@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG", "src\theBFG.csproj", "{0C322427-2014-496C-82D6-DF726BA50DF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG.Tests", "theBFG.Tests\theBFG.Tests.csproj", "{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C322427-2014-496C-82D6-DF726BA50DF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C322427-2014-496C-82D6-DF726BA50DF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C322427-2014-496C-82D6-DF726BA50DF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C322427-2014-496C-82D6-DF726BA50DF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

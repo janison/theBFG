@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <PackageVersion>1.0.0-beta</PackageVersion>
+        <Authors>captainjono</Authors>
+        <Description>A cloud-native C# unit / integration / load testing tool that clusters automatically
+
+
+dotnet install tool thebfg</Description>
+        <Copyright>MIT</Copyright>
+        <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
+        <PackageTags>unit testing mstest nunit dotnet test cluster load performance integration</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNetZip" Version="1.15.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
+        <PackageReference Include="System.Reactive" Version="4.0.0" />
+        <PackageReference Include="Autofac" Version="3.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>     
+      <Reference Include="Rxns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\..\..\..\Volumes\jan\Rxns\Rxn.Create\bin\Debug\netcoreapp3.1\Rxns.dll</HintPath>
+      </Reference>
+      <Reference Include="Rxns.Autofac, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\..\..\..\Volumes\jan\Rxns\Rxn.Create\bin\Debug\netcoreapp3.1\Rxns.Autofac.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>
