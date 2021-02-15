@@ -1,5 +1,5 @@
 <div><h1>TheBFG
-<img src=thebgf.png/>
+<img src="thebfg.png"/>
 </h1>
 </div> 
 

@@ -422,3 +422,4 @@ DerivedData/
 /src/.sonarqube
 /.idea/
 !/src/package/Rxns*
+!thebfg.png
