@@ -34,7 +34,7 @@ public class theBfg : IContainerPostBuildService, IDisposable
             };
         };
 
-        public static IObservable<IRxnAppContext> Reload(string url = "http://192.168.1.2:888/", params string[] args)
+        public static IObservable<IRxnAppContext> ReloadWith(string url = "http://192.168.1.2:888/", params string[] args)
         {
             return Rxns.Rxn.Create<IRxnAppContext>(o =>
             {

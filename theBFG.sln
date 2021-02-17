@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG", "src\theBFG.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG.Tests", "theBFG.Tests\theBFG.Tests.csproj", "{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG.testApp", "theBFG.testApp\theBFG.testApp.csproj", "{4C434841-F12F-4505-8830-849E45D2245C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B2B2EB2-132B-4C4D-9C31-627A2FAD6850}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C434841-F12F-4505-8830-849E45D2245C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C434841-F12F-4505-8830-849E45D2245C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C434841-F12F-4505-8830-849E45D2245C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C434841-F12F-4505-8830-849E45D2245C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
