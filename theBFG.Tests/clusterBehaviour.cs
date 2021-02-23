@@ -16,42 +16,47 @@ namespace theBFG.Tests
     [TestClass]
     public class clusterBehaviour
     {
+        [TestInitialize]
+        public void Setup()
+        {
+            
+        }
+        
         [TestMethod]
         public void should_compete_to_drain_test_queue()
         {
             //todo:
-            theBfg.ReloadWith("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll").WaitR();
+            theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll").WaitR();
         }
 
-        
         [TestMethod]
         public void should_auto_detect_workers()
         {
             ReportStatus.Log.ReportToConsole();
             var foundWorker = new Subject<Unit>();
-        
-            var server = new SsdpDiscoveryService();
-            server.Advertise("bfg-worker-queue","compete", "http://localhost:888/").Until();
 
-            var worker = new SsdpDiscoveryService();
-            worker.Discover()
-                .Where(msg => msg.Name.Contains("bfg-worker-queue"))
-                .Select(m =>
-                {
-                    var tokens = m.Name.Split(':');
-                    m.Name = tokens.Reverse().Skip(1).FirstOrDefault();
-                    return m;
-                })
-                .Do(msg =>
-                {
-                    $"Discovered {msg.Name} @ {msg.Url}".LogDebug();
-                })
-                .FirstAsync(w => w.Name.Contains("compete"))
+            var autoDiscovery = new SsdpDiscoveryService();
+            BfgTestApi.AdvertiseForWorkers(autoDiscovery, "compete");
+
+            BfgTestApi
+                .DiscoverWork(autoDiscovery, "compete")
+                .FirstAsync()
                 .Select(_ => new Unit())
                 .Subscribe(foundWorker);
 
-
             foundWorker.FirstAsync().WaitR();
+        }
+
+        [TestMethod]
+        public void should_detect_testagents()
+        {
+            var workerLifetime = new Subject<Unit>();
+            theBfg.ReloadWithTestWorker().LastAsync().Subscribe(workerLifetime);
+
+            theBfg.ReloadWithTestServer().LastAsync().Subscribe(workerLifetime);
+
+            "waiting for test to complete".LogDebug();
+            workerLifetime.WaitR();
         }
         
     }

@@ -14,19 +14,11 @@ namespace RxnCreate
 
     public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IRxnProcessor<StartUnitTest>, IManageResources
     {
-        public ClusterFanOut<StartUnitTest, UnitTestResult> Workflow =
-            new ClusterFanOut<StartUnitTest, UnitTestResult>();
-
-        public List<bfgWorker> Workers = new List<bfgWorker>();
-
-        public IObservable<UnitTestResult> StartUnitTest(StartUnitTest cfg)
-        {
-            return Workflow.Fanout(cfg);
-        }
+        public ClusterFanOut<StartUnitTest, UnitTestResult> Workflow = new ClusterFanOut<StartUnitTest, UnitTestResult>();
 
         public IObservable<IRxn> Process(StartUnitTest @event)
         {
-            return StartUnitTest(@event);
+            return Workflow.Fanout(@event);
         }
 
         public void Dispose()

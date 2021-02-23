@@ -6,7 +6,7 @@ namespace theBFG
     {
         static void Main(string[] args)
         {
-            theBfg.ReloadWith(args: args).Until();
+            theBfg.ReloadAnd(args: args).Until();
         }
     }
 }

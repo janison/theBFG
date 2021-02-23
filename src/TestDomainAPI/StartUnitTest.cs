@@ -12,6 +12,9 @@ namespace theBFG.TestDomainAPI
         public string UseAppUpdate { get; set; }
         public string UseAppVersion { get; set; }
         public string AppStatusUrl { get; set; }
+        
+        //of the format {StartTestNumber}:{EndTestNumber} as returned from "discover tests" command (dotnet test test.dll -discovertests)
+        public string Range { get; set; }
     }
 
 }

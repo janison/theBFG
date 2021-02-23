@@ -25,39 +25,36 @@ Feature | ...
 
 2. Create a `unit-test`
 
-3. Create a `test-host`
+3. Install bfg
 
     `dotnet install tool thebfg`
 
-    `dotnet tool thebfg start`
-
 5. Configure your `IDE` to deploy your `unit-test` on compile:
-   
-*AfterBuild:* `dotnet tool thebfg launch {test} {path/To/unit.test.dll}`
+ 
+*AfterBuild:* `dotnet tool thebfg target {path/To/unit.test.dll}`
 
 5. Spin up worker on the *same computer*, **or** **many *others***
    
-`dotnet tool theBFG wait`
+`dotnet tool theBFG fire`
 
 ... and thats it. Each time you `compile` your `unit-test` will be deployed to all the workers you have setup and they will run the tests as you commanded.
 
-*<h2>Integration test instead?</h2>*
+*<h2>Integration or Automation test? Start the SUT and monitor it for failures</h2>*
 
 6. Configure your `IDE` to deploy the  `app-under-test` on compile:
    
-`dotnet thebfg launch {test} {path/To/unit.test.dll}`
+`dotnet thebfg launch {app} {path/To/unit.test.dll}`
 
-7. Configure your test to download the `App` before running
- 
-`dotnet thebfg launch {app} {path/To/AppRoot}`
-
-8. Update your `test.dll` to download the App and get a reference to it
+7. Update your `test.dll` to download the App and get a reference to it
 
 `nuget install thebfg`
 
 ```c#
-// will install versions nested -> app/target/dir/{version}/*.*
-var stopKeepingUpToDate = TheBFG.WatchMyApp("app", "app/target/dir").Subscribe(); 
+// will install App into version folders nested -> app/target/dir/{version}/*.*
+// will continuely monitor for fresh app updates and automatically update
+// and launch it without having to restart your test - great for continuious
+// stress testing or hyper CI/CD scenarios
+var stop = theBFG.launch("app", "app/target/dir").Until(); 
 ```
 
 ....
@@ -132,6 +129,7 @@ Use subscribe to a [SignalR](http://dotnet.microsoft.com/) feed using the `bfgAP
 ## Manage libraries of Apps
 
 <img src=broken.jpg>
+
 
 # Changelog
 1.0-beta
