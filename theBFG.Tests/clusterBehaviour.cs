@@ -23,7 +23,7 @@ namespace theBFG.Tests
         }
         
         [TestMethod]
-        public void should_compete_to_drain_test_queue()
+        public void should_keep_updated()
         {
             //todo:
             theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll").WaitR();
@@ -50,13 +50,29 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_detect_testagents()
         {
-            var workerLifetime = new Subject<Unit>();
-            theBfg.ReloadWithTestWorker().LastAsync().Subscribe(workerLifetime);
+            try
+            {
+                var workerLifetime = new Subject<Unit>();
+                theBfg.ReloadWithTestWorker().LastAsync().Until();
 
-            theBfg.ReloadWithTestServer().LastAsync().Subscribe(workerLifetime);
+                theBfg.ReloadWithTestServer().LastAsync().Until();
 
-            "waiting for test to complete".LogDebug();
-            workerLifetime.WaitR();
+                "waiting for test to complete".LogDebug();
+                workerLifetime.WaitR();
+            }
+            catch (Exception e)
+            {
+               Assert.Fail(e.ToString());
+            }
+        }
+
+        [TestMethod]
+        public void should_support_rapid_fire_mode()
+        {
+            theBfg.ReloadWithTestWorker(args: "target testApp theBGF.testApp.dll and fire rapidly").LastAsync().Until();
+
+            "waiting for test to cimplete".LogDebug();
+            new Subject<int>().Wait();
         }
         
     }

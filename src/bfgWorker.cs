@@ -133,9 +133,11 @@ namespace theBFG
                 $"Discovered Api Hosting: {apiFound.Name}@{apiFound.Url}".LogDebug();
                 _registry.AppStatusUrl = apiFound.Url;
                 _rxnManager.Publish(new PerformAPing()).Until();
-                
+
                 $"Streaming logs".LogDebug();
                 _rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+
+                //from here on, heartbeats will return work for us to do
             });
 
             return apiName.IsNullOrWhitespace()
