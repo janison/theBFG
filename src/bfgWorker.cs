@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Rxns;
 using Rxns.Cloud;
@@ -56,6 +57,7 @@ namespace theBFG
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IUpdateServiceClient _updateService;
         private readonly IAppServiceRegistry _registry;
+        private int _runId;
         public string Name { get; }
         public string Route { get; }
 
@@ -78,7 +80,7 @@ namespace theBFG
                 Directory.CreateDirectory("logs");
             }
 
-            var file = File.Create($"logs/testLog_{DateTime.Now.ToString("s").Replace(":", "").LogDebug("LOG")}");
+            var file = File.Create($"logs/testLog_{Name.Replace("#", "")}_{++_runId}_{DateTime.Now.ToString("s").Replace(":", "").LogDebug("LOG")}");
             var testLog = new StreamWriter(file, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
@@ -94,29 +96,49 @@ namespace theBFG
                     }, true);
             }
 
+            work.Dll = FindIfNotExists(work.Dll);
+
             return keepTestUpdatedIfRequested
                 .Select(testPath =>
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
+                    var logName = work.RunThisTest.IsNullOrWhiteSpace(work.Dll);
+
+                    //https://github.com/dotnet/sdk/issues/5514
+                    var dotnetHack = "c:/program files/dotnet/dotnet.exe";
+
+                    if (!File.Exists(dotnetHack))
+                        dotnetHack = "dotnet";
+
                     //todo: make testrunner injectable/swapable
                     return Rxn.Create
                     (
-                        "dotnet",
-                        $"test{FilterIfSingleTestOnly(work)} {Path.Combine(testPath, work.Dll)}",
-                        i => testLog.WriteLine(i.LogDebug(work.RunThisTest ?? work.Dll)),
-                        e => testLog.WriteLine(e.LogDebug(work.RunThisTest ?? work.Dll)
+                        dotnetHack,
+                        $"test{FilterIfSingleTestOnly(work)} {Path.Combine(testPath.IsNullOrWhiteSpace(""), work.Dll)}",
+                        i => testLog.WriteLine(i.LogDebug(logName)),
+                        e => testLog.WriteLine(e.LogDebug(logName)
                     ));
                 })
                 .Switch()
                 .LastOrDefaultAsync()
+                .Catch<IDisposable, Exception>(_ => Disposable.Empty.ToObservable())
                 .Select(_ =>
                 {
                     return (UnitTestResult) new UnitTestResult()
                     {
                         WasSuccessful = true
                     }.AsResultOf(work);
-                });
+                })
+                ;
+        }
+
+        private string FindIfNotExists(string workDll, string parent = null)
+        {
+            if (File.Exists(workDll))
+                return workDll;
+
+            throw new Exception($"Test Not Found: {workDll}");
         }
 
         private string FilterIfSingleTestOnly(StartUnitTest work)

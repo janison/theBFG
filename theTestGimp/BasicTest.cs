@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace theBFG.Tests
+namespace theTestGimp
 {
     [TestClass]
     public class SomeAppWorkflowBehavior
@@ -14,7 +14,7 @@ namespace theBFG.Tests
             Thread.Sleep(10 * 1000);
             Assert.IsTrue(true);
         }
-        
+
         [TestMethod]
         public void the_2_test()
         {
@@ -24,7 +24,7 @@ namespace theBFG.Tests
             Assert.IsTrue(true);
 
         }
-        
+
         [TestMethod]
         public void the_3_test()
         {
@@ -33,7 +33,7 @@ namespace theBFG.Tests
 
             Assert.IsTrue(true);
         }
-        
+
         [TestMethod]
         public void the_4_test()
         {
@@ -42,7 +42,7 @@ namespace theBFG.Tests
 
             Assert.IsTrue(true);
         }
-        
+
         [TestMethod]
         public void the_5_test()
         {
@@ -51,7 +51,7 @@ namespace theBFG.Tests
 
             Assert.IsTrue(true);
         }
-        
+
         [TestMethod]
         public void the_6_test()
         {
@@ -60,6 +60,6 @@ namespace theBFG.Tests
 
             Assert.IsTrue(true);
         }
-        
+
     }
 }

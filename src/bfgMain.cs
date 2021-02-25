@@ -1,3 +1,4 @@
+using System.Reactive;
 using Rxns;
 
 namespace theBFG
@@ -7,6 +8,7 @@ namespace theBFG
         static void Main(string[] args)
         {
             theBfg.ReloadAnd(args: args).Until();
+            theBfg.IsCompleted.WaitR();
         }
     }
 }

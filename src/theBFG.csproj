@@ -23,7 +23,7 @@ dotnet install tool thebfg</Description>
 
     <ItemGroup>
       <Reference Include="Rxns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\..\rxns\src\Rxns\bin\Debug\netstandard2.1\Rxns.dll</HintPath>
+        <HintPath>..\pacakges\Rxns\Rxns.dll</HintPath>
       </Reference>
       <Reference Include="Rxns.Autofac, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
         <HintPath>..\pacakges\Rxns\Rxns.Autofac.dll</HintPath>

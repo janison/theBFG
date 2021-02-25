@@ -26,7 +26,7 @@ namespace theBFG.Tests
         public void should_keep_updated()
         {
             //todo:
-            theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll").WaitR();
+            //theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll".Split(' ')).WaitR();
         }
 
         [TestMethod]
@@ -69,9 +69,9 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_support_rapid_fire_mode()
         {
-            theBfg.ReloadWithTestWorker(args: "target testApp theBGF.testApp.dll and fire rapidly").LastAsync().Until();
+            theBfg.ReloadAnd(args: @"target C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll and fire rapidly".Split(' ')).LastAsync().Until();
 
-            "waiting for test to cimplete".LogDebug();
+            "waiting for test to complete".LogDebug();
             new Subject<int>().Wait();
         }
         
