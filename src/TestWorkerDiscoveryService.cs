@@ -1,6 +1,7 @@
 using System;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting.Updates;

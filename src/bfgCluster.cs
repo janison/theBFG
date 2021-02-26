@@ -1,37 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Linq;
+using Rxns;
 using Rxns.Cloud;
-using Rxns.DDD.Commanding;
 using Rxns.Interfaces;
-using theBFG;
+using Rxns.Scheduling;
 using theBFG.TestDomainAPI;
 
 namespace RxnCreate
 {
-    public class QueueWorkDone : CommandResult
+    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>
     {
+
+        public bfgCluster(IRxnManager<IRxn> rxns)
+        {
+
+            TimeSpan.FromSeconds(5).Then().Do(_ =>
+            {
+
+                rxns.Publish(new AppStatusInfoProviderEvent()
+                {
+                    ReporterName = "TestArena",
+                    Info = () => new AppStatusInfo[]
+                    {
+                        new AppStatusInfo("Workers",
+                            $"{Workflow.Workers.Count}{Workflow.Workers.Values.Where(v => v.IsBusy.Value()).Count()}"),
+                    }
+                }).Until();
+
+            }).Until();
+        }
     }
-
-    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IRxnProcessor<StartUnitTest>, IManageResources
-    {
-        public ClusterFanOut<StartUnitTest, UnitTestResult> Workflow = new ClusterFanOut<StartUnitTest, UnitTestResult>();
-
-        public IObservable<IRxn> Process(StartUnitTest @event)
-        {
-            return Workflow.Fanout(@event);
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public void OnDispose(IDisposable obj)
-        {
-        }
-    }
-
-
-    
-
-
 }

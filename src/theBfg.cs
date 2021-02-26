@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
@@ -6,15 +7,13 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Autofac;
-
 using RxnCreate;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.Cloud.Intelligence;
 using Rxns.Commanding;
-using Rxns.DDD.BoundedContext;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
 using Rxns.Hosting;
@@ -22,8 +21,6 @@ using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.Metrics;
-
-
 using Rxns.NewtonsoftJson;
 using Rxns.WebApiNET5;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
@@ -49,6 +46,7 @@ namespace theBFG
            {
                //d(dd);
                dd.CreatesOncePerApp<theBfg>()
+                .CreatesOncePerApp<bfgCluster>()
               .CreatesOncePerApp<SsdpDiscoveryService>()
               .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
               {
@@ -77,6 +75,7 @@ namespace theBFG
             {
                 d(dd);
                 dd.CreatesOncePerApp<SsdpDiscoveryService>();
+                dd.CreatesOncePerApp<bfgCluster>();
                 dd.CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                 {
                     SpawnTestaWorker(resolver);
@@ -225,6 +224,7 @@ namespace theBFG
         private Func<AppStatusInfo[]> _info = () => new AppStatusInfo[0];
         private DateTime _started;
         private bfgCluster _testCluster;
+        private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
 
         private void Start(IResolveTypes resolver)
         {
@@ -236,9 +236,19 @@ namespace theBFG
             //todo fix all the below hacks and put into proper organised classes
             //implement real cluster mode?
 
-           _testCluster = new bfgCluster();
+            _testCluster = resolver.Resolve<bfgCluster>();
+
+            var reactorMgr = resolver.Resolve<IManageReactors>();
+            var bfgReactor = reactorMgr.GetOrCreate("bfg").Reactor;
+            //need to fix health which will allow this to be viewed on the appstatus portal. should monitor health of fanout stratergy
+            //
+            //IMonitorActionFactory<IRxn> health =MonitorHealth
+            RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
+
             var rxnManage = resolver.Resolve<IRxnManager<IRxn>>();
             Action<IRxn> _publish = e => rxnManage.Publish(e).Until();
+
+
             var notUpdating = true;
 
             var iteration = 0;
@@ -311,7 +321,7 @@ namespace theBFG
 
             Action fireRapidly = () =>
             {
-                Enumerable.Range(0, Environment.ProcessorCount).ToObservable().Do(_ =>
+                Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ =>
                 {
                     fire();
                 }).Until();

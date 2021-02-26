@@ -4,8 +4,10 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
 using Rxns.DDD.CQRS;
 using Rxns.Health;
@@ -60,6 +62,8 @@ namespace theBFG
         private int _runId;
         public string Name { get; }
         public string Route { get; }
+        public IObservable<bool> IsBusy => _isBusy;
+        private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
 
         public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService)
         {
@@ -73,6 +77,7 @@ namespace theBFG
 
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
+            _isBusy.OnNext(true);
             $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
             if (!Directory.Exists("logs"))
@@ -103,7 +108,7 @@ namespace theBFG
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
-                    var logName = work.RunThisTest.IsNullOrWhiteSpace(work.Dll);
+                    var logName = $"{Name}{work.RunThisTest.IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}";
 
                     //https://github.com/dotnet/sdk/issues/5514
                     var dotnetHack = "c:/program files/dotnet/dotnet.exe";
@@ -130,7 +135,10 @@ namespace theBFG
                         WasSuccessful = true
                     }.AsResultOf(work);
                 })
-                ;
+                .FinallyR(() =>
+                {
+                    _isBusy.OnNext(false);
+                });
         }
 
         private string FindIfNotExists(string workDll, string parent = null)
