@@ -1,55 +1,21 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Rxns;
-using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
-using Rxns.DDD.Commanding;
 using Rxns.DDD.CQRS;
 using Rxns.Health;
-using Rxns.Health.AppStatus;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
-using theBFG.RxnsAdapter;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
-{
-    public class BfgTestApi
-    {
-        public static IDisposable AdvertiseForWorkers(SsdpDiscoveryService discovery, string apiName = null, string hostUrl = "http://localhost:888/")
-        {
-            return discovery.Advertise("bfg-worker-queue", apiName, hostUrl).Until();
-        }
-        
-        //to load a range of tests with dotnet test i cant use filters
-        //will need to discover_tests in the dll first, parse the list of tests and divide them up
-        //and stitch a list together
-        public static IObservable<ApiHeartbeat> DiscoverWork(IAppServiceDiscovery services, string apiName = null)
-        {
-            return services.Discover()
-                .Where(msg => msg.Name.Contains("bfg-worker-queue") &&
-                                        (apiName.IsNullOrWhitespace() || msg.Name.BasicallyContains(apiName)))
-                .Select(m =>
-                {
-                    var tokens = m.Name.Split(':');
-                    m.Name = tokens.Reverse().Skip(1).FirstOrDefault();
-                    return m;
-                })
-                .Do(msg =>
-                {
-                    $"Discovered target {msg.Name} @ {msg.Url}".LogDebug();
-                });
-        }
-    }
-    
-    
+{   
     /// <summary>
     /// 
     /// </summary>
@@ -158,7 +124,7 @@ namespace theBFG
         {
             $"Attempting to discover work {apiName ?? "any"}@{testHostUrl ?? "any"}".LogDebug();
             
-            var allDiscoveredApiRequests = BfgTestApi.DiscoverWork(_services).Do(apiFound =>
+            var allDiscoveredApiRequests = bfgTestApi.DiscoverWork(_services).Do(apiFound =>
             {
                 $"Discovered Api Hosting: {apiFound.Name}@{apiFound.Url}".LogDebug();
                 _registry.AppStatusUrl = apiFound.Url;

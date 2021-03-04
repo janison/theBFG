@@ -7,11 +7,10 @@ using Rxns.Interfaces;
 using Rxns.Scheduling;
 using theBFG.TestDomainAPI;
 
-namespace RxnCreate
+namespace theBFG
 {
     public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>
     {
-
         public bfgCluster(IRxnManager<IRxn> rxns)
         {
 
@@ -23,8 +22,7 @@ namespace RxnCreate
                     ReporterName = "TestArena",
                     Info = () => new AppStatusInfo[]
                     {
-                        new AppStatusInfo("Workers",
-                            $"{Workflow.Workers.Count}{Workflow.Workers.Values.Where(v => v.IsBusy.Value()).Count()}"),
+                        new AppStatusInfo("Workers", $"{Workflow.Workers.Count}{Workflow.Workers.Values.Count(v => v.IsBusy.Value())}"),
                     }
                 }).Until();
 

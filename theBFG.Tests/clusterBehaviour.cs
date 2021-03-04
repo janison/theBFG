@@ -36,9 +36,9 @@ namespace theBFG.Tests
             var foundWorker = new Subject<Unit>();
 
             var autoDiscovery = new SsdpDiscoveryService();
-            BfgTestApi.AdvertiseForWorkers(autoDiscovery, "compete");
+            bfgTestApi.AdvertiseForWorkers(autoDiscovery, "compete");
 
-            BfgTestApi
+            bfgTestApi
                 .DiscoverWork(autoDiscovery, "compete")
                 .FirstAsync()
                 .Select(_ => new Unit())

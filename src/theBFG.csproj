@@ -23,13 +23,13 @@ dotnet install tool thebfg</Description>
 
     <ItemGroup>
       <Reference Include="Rxns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\pacakges\Rxns\Rxns.dll</HintPath>
+        <HintPath>C:\jan\Rxns\src\Rxns\obj\Debug\netstandard2.1\Rxns.dll</HintPath>
       </Reference>
       <Reference Include="Rxns.Autofac, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\pacakges\Rxns\Rxns.Autofac.dll</HintPath>
+        <HintPath>C:\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.Autofac.dll</HintPath>
       </Reference>
       <Reference Include="Rxns.WebApiNET5, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\pacakges\Rxns\Rxns.WebApiNET5.dll</HintPath>
+        <HintPath>C:\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.WebApiNET5.dll</HintPath>
       </Reference>
     </ItemGroup>
 
