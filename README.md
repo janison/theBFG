@@ -107,7 +107,7 @@ Augment the stream with your own logging
 
 ## Real-time metrics
 
-Your bfg cluster vitals are visualised
+Access Test Arena metrics and other bfg cluster vitals through a web-browser
 
 <img src=broken.jpg>
 
@@ -118,7 +118,7 @@ Your bfg cluster vitals are visualised
 
 ## Real-time ports 
 
-Use subscribe to a [SignalR](http://dotnet.microsoft.com/) feed using the `bfgAPI` to connect directly console and parse the event for your *specific* integration `use-case` ie. [AppInsights](http://azure.microsoft.com/)
+use [SignalR](http://dotnet.microsoft.com/) to subscribe to a real-time event feed using the `bfgAPI` to customise the integration for your specific  `use-case` ie. logging to [AppInsights](http://azure.microsoft.com/)
 
 
 ```
@@ -131,5 +131,6 @@ Use subscribe to a [SignalR](http://dotnet.microsoft.com/) feed using the `bfgAP
 <img src=broken.jpg>
 
 
-# Changelog
-1.0-beta
+Changelog|comment
+-|-
+1.0-beta | (in progress) Baseline API implemention

@@ -53,9 +53,9 @@ namespace theBFG.Tests
             try
             {
                 var workerLifetime = new Subject<Unit>();
-                theBfg.ReloadWithTestWorker().LastAsync().Until();
+                theBfg.ReloadWithTestWorker(args: "fire".Split(' ')).LastAsync().Until();
 
-                theBfg.ReloadWithTestServer().LastAsync().Until();
+                theBfg.ReloadWithTestServer(args: "target C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll".Split(' ')).LastAsync().Until();
 
                 "waiting for test to complete".LogDebug();
                 workerLifetime.WaitR();

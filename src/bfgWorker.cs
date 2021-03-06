@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Rxns;
 using Rxns.Cloud.Intelligence;
+using Rxns.DDD.Commanding;
 using Rxns.DDD.CQRS;
 using Rxns.Health;
 using Rxns.Hosting;
@@ -55,19 +56,25 @@ namespace theBFG
             var testLog = new StreamWriter(file, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
-            if (!work.UseAppUpdate.IsNullOrWhitespace())
+            var workDll = new FileInfo(work.Dll).Name;
+            workDll = $"{work.UseAppUpdate}/{workDll}"; //{work.UseAppVersion}/
+            work.Dll = workDll;
+
+            if (!File.Exists(work.Dll) || !work.UseAppUpdate.IsNullOrWhitespace())
             {
                 //todo: update need
                 keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,
-                    work.UseAppUpdate, new RxnAppCfg()
+                    work.UseAppUpdate ?? "Test", new RxnAppCfg()
                     {
-                        AppStatusUrl = work.AppStatusUrl,
+                        AppStatusUrl = "http://localhost:888",// work.AppStatusUrl,
                         SystemName = work.UseAppUpdate,
                         KeepUpdated = true
                     }, true);
             }
-
-            work.Dll = FindIfNotExists(work.Dll);
+            else
+            {
+                work.Dll = FindIfNotExists(work.Dll);
+            }
 
             return keepTestUpdatedIfRequested
                 .Select(testPath =>
@@ -86,14 +93,18 @@ namespace theBFG
                     return Rxn.Create
                     (
                         dotnetHack,
-                        $"test{FilterIfSingleTestOnly(work)} {Path.Combine(testPath.IsNullOrWhiteSpace(""), work.Dll)}",
+                        $"test{FilterIfSingleTestOnly(work)} {Path.Combine(Environment.CurrentDirectory, work.Dll)}",
                         i => testLog.WriteLine(i.LogDebug(logName)),
                         e => testLog.WriteLine(e.LogDebug(logName)
                     ));
                 })
                 .Switch()
                 .LastOrDefaultAsync()
-                .Catch<IDisposable, Exception>(_ => Disposable.Empty.ToObservable())
+                .Catch<IDisposable, Exception>(e =>
+                {
+                    $"Failed running test {e}".LogDebug();
+                    return Disposable.Empty.ToObservable();
+                })
                 .Select(_ =>
                 {
                     return (UnitTestResult) new UnitTestResult()

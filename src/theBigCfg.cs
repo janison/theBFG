@@ -6,6 +6,11 @@ namespace theBFG
 {
     public class theBigCfg : StartUnitTest
     {
+        public theBigCfg()
+        {
+
+        }
+
         public static theBigCfg Detect()
         {
             var cfg = new theBigCfg();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
@@ -51,7 +52,7 @@ namespace theBFG
                 //var clusterHost = OutOfProcessFactory.CreateClusterHost(args, appStore, cfg);
 
                 return theBFGDef.TestWorker(apiName, testHostUrl, theBFGDef.Cfg, RxnApp.SpareReator(testHostUrl)).ToRxns()
-                    .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, false))
+                    .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, true))
                     .OnHost(new ConsoleHostedApp(), cfg)
                     .SelectMany(h => h.Run())
                     .Select(app => new Unit())
@@ -72,19 +73,16 @@ namespace theBFG
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
             var testName = string.Empty;// args.Skip(3).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppUpdate);
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
-            url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace(testCfg.AppStatusUrl)
+            url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
                 .IsNullOrWhiteSpace(cfg.AppStatusUrl);
-
-            if (fire.BasicallyEquals("fire"))
-                return new StartUnitTest()
-                {
-                    UseAppUpdate = appUpdateDllSource,
-                    UseAppVersion = appUpdateVersion,
-                    Dll = dll,
-                    RunThisTest = testName,
-                };
-
-            return null;
+            
+            return new StartUnitTest()
+            {
+                UseAppUpdate = appUpdateDllSource ?? "Test",
+                UseAppVersion = appUpdateVersion,
+                Dll = dll,
+                RunThisTest = testName,
+            };
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
@@ -136,6 +134,7 @@ namespace theBFG
             return Rxn.Create<Unit>(o =>
             {
                 ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
+                theBFGDef.Cfg = DetectIfTargetMode(url, args);
 
                 "Configuring App".LogDebug();
                 
@@ -193,11 +192,22 @@ namespace theBFG
             var rxnManage = resolver.Resolve<IRxnManager<IRxn>>();
             Action<IRxn> _publish = e => rxnManage.Publish(e).Until();
 
+            var testUpdate = resolver.Resolve<IAppUpdateManager>(); 
+            TimeSpan.FromSeconds(2).Then().Do(_ =>
+            {
+                RxnApps.CreateAppUpdate(unitTestToRun.UseAppUpdate, unitTestToRun.UseAppVersion,
+                        new FileInfo(unitTestToRun.Dll).DirectoryName, false, "http://localhost:888")
+                    .Catch<Unit, Exception>(
+                        e =>
+                        {
+                            ReportStatus.Log.OnError("Could not download test. Cant join cluster :(", e);
+                            throw e;
+                        }).WaitR();
+            }).Until();
 
             var notUpdating = true;
 
             var iteration = 0;
-            var workerId = 0;
             var startedAt = Stopwatch.StartNew();
             Action fire = () =>
             {
@@ -256,13 +266,7 @@ namespace theBFG
                         }).Until();
             };
 
-            Action spawnWorker = () =>
-            {
-                "Spawning worker".LogDebug(++workerId);
-
-                var worker = theBFGDef.SpawnTestaWorker(resolver);
-                _testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = worker }).Do(e => _publish(e)).Until();
-            };
+            
 
             Action fireRapidly = () =>
             {
@@ -276,7 +280,7 @@ namespace theBFG
             {
                 Enumerable.Range(0, Environment.ProcessorCount).ToObservable().Do(_ =>
                 {
-                    spawnWorker();
+                    SpawnWorker(resolver);
                 }).Until();
             };
 
@@ -294,7 +298,7 @@ namespace theBFG
             }
             else if (args.Contains("fire"))
             {
-                spawnWorker();
+                SpawnWorker(resolver);
             }
 
             if (args.Contains("continuously"))
@@ -334,6 +338,13 @@ namespace theBFG
             //need to test the appstatus worker tunnel
             //need to push rxns webapi to nuget
             //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
+        }
+
+        public bfgWorker SpawnWorker(IResolveTypes resolver)
+        {
+            var worker = theBFGDef.SpawnTestWorker(resolver);
+
+            return worker;
         }
 
         private void BroadcasteStatsToAppStatus(bfgCluster testCluster, StartUnitTest unitTestToRun)

@@ -5,6 +5,7 @@ using Rxns;
 using Rxns.Cloud.Intelligence;
 using Rxns.Commanding;
 using Rxns.Health.AppStatus;
+using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using theBFG.RxnsAdapter;
 using theBFG.TestDomainAPI;
@@ -14,11 +15,13 @@ namespace theBFG
     public class bfgWorkerDoWorkOrchestrator : IAppHeartBeatHandler
     {
         private readonly IRxnManager<IRxn> _rxnManager;
+        private readonly IAppStatusStore _appCmds;
         private readonly StartUnitTest _cfg;
 
-        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, StartUnitTest cfg)
+        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, StartUnitTest cfg)
         {
             _rxnManager = rxnManager;
+            _appCmds = appCmds;
             _cfg = cfg;
         }
 
@@ -30,10 +33,17 @@ namespace theBFG
         /// <returns></returns>
         public IObservable<IRxn> OnNewAppDiscovered(IAppStatusManager updates, SystemStatusEvent app)
         {
-            return new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
-            {
-                Worker = new bfgWorkerRxnManagerBridge<StartUnitTest, UnitTestResult>(_rxnManager)
-            }.ToObservable();
+            if(app.SystemName.Contains("worker", StringComparison.InvariantCultureIgnoreCase))
+                return new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
+                {
+                    Worker = new bfgWorkerRxnManagerBridge<StartUnitTest, UnitTestResult>(_appCmds, _rxnManager)
+                    {
+                        Route = app.GetRoute(),
+                        Name = app.SystemName
+                    }
+                }.ToObservable();
+
+            return Rxn.Empty();
         }
 
         public IObservable<IRxn> OnAppHeartBeat(IAppStatusManager updates, SystemStatusEvent app)
