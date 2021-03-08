@@ -7,7 +7,10 @@ using System.Threading.Tasks;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
+using Rxns.Collections;
 using Rxns.DDD;
+using Rxns.DDD.CQRS;
+using Rxns.Health;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
@@ -22,22 +25,21 @@ namespace theBFG
 {
     public static class theBFGDef
     {
-        public static StartUnitTest Cfg;
+        public static StartUnitTest[] Cfg;
         private static int _workerCount;
         
-        public static Func<StartUnitTest, string[], Action<IRxnLifecycle>> TestServer = (cfg, args) =>
+        public static Func<string[], Action<IRxnLifecycle>> TestArena = (args) =>
         {
             RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
             RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-
-            Cfg = cfg;
-
+            
             return dd =>
             {
                 if (Cfg != null)
-                    dd.CreatesOncePerApp(_ => cfg);
+                    dd.CreatesOncePerApp(_ => Cfg[0]);
+                    dd.CreatesOncePerApp(_ => Cfg);
 
-                //d(dd);
+                    //d(dd);
                 dd.CreatesOncePerApp<theBfg>()
                     .CreatesOncePerApp<bfgCluster>()
                     .CreatesOncePerApp<SsdpDiscoveryService>()
@@ -46,6 +48,7 @@ namespace theBFG
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .Includes<AspNetCoreWebApiAdapterModule>()
                     .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
+                    .CreatesOncePerApp<DotNetTestArena>()
                     //cfg specific
                     .CreatesOncePerApp(() => new AggViewCfg()
                     {
@@ -63,7 +66,7 @@ namespace theBFG
             };
         };
 
-        public static Func<string, string, StartUnitTest, Action<IRxnLifecycle>, Action<IRxnLifecycle>> TestWorker = (apiName, testHostUrl, testcfg, d) =>
+        public static Func<string, string, Action<IRxnLifecycle>, Action<IRxnLifecycle>> TestWorker = (apiName, testHostUrl, d) =>
         {
             return dd =>
             {
@@ -73,6 +76,7 @@ namespace theBFG
                 .RespondsToSvcCmds<StartUnitTest>()
                 .CreatesOncePerApp<AppStatusClientModule>()
                 .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
+                .CreatesOncePerApp<DotNetTestArena>()
                 .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
                 .CreatesOncePerApp(_ => new AppServiceRegistry()
                 {
@@ -93,10 +97,14 @@ namespace theBFG
 
             var testCluster = resolver.Resolve<bfgCluster>();
             var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
+
+            $"Streaming logs".LogDebug();
+            rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+
             $"Starting worker".LogDebug();
             Interlocked.Increment(ref _workerCount);
 
-            var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>());
+            var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(), resolver.Resolve<ITestArena>());
 
             if (Cfg == null)
                 testWorker.DiscoverAndDoWork();

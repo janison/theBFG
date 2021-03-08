@@ -4,7 +4,7 @@ using Rxns.WebApiNET5;
 
 namespace theBFG
 {
-    public class theBFGAspnetCoreAdapter : ConfigureAndStartAspnetCore
+    public class theBFGAspNetCoreAdapter : ConfigureAndStartAspnetCore
     {
         public static IRxnAppCfg Appcfg = null;
         public static IWebApiCfg Cfg = new WebApiCfg()
@@ -14,14 +14,13 @@ namespace theBFG
             Html5Root = @"C:\jan\Rxns\Rxns.AppSatus\Web\dist" // @"/Users/janison/rxns/Rxns.AppSatus/Web/dist/" //the rxns appstatus portal
         };
 
-        public theBFGAspnetCoreAdapter()
+        public theBFGAspNetCoreAdapter()
         {
             var args = Appcfg?.Args ?? new string[0];
-            var url = string.Empty;
-
+            
             WebApiCfg = Cfg;
-            AppInfo = new ClusteredAppInfo("bfgTestServer", "1.0.0", args, false);
-            App = e => theBFGDef.TestServer(theBfg.DetectIfTargetMode(url, args), args);
+            AppInfo = new ClusteredAppInfo("bfgTestArena", "1.0.0", args, false);
+            App = e => theBFGDef.TestArena(args);
         }
 
         public override Func<string, Action<IRxnLifecycle>> App { get; }

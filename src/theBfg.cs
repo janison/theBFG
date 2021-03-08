@@ -42,7 +42,7 @@ namespace theBFG
             {
                 var apiName = args.Skip(1).FirstOrDefault();
                 var testHostUrl = args.Skip(2).FirstOrDefault().IsNullOrWhiteSpace("http://localhost:888");
-                theBFGDef.Cfg = DetectIfTargetMode(url, args);
+                theBFGDef.Cfg = DetectIfTargetMode(url, args).WaitR();
 
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
@@ -51,7 +51,7 @@ namespace theBFG
                 //var appStore = new CurrentDirectoryAppUpdateStore();
                 //var clusterHost = OutOfProcessFactory.CreateClusterHost(args, appStore, cfg);
 
-                return theBFGDef.TestWorker(apiName, testHostUrl, theBFGDef.Cfg, RxnApp.SpareReator(testHostUrl)).ToRxns()
+                return theBFGDef.TestWorker(apiName, testHostUrl, RxnApp.SpareReator(testHostUrl)).ToRxns()
                     .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, true))
                     .OnHost(new ConsoleHostedApp(), cfg)
                     .SelectMany(h => h.Run())
@@ -60,8 +60,9 @@ namespace theBFG
             });
         }
 
-        public static StartUnitTest DetectIfTargetMode(string url, string[] args)
+        public static IObservable<StartUnitTest[]> DetectIfTargetMode(string url, string[] args)
         {
+
             var cfg = RxnAppCfg.Detect(args);
             var testCfg = theBigCfg.Detect();
 
@@ -76,13 +77,36 @@ namespace theBFG
             url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
                 .IsNullOrWhiteSpace(cfg.AppStatusUrl);
             
-            return new StartUnitTest()
+            var testsToStart = new StartUnitTest()
             {
                 UseAppUpdate = appUpdateDllSource ?? "Test",
                 UseAppVersion = appUpdateVersion,
                 Dll = dll,
                 RunThisTest = testName,
             };
+
+
+            var mode = new DotNetTestArena();
+            var batchSize = 2;
+
+            if (args.Contains("compete"))
+            {
+
+                return mode.ListTests(testsToStart).SelectMany(s => s)
+                    .Buffer(batchSize)
+                    .Select(tests => new StartUnitTest()
+                {
+                    UseAppUpdate = appUpdateDllSource ?? "Test",
+                    UseAppVersion = appUpdateVersion,
+                    Dll = dll,
+                    RunThisTest = tests.ToStringEach()
+                })
+                .ToArray();
+            }
+            else
+            {
+                return new[] { testsToStart }.ToObservable();
+            }
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
@@ -99,7 +123,7 @@ namespace theBFG
                         return ReloadWithTestWorker(url, args).Subscribe(o);
                         break;
                     case "target":
-                        return ReloadWithTestServer(url, args).Subscribe(o);
+                        return ReloadWithTestArena(url, args).Subscribe(o);
                         break;
                     case null:
 
@@ -129,19 +153,19 @@ namespace theBFG
             });
         }
 
-        public static IObservable<Unit> ReloadWithTestServer(string url = "http://localhost:888/", params string[] args)
+        public static IObservable<Unit> ReloadWithTestArena(string url = "http://localhost:888/", params string[] args)
         {
             return Rxn.Create<Unit>(o =>
             {
                 ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
-                theBFGDef.Cfg = DetectIfTargetMode(url, args);
+                theBFGDef.Cfg = DetectIfTargetMode(url, args).WaitR();
 
                 "Configuring App".LogDebug();
                 
                 
-                theBFGAspnetCoreAdapter.Appcfg = RxnAppCfg.Detect(args);
+                theBFGAspNetCoreAdapter.Appcfg = RxnAppCfg.Detect(args);
                 
-                return AspNetCoreWebApiAdapter.StartWebServices<theBFGAspnetCoreAdapter>(theBFGAspnetCoreAdapter.Cfg, args).ToObservable()
+                return AspNetCoreWebApiAdapter.StartWebServices<theBFGAspNetCoreAdapter>(theBFGAspNetCoreAdapter.Cfg, args).ToObservable()
                     .LastAsync()
                     .Select(_ => new Unit())
                     .Subscribe(o);
@@ -174,7 +198,7 @@ namespace theBFG
             var args = Args;
             var unitTestToRun = theBFGDef.Cfg;
             _started = DateTime.Now;
-            "Starting up TestServer".LogDebug();
+            "Starting up TestArena".LogDebug();
 
             //todo fix all the below hacks and put into proper organised classes
             //move fire etc methods to testdomainapi
@@ -195,8 +219,8 @@ namespace theBFG
             var testUpdate = resolver.Resolve<IAppUpdateManager>(); 
             TimeSpan.FromSeconds(2).Then().Do(_ =>
             {
-                RxnApps.CreateAppUpdate(unitTestToRun.UseAppUpdate, unitTestToRun.UseAppVersion,
-                        new FileInfo(unitTestToRun.Dll).DirectoryName, false, "http://localhost:888")
+                RxnApps.CreateAppUpdate(unitTestToRun[0].UseAppUpdate, Scrub(unitTestToRun[0].UseAppVersion),
+                        new FileInfo(unitTestToRun[0].Dll).DirectoryName, true, "http://localhost:888")
                     .Catch<Unit, Exception>(
                         e =>
                         {
@@ -214,14 +238,17 @@ namespace theBFG
                 "Test".LogDebug(++iteration);
                 startedAt.Restart();
 
-                _testCluster.Queue(unitTestToRun);
+                foreach (var test in unitTestToRun)
+                {
+                    _testCluster.Queue(test);
+                }
             };
 
             Action<Action> doWorkContiniously = (fireStyle) =>
             {
                 var stopDOingWor1k = rxnManage
                     .CreateSubscription<CommandResult>()
-                    .Where(c => c.InResponseTo.Equals(unitTestToRun.Id))
+                    .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id))
                     .Select(_ => --iteration)
                     .If(e => e <= 0,
                         _ =>
@@ -241,7 +268,7 @@ namespace theBFG
 
             _testCluster.ConfigiurePublishFunc(e => _publish(e));
 
-            BroadcasteStatsToAppStatus(_testCluster, unitTestToRun);
+            BroadcasteStatsToAppStatus(_testCluster, unitTestToRun[0]);
 
             var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
 
@@ -255,7 +282,7 @@ namespace theBFG
                 var stopDOingWork = rxnManage
                     .CreateSubscription<CommandResult>()
                     .Where(_ => unitTestToRun != null)
-                    .Where(c => c.InResponseTo.Equals(unitTestToRun.Id))
+                    .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id)) //this code is wrong, need to fix, could be a response to any msg
                     .Do(
                         _ =>
                         {
@@ -333,11 +360,18 @@ namespace theBFG
                     theBfg.IsCompleted.OnCompleted();
                 });
             }
-
-            //need to active webapi inside of this testserver
-            //need to test the appstatus worker tunnel
+            
+            //todo:
+            //need to push bfg to nuget
             //need to push rxns webapi to nuget
             //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
+        }
+
+        private string Scrub(string useAppVersion)
+        {
+            return new[] {"rapidly", "continuously", "fire"}.FirstOrDefault(i => i == useAppVersion) == null
+                ? useAppVersion
+                : null;
         }
 
         public bfgWorker SpawnWorker(IResolveTypes resolver)
