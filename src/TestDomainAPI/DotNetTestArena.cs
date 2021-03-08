@@ -92,7 +92,7 @@ namespace theBFG.TestDomainAPI
 
         private string FilterIfSingleTestOnly(StartUnitTest work)
         {
-            return work.RunThisTest.IsNullOrWhitespace() ? "" : $" --filter Name={work.RunThisTest}";
+            return work.RunThisTest.IsNullOrWhitespace() ? "" : $" --filter Name={work.RunThisTest.Replace(",", "|Name=")}";
         }
 
     }

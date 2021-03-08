@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\src\theBFG.csproj" />
+      <ProjectReference Include="..\theTestGimp\theTestGimp.csproj" />
     </ItemGroup>
 
     <ItemGroup>

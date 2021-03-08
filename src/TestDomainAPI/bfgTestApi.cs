@@ -4,7 +4,6 @@ using System.Reactive.Linq;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Hosting;
-using Rxns.Interfaces;
 using Rxns.Logging;
 
 namespace theBFG

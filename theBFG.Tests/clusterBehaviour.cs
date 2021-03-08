@@ -16,9 +16,14 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG.Tests
 {
+    /// <summary>
+    /// WARNING: these tests are all used for spiking dev. will be cleaned up later once API
+    /// is stable and fit for purpose. most tests will run indefinitely atm
+    /// </summary>
     [TestClass]
     public class clusterBehaviour
     {
+        private string theGimp = "../../../../theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll";
         [TestInitialize]
         public void Setup()
         {
@@ -58,7 +63,7 @@ namespace theBFG.Tests
                 var workerLifetime = new Subject<Unit>();
                 theBfg.ReloadWithTestWorker(args: "fire".Split(' ')).LastAsync().Until();
 
-                theBfg.ReloadWithTestArena(args: "target C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll".Split(' ')).LastAsync().Until();
+                theBfg.ReloadWithTestArena(args: $"target {theGimp}".Split(' ')).LastAsync().Until();
 
                 "waiting for test to complete".LogDebug();
                 workerLifetime.WaitR();
@@ -76,7 +81,7 @@ namespace theBFG.Tests
             //rapidly is appended download function
             //need to detect local vs remote worker
 
-            theBfg.ReloadAnd(args: @"target C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll and fire rapidly".Split(' ')).LastAsync().Until();
+            theBfg.ReloadAnd(args: @$"target {theGimp} and fire rapidly".Split(' ')).LastAsync().Until();
 
             "waiting for test to complete".LogDebug();
             new Subject<int>().Wait();
@@ -90,7 +95,7 @@ namespace theBFG.Tests
 
             var allTest = ta.ListTests(new StartUnitTest()
             {
-                Dll = "C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll",
+                Dll = theGimp,
             }).WaitR().ToArray();
 
             allTest.Count().Should().Be(6, "4 tests should be found in theTestGimp");
@@ -102,14 +107,16 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_upload_logs_on_completion()
         {
-
+            //this is implemented now, need to write test
         }
 
 
         [TestMethod]
-        public void should_support()
+        public void should_support_compete()
         {
+            theBfg.ReloadAnd(args: $"target {theGimp} and fire compete 2".Split(' ')).Until();
 
+            new Subject<Unit>().WaitR();
         }
     }
 }

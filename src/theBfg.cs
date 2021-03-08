@@ -87,10 +87,17 @@ namespace theBFG
 
 
             var mode = new DotNetTestArena();
-            var batchSize = 2;
 
             if (args.Contains("compete"))
             {
+                
+                var userSize = args.Last();
+                int batchSize = 0;
+                Int32.TryParse(userSize, out batchSize);
+
+                batchSize = batchSize == 0 ? 25 : batchSize;
+
+                $"Reloading with {batchSize} tests per/batch".LogDebug();
 
                 return mode.ListTests(testsToStart).SelectMany(s => s)
                     .Buffer(batchSize)
