@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Text;
 using Rxns;
+using Rxns.Interfaces;
 using Rxns.Logging;
 
 namespace theBFG.TestDomainAPI
@@ -15,22 +18,69 @@ namespace theBFG.TestDomainAPI
     /// </summary>
     public class DotNetTestArena : ITestArena
     {
-        public IObservable<IDisposable> Start(string name, StartUnitTest work, StreamWriter testLog)
+        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog)
         {
+            var testEventStream = new Subject<IRxn>();
             //https://github.com/dotnet/sdk/issues/5514
             var dotnetHack = GetDotNetOnPlatform();
 
             var logName = $"{name}{work.RunThisTest.IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}";
 
-
+            bool isreadingOutputMessage = false;
+            var lastLine = false;
+            var outputBuffer = new StringBuilder();
             //todo: make testrunner injectable/swapable
             return Rxn.Create
             (
                 dotnetHack,
-                $"test{FilterIfSingleTestOnly(work)} {EnsureRooted(work.Dll)} --results-directory {EnsureRooted("logs/")} --collect:\"XPlat Code Coverage\" --logger trx --no-build",
-                i => testLog.WriteLine(i.LogDebug(logName)),
-                e => testLog.WriteLine(e.LogDebug(logName)
-                ));
+                $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"",
+                i =>
+                {
+                    if(i == null) return;
+                    
+                    var cmd = i.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (cmd.Length > 0)
+                    {
+                        lastLine = false;
+
+                        if (cmd[0] == "Passed")
+                        {
+                            testEventStream.OnNext(new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2])));
+                        }
+
+                        if (isreadingOutputMessage)
+                        {
+                            outputBuffer.AppendLine(i);
+                        }
+
+                        if (cmd[0] == "Standard")
+                        {
+                            isreadingOutputMessage = true;
+                        }
+                    }
+                    else
+                    {
+                        if (lastLine)
+                        {
+                            isreadingOutputMessage = false;
+                            testEventStream.OnNext(new UnitTestPartialLogResult(work.Id, outputBuffer.ToString()));
+                        }
+
+                        if (isreadingOutputMessage)
+                        {
+                            lastLine = true;
+                        }
+                    }
+
+                    testLog.WriteLine(i.LogDebug(logName));
+                },
+                e => testLog.WriteLine(e.LogDebug(logName))
+            ).SelectMany(_ => testEventStream);
+        }
+
+        private string ToDuration(string s)
+        {
+            return s.TrimStart('[').TrimEnd(']');
         }
 
         private string GetDotNetOnPlatform()
@@ -51,7 +101,7 @@ namespace theBFG.TestDomainAPI
             return Rxn.Create
             (
                 dotnet,
-                $"test {EnsureRooted(work.Dll)} --listtests",
+                $"test {work.Dll.EnsureRooted()} --listtests",
                 i =>
                 {
                     i.LogDebug();
@@ -79,21 +129,11 @@ namespace theBFG.TestDomainAPI
             ;
         }
 
-        private string EnsureRooted(string workDll)
-        {
-            if (workDll.Length < 1) return workDll;
-
-            if (workDll.StartsWith("/") || workDll[1] == ':')
-                return workDll;
-
-            return $"{Path.Combine(Environment.CurrentDirectory, workDll)}";
-        }
-
-
         private string FilterIfSingleTestOnly(StartUnitTest work)
         {
             return work.RunThisTest.IsNullOrWhitespace() ? "" : $" --filter Name={work.RunThisTest.Replace(",", "|Name=")}";
         }
-
     }
+
+
 }

@@ -15,22 +15,50 @@ dotnet install tool thebfg</Description>
     </PropertyGroup>
 
     <ItemGroup>
+      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="TestArena\bower_components\font-awesome\fonts\FontAwesome.otf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff2">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="DotNetZip" Version="1.15.0" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+        <PackageReference Include="Rxns.WebApiNET5" Version="2.0.0" />
         <PackageReference Include="System.Reactive" Version="4.0.0" />
         <PackageReference Include="Autofac" Version="3.5.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Rxns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>C:\jan\Rxns\src\Rxns\obj\Debug\netstandard2.1\Rxns.dll</HintPath>
-      </Reference>
-      <Reference Include="Rxns.Autofac, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>C:\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.Autofac.dll</HintPath>
-      </Reference>
-      <Reference Include="Rxns.WebApiNET5, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>C:\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.WebApiNET5.dll</HintPath>
-      </Reference>
+      <None Update="TestArena\app.full.min.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="TestArena\app.full.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="TestArena\index.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="TestArena\shared_components\signalr.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

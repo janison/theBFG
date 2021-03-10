@@ -88,18 +88,18 @@ namespace theBFG
             }
 
             return keepTestUpdatedIfRequested
-                .Select(testPath =>
+                .SelectMany(testPath =>
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
                     
-                    return _arena.Start(Name, work, testLog);
+                    return _arena.Start(Name, work, testLog).SelectMany(_ => _rxnManager.Publish(_));
                 })
-                .Switch()
                 .LastOrDefaultAsync()
-                .Catch<IDisposable, Exception>(e =>
+                .Delay(TimeSpan.FromSeconds(1)) //sharing violation with log atm
+                .Catch<Unit, Exception>(e =>
                 {
                     $"Failed running test {e}".LogDebug();
-                    return Disposable.Empty.ToObservable();
+                    return Rxn.Empty<Unit>();
                 })
                 .SelectMany(_ =>
                 {
@@ -118,7 +118,8 @@ namespace theBFG
                     return (UnitTestResult) new UnitTestResult()
                     {
                         WasSuccessful = true
-                    }.AsResultOf(work);                })
+                    }.AsResultOf(work);
+                })
                 .FinallyR(() =>
                 {
                     _isBusy.OnNext(false);
