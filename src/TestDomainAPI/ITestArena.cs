@@ -13,31 +13,39 @@ namespace theBFG.TestDomainAPI
 
     //event flows for the test arena
 
-    public class UnitTestPartialResult : IRxn
+    public interface ITestDomainEvent : IRxn
+    {
+    }
+
+    public class UnitTestPartialResult : ITestDomainEvent
     {
         public string Duration { get; set; }
         public string Result { get; }
         public string TestName { get; }
+        public string Worker { get; set; }
         public string TestId { get; }
 
-        public UnitTestPartialResult(string testId, string result, string testName, string duration)
+        public UnitTestPartialResult(string testId, string result, string testName, string duration, string worker)
         {
             Result = result;
             TestName = testName;
             Duration = duration;
             TestId = testId;
+            Worker = worker;
         }
     }
 
-    public class UnitTestPartialLogResult : IRxn
+    public class UnitTestPartialLogResult : ITestDomainEvent
     {
         public string LogMessage { get; set; }
+        public string Worker { get; set; }
         public string TestId { get; set; }
         
-        public UnitTestPartialLogResult(string forTest, string logMessage)
+        public UnitTestPartialLogResult(string forTest, string worker, string logMessage)
         {
             TestId = forTest;
             LogMessage = logMessage;
+            Worker = worker;
         }
     }
 }

@@ -3,7 +3,7 @@ using Rxns.DDD.Commanding;
 
 namespace theBFG.TestDomainAPI
 {
-    public class StartUnitTest : ServiceCommand
+    public class StartUnitTest : ServiceCommand, ITestDomainEvent
     {
         public bool RunAllTest { get; set; }
         public string RunThisTest { get; set; }

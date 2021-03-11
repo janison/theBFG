@@ -45,7 +45,7 @@ namespace theBFG.TestDomainAPI
 
                         if (cmd[0] == "Passed")
                         {
-                            testEventStream.OnNext(new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2])));
+                            testEventStream.OnNext(new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2]), name));
                         }
 
                         if (isreadingOutputMessage)
@@ -63,7 +63,8 @@ namespace theBFG.TestDomainAPI
                         if (lastLine)
                         {
                             isreadingOutputMessage = false;
-                            testEventStream.OnNext(new UnitTestPartialLogResult(work.Id, outputBuffer.ToString()));
+                            testEventStream.OnNext(new UnitTestPartialLogResult(work.Id, name, outputBuffer.ToString()));
+                            outputBuffer.Clear();
                         }
 
                         if (isreadingOutputMessage)

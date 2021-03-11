@@ -41,9 +41,20 @@ dotnet install tool thebfg</Description>
     <ItemGroup>
         <PackageReference Include="DotNetZip" Version="1.15.0" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-        <PackageReference Include="Rxns.WebApiNET5" Version="2.0.0" />
         <PackageReference Include="System.Reactive" Version="4.0.0" />
         <PackageReference Include="Autofac" Version="3.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Rxns">
+        <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.dll</HintPath>
+      </Reference>
+      <Reference Include="Rxns.Autofac">
+        <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.Autofac.dll</HintPath>
+      </Reference>
+      <Reference Include="Rxns.WebApiNET5">
+        <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.WebApiNET5.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <ItemGroup>

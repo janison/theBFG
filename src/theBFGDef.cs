@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Connections;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
@@ -18,6 +20,7 @@ using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.Metrics;
 using Rxns.NewtonsoftJson;
+using Rxns.WebApiNET5;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using theBFG.TestDomainAPI;
 
@@ -49,6 +52,24 @@ namespace theBFG
                     .Includes<AspNetCoreWebApiAdapterModule>()
                     .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
                     .CreatesOncePerApp<DotNetTestArena>()
+                    .CreatesOncePerApp<bfgTestArenaProgressView>()
+                    .RespondsToSvcCmds<Reload>()
+                    .CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
+                    .CreatesOncePerApp(_ => new AspnetCoreCfg()
+                    {
+                        Cfg = aspnet =>
+                        {
+                            aspnet.UseEndpoints(e =>
+                            {
+                                e.MapHub<bfgTestArenaProgressHub>("/testArena", o =>
+                                {
+                                    o.Transports =
+                                        HttpTransportType.WebSockets |
+                                        HttpTransportType.LongPolling;
+                                });
+                            });
+                        }
+                    })
                     //cfg specific
                     .CreatesOncePerApp(() => new AggViewCfg()
                     {

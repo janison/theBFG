@@ -28,7 +28,12 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    public class theBfg : IContainerPostBuildService, IDisposable
+    public class Reload : ServiceCommand
+    {
+
+    }
+
+    public class theBfg : IContainerPostBuildService, IDisposable, IServiceCommandHandler<Reload>
     {
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);
         public IDisposable TestRunner { get; set; }
@@ -200,6 +205,23 @@ namespace theBFG
         private bfgCluster _testCluster;
         private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
 
+        public void Fire()
+        {
+            startedAt = Stopwatch.StartNew();
+          
+            "Test".LogDebug(++iteration);
+            startedAt.Restart();
+
+            foreach (var test in theBFGDef.Cfg)
+            {
+                _testCluster.Queue(test);
+            }
+        }
+
+
+        int iteration = 0;
+        private Stopwatch startedAt = new Stopwatch();
+
         private void Start(IResolveTypes resolver)
         {
             var args = Args;
@@ -238,18 +260,7 @@ namespace theBFG
 
             var notUpdating = true;
 
-            var iteration = 0;
-            var startedAt = Stopwatch.StartNew();
-            Action fire = () =>
-            {
-                "Test".LogDebug(++iteration);
-                startedAt.Restart();
-
-                foreach (var test in unitTestToRun)
-                {
-                    _testCluster.Queue(test);
-                }
-            };
+      
 
             Action<Action> doWorkContiniously = (fireStyle) =>
             {
@@ -282,7 +293,8 @@ namespace theBFG
             $"Heartbeating".LogDebug();
             rxnManager.Publish(new PerformAPing()).Until();
 
-            var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
+            "disabled advertising!".LogDebug();
+           // var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
             
             Action<Action> watchForCompletion = (onComplete) =>
             {
@@ -306,7 +318,7 @@ namespace theBFG
             {
                 Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ =>
                 {
-                    fire();
+                    Fire();
                 }).Until();
             };
 
@@ -346,7 +358,7 @@ namespace theBFG
                 }
                 else
                 {
-                    doWorkContiniously(fire);
+                    doWorkContiniously(Fire);
                 }
 
             }
@@ -358,7 +370,7 @@ namespace theBFG
                 }
                 else
                 {
-                    fire();
+                    Fire();
                 }
 
                 watchForCompletion(() =>
@@ -402,8 +414,7 @@ namespace theBFG
 
                 return new[]
                 {
-                    new AppStatusInfo("Test",
-                        $"Running {(unitTestToRun.RunAllTest ? "All" : unitTestToRun.RunThisTest)}"),
+                    new AppStatusInfo("Test", $"Running {(unitTestToRun.RunAllTest ? "All" : unitTestToRun.RunThisTest)}"),
                     new AppStatusInfo("Duration", (DateTime.Now - _started).TotalMilliseconds),
                     new AppStatusInfo("Workers", testCluster.Workflow.Workers.Count)
                 };
@@ -415,6 +426,17 @@ namespace theBFG
         public void Dispose()
         {
             TestRunner?.Dispose();
+        }
+
+        public IObservable<CommandResult> Handle(Reload command)
+        {
+            return Rxn.Create(() =>
+            {
+                "Reloading".LogDebug();
+                Fire();
+
+                return CommandResult.Success().AsResultOf(command);
+            });
         }
     }
 
