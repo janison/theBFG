@@ -155,10 +155,16 @@ namespace theBFG
             $"Attempting to discover work {apiName ?? "any"}@{testHostUrl ?? "any"}".LogDebug();
             
             var allDiscoveredApiRequests = bfgTestApi.DiscoverWork(_services).Do(apiFound =>
+
             {
                 $"Discovered Api Hosting: {apiFound.Name}@{apiFound.Url}".LogDebug();
                 _registry.AppStatusUrl = apiFound.Url;
-                _rxnManager.Publish(new PerformAPing()).Until();
+
+                TimeSpan.FromSeconds(1).Then().Do(_ =>
+                {
+                    _rxnManager.Publish(new PerformAPing()).Until();
+
+                });
 
                 //from here on, heartbeats will return work for us to do
             });

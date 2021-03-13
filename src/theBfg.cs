@@ -293,11 +293,13 @@ namespace theBFG
             $"Heartbeating".LogDebug();
             rxnManager.Publish(new PerformAPing()).Until();
 
-            "disabled advertising!".LogDebug();
-           // var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
+            //"disabled advertising!".LogDebug();
+            var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
             
             Action<Action> watchForCompletion = (onComplete) =>
             {
+                //stopAdvertising?.Dispose();
+
                 var stopDOingWork = rxnManage
                     .CreateSubscription<CommandResult>()
                     .Where(_ => unitTestToRun != null)

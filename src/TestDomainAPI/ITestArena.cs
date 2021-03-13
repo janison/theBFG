@@ -20,10 +20,14 @@ namespace theBFG.TestDomainAPI
     public class UnitTestPartialResult : ITestDomainEvent
     {
         public string Duration { get; set; }
-        public string Result { get; }
-        public string TestName { get; }
+        public string Result { get; set; }
+        public string TestName { get; set; }
         public string Worker { get; set; }
-        public string TestId { get; }
+        public string TestId { get; set; }
+
+        public UnitTestPartialResult()
+        {
+        }
 
         public UnitTestPartialResult(string testId, string result, string testName, string duration, string worker)
         {
@@ -40,7 +44,11 @@ namespace theBFG.TestDomainAPI
         public string LogMessage { get; set; }
         public string Worker { get; set; }
         public string TestId { get; set; }
-        
+
+        public UnitTestPartialLogResult()
+        {
+        }
+
         public UnitTestPartialLogResult(string forTest, string worker, string logMessage)
         {
             TestId = forTest;

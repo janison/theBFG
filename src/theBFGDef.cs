@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
@@ -30,19 +31,21 @@ namespace theBFG
     {
         public static StartUnitTest[] Cfg;
         private static int _workerCount;
-        
+
         public static Func<string[], Action<IRxnLifecycle>> TestArena = (args) =>
         {
             RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
             RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-            
+
             return dd =>
             {
-                if (Cfg != null)
+                //DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
+                if (Cfg.AnyItems())
                     dd.CreatesOncePerApp(_ => Cfg[0]);
-                    dd.CreatesOncePerApp(_ => Cfg);
 
-                    //d(dd);
+                dd.CreatesOncePerApp(_ => Cfg);
+
+                //d(dd);
                 dd.CreatesOncePerApp<theBfg>()
                     .CreatesOncePerApp<bfgCluster>()
                     .CreatesOncePerApp<SsdpDiscoveryService>()
@@ -54,6 +57,10 @@ namespace theBFG
                     .CreatesOncePerApp<DotNetTestArena>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .RespondsToSvcCmds<Reload>()
+
+                    .Emits<UnitTestResult>()
+                    .Emits<UnitTestPartialResult>()
+                    .Emits<UnitTestPartialLogResult>()
                     .CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
                     .CreatesOncePerApp(_ => new AspnetCoreCfg()
                     {
@@ -81,9 +88,8 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new RxnDebugLogger("bfgCluster"))
                     .CreatesOncePerApp<INSECURE_SERVICE_DEBUG_ONLY_MODE>()
-                    .CreatesOncePerApp<UseDeserialiseCodec>();
-
-
+                    .CreatesOncePerApp<UseDeserialiseCodec>()
+                    ;
             };
         };
 
@@ -92,21 +98,29 @@ namespace theBFG
             return dd =>
             {
                 d(dd);
+
                 dd.CreatesOncePerApp<SsdpDiscoveryService>()
-                .CreatesOncePerApp<bfgCluster>()
-                .RespondsToSvcCmds<StartUnitTest>()
-                .CreatesOncePerApp<AppStatusClientModule>()
-                .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
-                .CreatesOncePerApp<DotNetTestArena>()
-                .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
-                .CreatesOncePerApp(_ => new AppServiceRegistry()
-                {
-                    AppStatusUrl = testHostUrl
-                })
-                .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
-                {
-                    SpawnTestWorker(resolver);
-                }));
+                    .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
+                    .CreatesOncePerApp<bfgCluster>()
+                    .RespondsToSvcCmds<StartUnitTest>()
+                    .CreatesOncePerApp<AppStatusClientModule>()
+                    .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
+                    .CreatesOncePerApp<DotNetTestArena>()
+                    .Emits<UnitTestResult>()
+                    .Emits<UnitTestPartialResult>()
+                    .Emits<UnitTestPartialLogResult>()
+                    .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
+                    .CreatesOncePerApp(_ => new AppServiceRegistry()
+                    {
+                        AppStatusUrl = testHostUrl
+                    })
+                    .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
+                    {
+                        SpawnTestWorker(resolver);
+                    }));
+                
+                DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
+                ;
             };
         };
 
@@ -127,7 +141,7 @@ namespace theBFG
 
             var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(), resolver.Resolve<ITestArena>());
 
-            if (Cfg == null)
+            if (!Cfg.AnyItems() || Cfg[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(Cfg[0].UseAppVersion))
                 testWorker.DiscoverAndDoWork();
 
             testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker }).SelectMany(e => rxnManager.Publish(e)).Until();
