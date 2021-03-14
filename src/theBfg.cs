@@ -13,16 +13,16 @@ using Autofac;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
+using Rxns.Collections;
 using Rxns.Commanding;
 using Rxns.DDD.Commanding;
+using Rxns.DDD.CQRS;
 using Rxns.Health;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
-using Rxns.Metrics;
 using Rxns.NewtonsoftJson;
-using Rxns.WebApiNET5;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using theBFG.TestDomainAPI;
 
@@ -33,14 +33,17 @@ namespace theBFG
 
     }
 
-    public class theBfg : IContainerPostBuildService, IDisposable, IServiceCommandHandler<Reload>
+    public class theBfg : IDisposable, IServiceCommandHandler<Reload>
     {
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);
         public IDisposable TestRunner { get; set; }
         public static string[] Args = new string[0];
-        
-        private static int _workerCount = 0;
-        
+
+        private Func<AppStatusInfo[]> _info = () => new AppStatusInfo[0];
+        private DateTime _started;
+        private bfgCluster _testCluster;
+        bool _notUpdating = true;
+
         public static IObservable<Unit> ReloadWithTestWorker(string url = "http://localhost:888/", params string[] args)
         {
             return Rxn.Create<Unit>(o =>
@@ -188,23 +191,6 @@ namespace theBFG
         {
         }
 
-        public void Run(IReportStatus logger, IResolveTypes container)
-        {
-            logger.OnInformation("Starting unit TestArea");
-
-            Start(container);
-            //todo: need to fix ordering of services, this needs to start before the appstatusservicce otherwise it will miss the infoprovdiderevent
-            container.Resolve<SystemStatusPublisher>().Process(new AppStatusInfoProviderEvent()
-            {
-                Info = _info
-            }).Until();
-        }
-
-        private Func<AppStatusInfo[]> _info = () => new AppStatusInfo[0];
-        private DateTime _started;
-        private bfgCluster _testCluster;
-        private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
-
         public void Fire()
         {
             startedAt = Stopwatch.StartNew();
@@ -218,34 +204,99 @@ namespace theBFG
             }
         }
 
+        public IDisposable DoWorkContiniously(IRxnManager<IRxn> rxnManage, StartUnitTest[] unitTestToRun,  Action fireStyle)
+        {
+            
+            var stopDOingWor1k = rxnManage.CreateSubscription<CommandResult>()
+                .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id))
+                .Select(_ => --iteration)
+                .If(e => e <= 0, _ =>
+                {
+                    if (_notUpdating)
+                    {
+                        CurrentThreadScheduler.Instance.Run(() => { fireStyle(); });
+                    }
+                })
+                .Until();
+            
+            fireStyle();
+
+            return stopDOingWor1k;
+        }
+
+        public IDisposable WatchForCompletion(IRxnManager<IRxn> rxnManage, StartUnitTest[] unitTestToRun, Action onComplete)
+        {
+            //stopAdvertising?.Dispose();
+
+            var stopDOingWork = rxnManage.CreateSubscription<CommandResult>()
+                .Where(_ => unitTestToRun != null)
+                .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id)) //this code is wrong, need to fix, could be a response to any msg
+                .Do(_ =>
+                {
+                    $"Duration: {startedAt.Elapsed}".LogDebug();
+
+                    if (iteration <= 0) onComplete?.Invoke();
+                })
+                .Until();
+
+            return stopDOingWork;
+        }
+
+        public void FireRapidly()
+        {
+            Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ => { Fire(); }).Until();
+        }
+
+        public IObservable<bfgWorker> StartRapidWorkers(IResolveTypes resolver, StartUnitTest[] unitTestToRun)
+        {
+            return Enumerable.Range(0, Environment.ProcessorCount).ToObservable().Select(_ => SpawnTestWorker(resolver, unitTestToRun));
+        }
+
+        public void WatchForTestUpdates(IRxnManager<IRxn> rxnManage)
+        {
+            rxnManage.CreateSubscription<UpdateSystemCommand>()
+                .Do(_ => { _notUpdating = false; })
+                .Until(); }
+
 
         int iteration = 0;
         private Stopwatch startedAt = new Stopwatch();
 
-        private void Start(IResolveTypes resolver)
+
+        public IDisposable StartTestArena(string[] args, StartUnitTest[] unitTests, IResolveTypes resolver)
         {
-            var args = Args;
-            var unitTestToRun = theBFGDef.Cfg;
-            _started = DateTime.Now;
             "Starting up TestArena".LogDebug();
 
-            //todo fix all the below hacks and put into proper organised classes
-            //move fire etc methods to testdomainapi
-            //implement real cluster mode?
+            _started = DateTime.Now;
 
             _testCluster = resolver.Resolve<bfgCluster>();
+            BroadcasteStatsToTestArena(_testCluster, unitTests[0], resolver.Resolve<SystemStatusPublisher>(), resolver.Resolve<IManageReactors>());
 
-            var reactorMgr = resolver.Resolve<IManageReactors>();
-            var bfgReactor = reactorMgr.GetOrCreate("bfg").Reactor;
-            //need to fix health which will allow this to be viewed on the appstatus portal. should monitor health of fanout stratergy
-            //
-            //IMonitorActionFactory<IRxn> health =MonitorHealth
-            RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
+            LaunchUnitTestsToTestArenaDelayed(unitTests);
+            var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
+            var stopFiring = StartFiringWorkflow(args, unitTests,  resolver.Resolve<IRxnManager<IRxn>>());
+            
+            return new CompositeDisposable(stopAdvertising, stopFiring);
+        }
 
-            var rxnManage = resolver.Resolve<IRxnManager<IRxn>>();
-            Action<IRxn> _publish = e => rxnManage.Publish(e).Until();
+        public IObservable<bfgWorker> StartTestArenaWorkers(string[] args, StartUnitTest[] unitTestToRun, IResolveTypes resolver)
+        {
+            if (args.Contains("rapidly"))
+            {
+                return StartRapidWorkers(resolver, unitTestToRun);
+            }
+            
+            if (args.Contains("fire"))
+            {
+                return SpawnTestWorker(resolver, unitTestToRun).ToObservable();
+            }
 
-            var testUpdate = resolver.Resolve<IAppUpdateManager>(); 
+            return Rxn.Empty<bfgWorker>();
+        }
+
+
+        public void LaunchUnitTestsToTestArenaDelayed(StartUnitTest[] unitTestToRun)
+        {
             TimeSpan.FromSeconds(2).Then().Do(_ =>
             {
                 RxnApps.CreateAppUpdate(unitTestToRun[0].UseAppUpdate, Scrub(unitTestToRun[0].UseAppVersion),
@@ -257,135 +308,50 @@ namespace theBFG
                             throw e;
                         }).WaitR();
             }).Until();
+        }
 
-            var notUpdating = true;
-
-      
-
-            Action<Action> doWorkContiniously = (fireStyle) =>
-            {
-                var stopDOingWor1k = rxnManage
-                    .CreateSubscription<CommandResult>()
-                    .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id))
-                    .Select(_ => --iteration)
-                    .If(e => e <= 0,
-                        _ =>
-                        {
-                            if (notUpdating)
-                            {
-                                CurrentThreadScheduler.Instance.Run(() =>
-                                {
-                                    fireStyle();
-                                });
-                            }
-                        }).Until();
-
-
-                fireStyle();
-            };
-
-            _testCluster.ConfigiurePublishFunc(e => _publish(e));
-
-            BroadcasteStatsToAppStatus(_testCluster, unitTestToRun[0]);
-
-            var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
-
-            $"Heartbeating".LogDebug();
-            rxnManager.Publish(new PerformAPing()).Until();
-
-            //"disabled advertising!".LogDebug();
-            var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
-            
-            Action<Action> watchForCompletion = (onComplete) =>
-            {
-                //stopAdvertising?.Dispose();
-
-                var stopDOingWork = rxnManage
-                    .CreateSubscription<CommandResult>()
-                    .Where(_ => unitTestToRun != null)
-                    .Where(c => c.InResponseTo.Equals(unitTestToRun[0].Id)) //this code is wrong, need to fix, could be a response to any msg
-                    .Do(
-                        _ =>
-                        {
-                            $"Duration: {startedAt.Elapsed}".LogDebug();
-
-                            if (iteration <= 0)
-                                onComplete?.Invoke();
-                        }).Until();
-            };
-
-            
-
-            Action fireRapidly = () =>
-            {
-                Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ =>
-                {
-                    Fire();
-                }).Until();
-            };
-
-            Action startRapidWorkers = () =>
-            {
-                Enumerable.Range(0, Environment.ProcessorCount).ToObservable().Do(_ =>
-                {
-                    SpawnWorker(resolver);
-                }).Until();
-            };
-
-            Action watchUpdating = () => rxnManage
-                .CreateSubscription<UpdateSystemCommand>()
-                .Do(
-                    _ =>
-                    {
-                        notUpdating = false;
-                    }).Until();
-
-            if (args.Contains("rapidly"))
-            {
-                startRapidWorkers();
-            }
-            else if (args.Contains("fire"))
-            {
-                SpawnWorker(resolver);
-            }
+        /// <summary>
+        /// Implements the firing sematics of the bfg, reponding to rapidly condintiously etc
+        
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="unitTestToRun"></param>
+        /// <param name="resolver"></param>
+        /// <param name="rxnManager"></param>
+        /// <returns></returns>
+        public IDisposable StartFiringWorkflow(string[] args, StartUnitTest[] unitTestToRun,  IRxnManager<IRxn> rxnManager)
+        {
 
             if (args.Contains("continuously"))
             {
-                watchUpdating();
-                watchForCompletion(null);
-                
+                WatchForTestUpdates(rxnManager);
+
                 if (args.Contains("rapidly"))
                 {
-                    doWorkContiniously(fireRapidly);
+                    DoWorkContiniously(rxnManager, unitTestToRun, (Action)FireRapidly);
                 }
                 else
                 {
-                    doWorkContiniously(Fire);
+                    DoWorkContiniously(rxnManager, unitTestToRun, Fire);
                 }
-
             }
             else
             {
                 if (args.Contains("rapidly"))
                 {
-                    fireRapidly();
+                    FireRapidly();
                 }
                 else
                 {
                     Fire();
                 }
-
-                watchForCompletion(() =>
-                {
-                    theBfg.IsCompleted.OnNext(new Unit());
-                    theBfg.IsCompleted.OnCompleted();
-                });
             }
-            
-            //todo:
-            //need to push bfg to nuget
-            //need to push rxns webapi to nuget
-            //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
+
+            return WatchForCompletion(rxnManager, unitTestToRun, () =>
+            {
+                theBfg.IsCompleted.OnNext(new Unit());
+                theBfg.IsCompleted.OnCompleted();
+            });
         }
 
         private string Scrub(string useAppVersion)
@@ -395,15 +361,41 @@ namespace theBFG
                 : null;
         }
 
-        public bfgWorker SpawnWorker(IResolveTypes resolver)
-        {
-            var worker = theBFGDef.SpawnTestWorker(resolver);
+        private static int workerId;
+        private static int _workerCount;
+        private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
 
-            return worker;
+        public static bfgWorker SpawnTestWorker(IResolveTypes resolver, StartUnitTest[] Cfg)
+        {
+            "Spawning worker".LogDebug(++workerId);
+
+            var testCluster = resolver.Resolve<bfgCluster>();
+            var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
+
+            $"Streaming logs".LogDebug();
+            rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+
+            $"Starting worker".LogDebug();
+            Interlocked.Increment(ref _workerCount);
+
+            var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(), resolver.Resolve<ITestArena>());
+
+            if (!Cfg.AnyItems() || Cfg[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(Cfg[0].UseAppVersion))
+                testWorker.DiscoverAndDoWork();
+
+            testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker }).SelectMany(e => rxnManager.Publish(e)).Until();
+
+            return testWorker;
         }
 
-        private void BroadcasteStatsToAppStatus(bfgCluster testCluster, StartUnitTest unitTestToRun)
+        private void BroadcasteStatsToTestArena(bfgCluster testCluster, StartUnitTest unitTestToRun, SystemStatusPublisher publusher, IManageReactors reactorMgr)
         {
+            var bfgReactor = reactorMgr.GetOrCreate("bfg").Reactor;
+            //need to fix health which will allow this to be viewed on the appstatus portal. should monitor health of fanout stratergy
+            //
+            //IMonitorActionFactory<IRxn> health =MonitorHealth
+            RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
+
             _info = () =>
             {
                 if (unitTestToRun == null)
@@ -422,7 +414,14 @@ namespace theBFG
                 };
             };
 
-            _info();
+            //todo: need to fix ordering of services, this needs to start before the appstatusservicce otherwise it will miss the infoprovdiderevent
+            publusher.Process(new AppStatusInfoProviderEvent()
+            {
+                Info = _info
+            }).Until();
+
+            $"Heartbeating".LogDebug();
+            bfgReactor.Output.Publish(new PerformAPing()).Until();
         }
 
         public void Dispose()

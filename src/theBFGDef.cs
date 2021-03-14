@@ -1,19 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
 using Rxns;
 using Rxns.Cloud;
-using Rxns.Cloud.Intelligence;
-using Rxns.Collections;
 using Rxns.DDD;
-using Rxns.DDD.CQRS;
-using Rxns.Health;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
@@ -27,10 +18,13 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
+    //todo:
+    //need to push bfg to nuget
+    //need to push rxns webapi to nuget
+    //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
     public static class theBFGDef
     {
         public static StartUnitTest[] Cfg;
-        private static int _workerCount;
 
         public static Func<string[], Action<IRxnLifecycle>> TestArena = (args) =>
         {
@@ -89,7 +83,13 @@ namespace theBFG
                     .CreatesOncePerApp(_ => new RxnDebugLogger("bfgCluster"))
                     .CreatesOncePerApp<INSECURE_SERVICE_DEBUG_ONLY_MODE>()
                     .CreatesOncePerApp<UseDeserialiseCodec>()
-                    ;
+                    .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
+                    {
+                        var theBfg = new theBfg();
+                        var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
+                        var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+                    }));
+                ;
             };
         };
 
@@ -116,37 +116,12 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        SpawnTestWorker(resolver);
+                        var theBfg = new theBfg();
+                        var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver).Until();
                     }));
                 
                 DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
-                ;
             };
         };
-
-        private static int workerId;
-
-        public static bfgWorker SpawnTestWorker(IResolveTypes resolver)
-        {
-            "Spawning worker".LogDebug(++workerId);
-
-            var testCluster = resolver.Resolve<bfgCluster>();
-            var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
-
-            $"Streaming logs".LogDebug();
-            rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
-
-            $"Starting worker".LogDebug();
-            Interlocked.Increment(ref _workerCount);
-
-            var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(), resolver.Resolve<ITestArena>());
-
-            if (!Cfg.AnyItems() || Cfg[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(Cfg[0].UseAppVersion))
-                testWorker.DiscoverAndDoWork();
-
-            testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker }).SelectMany(e => rxnManager.Publish(e)).Until();
-
-            return testWorker;
-        }
     }
 }
