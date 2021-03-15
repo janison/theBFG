@@ -53,7 +53,7 @@ namespace theBFG
         private void SendInitalMetricsTo(IClientProxy user)
         {
             _testArena.GetHistory().Where(v => v != null).Buffer(TimeSpan.FromSeconds(2), 50).Where(v => v.AnyItems())
-                .Do(s => user.SendAsync("onUpdate", s)).Subscribe();
+                .SelectMany(s => s).Do(s => user.SendAsync("onUpdate", s)).Subscribe();
         }
 
         public override Task OnConnectedAsync()
@@ -110,7 +110,7 @@ namespace theBFG
                     {
                         OnWarning("x {0}", e.Message);
                         return new object().ToObservable();
-                    });
+                    }).Until();
             }
             catch (ArgumentException e)
             {

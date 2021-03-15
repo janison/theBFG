@@ -51,6 +51,8 @@ namespace theBFG
                 var apiName = args.Skip(1).FirstOrDefault();
                 var testHostUrl = args.Skip(2).FirstOrDefault().IsNullOrWhiteSpace("http://localhost:888");
                 theBFGDef.Cfg = DetectIfTargetMode(url, args).WaitR();
+                theBfg.Args = args;
+
 
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
@@ -126,7 +128,6 @@ namespace theBFG
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
         {
-            Args = args;
             return Rxn.Create<Unit>(o =>
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
@@ -174,6 +175,7 @@ namespace theBFG
             {
                 ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
                 theBFGDef.Cfg = DetectIfTargetMode(url, args).WaitR();
+                theBfg.Args = args;
 
                 "Configuring App".LogDebug();
                 
@@ -200,7 +202,7 @@ namespace theBFG
 
             foreach (var test in theBFGDef.Cfg)
             {
-                _testCluster.Queue(test);
+                _testCluster.Publish(test);
             }
         }
 
@@ -281,6 +283,8 @@ namespace theBFG
 
         public IObservable<bfgWorker> StartTestArenaWorkers(string[] args, StartUnitTest[] unitTestToRun, IResolveTypes resolver)
         {
+            _testCluster = resolver.Resolve<bfgCluster>();
+
             if (args.Contains("rapidly"))
             {
                 return StartRapidWorkers(resolver, unitTestToRun);

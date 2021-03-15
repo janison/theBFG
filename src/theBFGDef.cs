@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
 using Rxns;
@@ -85,9 +86,13 @@ namespace theBFG
                     .CreatesOncePerApp<UseDeserialiseCodec>()
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        var theBfg = new theBfg();
-                        var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
-                        var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+                        TimeSpan.FromSeconds(1).Then().Do(_ =>
+                        {
+                            var theBfg = resolver.Resolve<theBfg>();
+                            var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
+                            var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+                        }).Until();
+
                     }));
                 ;
             };
@@ -99,7 +104,9 @@ namespace theBFG
             {
                 d(dd);
 
-                dd.CreatesOncePerApp<SsdpDiscoveryService>()
+                dd.
+                CreatesOncePerApp<theBfg>()
+                .CreatesOncePerApp<SsdpDiscoveryService>()
                     .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
                     .CreatesOncePerApp<bfgCluster>()
                     .RespondsToSvcCmds<StartUnitTest>()
@@ -116,7 +123,7 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        var theBfg = new theBfg();
+                        var theBfg = resolver.Resolve<theBfg>();
                         var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver).Until();
                     }));
                 
