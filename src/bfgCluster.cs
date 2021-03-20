@@ -4,6 +4,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
 using Rxns.Interfaces;
 using theBFG.TestDomainAPI;
@@ -17,7 +18,7 @@ namespace theBFG
             _publish(rxn);
         }
 
-        public bfgCluster()
+        public bfgCluster() : base(new CompeteFanout<StartUnitTest, UnitTestResult>())
         {
             TimeSpan.FromSeconds(5).Then().Do(_ =>
             {

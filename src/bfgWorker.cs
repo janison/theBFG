@@ -50,19 +50,20 @@ namespace theBFG
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
             _isBusy.OnNext(true);
+            var logDir = $"logs/{Name.Replace('#', '-')}_{_runId++}";
             $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
-            if (!Directory.Exists("logs"))
+            if (!Directory.Exists(logDir))
             {
-                Directory.CreateDirectory("logs");
+                Directory.CreateDirectory(logDir);
             }
 
             var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now.ToString("s").Replace(":", "")}";
-            var logFile = File.Create($"logs/testLog_{logId.LogDebug("LOG")}");
+            var logFile = File.Create($"{logDir}/testLog_{logId.LogDebug("LOG")}");
             var testLog = new StreamWriter(logFile, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
-            if (!File.Exists(work.Dll))
+            if (false &&!File.Exists(work.Dll))
             {
                 if (work.UseAppUpdate.IsNullOrWhitespace())
                 {
@@ -91,11 +92,9 @@ namespace theBFG
                 .SelectMany(testPath =>
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
-                    
+
                     return _arena.Start(Name, work, testLog).SelectMany(_ => _rxnManager.Publish(_));
                 })
-                .LastOrDefaultAsync()
-                .Delay(TimeSpan.FromSeconds(1)) //sharing violation with log atm
                 .Catch<Unit, Exception>(e =>
                 {
                     $"Failed running test {e}".LogDebug();
@@ -105,7 +104,7 @@ namespace theBFG
                 {
                     testLog.Dispose();
                     logFile.Dispose();
-                    var logsZip = ZipAndTruncate("logs", logId);
+                    var logsZip = ZipAndTruncate(logDir, logId);
                     var sendingLogs = File.OpenRead(logsZip);
                     return _appStatus.PublishLog(sendingLogs).Do(_ =>
                     {

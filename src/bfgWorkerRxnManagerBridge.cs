@@ -29,11 +29,16 @@ namespace theBFG.RxnsAdapter
 
         public IObservable<TR> DoWork(T work)
         {
+            _isBusy.OnNext(true);
             _appCmds.Add(work.AsQuestion(Route));
 
             return _repsonseChannel.CreateSubscription<TR>()
                 .Where(c => c.InResponseTo == work.Id)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync()
+                .FinallyR(() =>
+                {
+                    _isBusy.OnNext(false);
+                });
         }
     }
 }

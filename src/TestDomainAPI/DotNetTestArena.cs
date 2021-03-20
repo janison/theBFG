@@ -30,9 +30,9 @@ namespace theBFG.TestDomainAPI
             {
                 lastLine = false;
 
-                if (cmd[0] == "Passed")
+                if (cmd[0] == "Passed" || cmd[0] == "Failed")
                 {
-                    yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2]), worker);
+                    yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], cmd.Length > 2 ? ToDuration(cmd[2]) : "0", worker);
                 }
 
                 if (isreadingOutputMessage)

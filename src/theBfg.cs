@@ -379,13 +379,12 @@ namespace theBFG
                 : null;
         }
 
-        private static int workerId;
         private static int _workerCount;
         private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
 
         public static bfgWorker SpawnTestWorker(IResolveTypes resolver, StartUnitTest[] Cfg)
         {
-            "Spawning worker".LogDebug(++workerId);
+            "Spawning worker".LogDebug(++_workerCount);
 
             var testCluster = resolver.Resolve<bfgCluster>();
             var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
@@ -394,7 +393,6 @@ namespace theBFG
             //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
 
             $"Starting worker".LogDebug();
-            Interlocked.Increment(ref _workerCount);
 
             var testWorker = new bfgWorker($"TestWorker#{_workerCount}", "local", resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(), resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(), resolver.Resolve<ITestArena>());
 
