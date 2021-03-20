@@ -21,7 +21,7 @@ namespace theBFG.TestDomainAPI
             //https://github.com/dotnet/sdk/issues/5514
             var dotnetHack = PathToTestArenaProcess();
 
-            var logName = $"{name}{work.RunThisTest.IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}";
+            var logName = $"{name}{work.RunThisTest.IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}".LogDebug("Targeting");
 
             bool isreadingOutputMessage = false;
             var lastLine = false;
@@ -41,7 +41,14 @@ namespace theBFG.TestDomainAPI
                     testLog.WriteLine(i.LogDebug(logName));
                 },
                 e => testLog.WriteLine(e.LogDebug(logName))
-            ).SelectMany(_ => testEventStream);
+            ).FinallyR(() => testEventStream.OnCompleted())
+            .SelectMany(_ => testEventStream)
+            .FinallyR(() =>
+            {
+                testLog.WriteLine("");
+                testLog.WriteLine("");
+                //triggers the end of a test
+            });
         }
 
         protected abstract string StartTestsCmd(StartUnitTest work);

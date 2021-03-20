@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -72,7 +73,6 @@ namespace theBFG
 
         public static IObservable<StartUnitTest[]> DetectIfTargetMode(string url, string[] args)
         {
-
             var cfg = RxnAppCfg.Detect(args);
             var testCfg = theBigCfg.Detect();
 
@@ -86,14 +86,17 @@ namespace theBFG
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
                 .IsNullOrWhiteSpace(cfg.AppStatusUrl);
-            
-            var testsToStart = new StartUnitTest()
-            {
-                UseAppUpdate = appUpdateDllSource ?? "Test",
-                UseAppVersion = appUpdateVersion,
-                Dll = dll,
-                RunThisTest = testName,
-            };
+
+            List<StartUnitTest> tests = new List<StartUnitTest>();
+
+            foreach(var target in GetTargets(dll))
+                tests.Add( new StartUnitTest()
+                {
+                    UseAppUpdate = appUpdateDllSource ?? "Test",
+                    UseAppVersion = appUpdateVersion,
+                    Dll = target,
+                    RunThisTest = testName,
+                });
 
 
             var mode = new DotNetTestArena();
@@ -109,7 +112,8 @@ namespace theBFG
 
                 $"Reloading with {batchSize} tests per/batch".LogDebug();
 
-                return mode.ListTests(testsToStart).SelectMany(s => s)
+                return tests.ToObservableSequence().SelectMany(t =>  
+                     mode.ListTests(t).SelectMany(s => s)
                     .Buffer(batchSize)
                     .Select(tests => new StartUnitTest()
                 {
@@ -118,12 +122,22 @@ namespace theBFG
                     Dll = dll,
                     RunThisTest = tests.ToStringEach()
                 })
-                .ToArray();
+                .ToArray());
             }
             else
             {
-                return new[] { testsToStart }.ToObservable();
+                return Observable.Return(tests.ToArray());
             }
+        }
+
+        private static IEnumerable<string> GetTargets(string dll)
+        {
+            if (!dll.Contains("*")) yield return dll;
+
+            var pattern = dll.Split('/', '\\');
+
+            foreach (var file in Directory.GetFileSystemEntries(pattern.Take(pattern.Length - 1).ToStringEach("/"), pattern.Last()))
+                yield return file;
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)

@@ -32,6 +32,7 @@ Feature | ...
 5. Configure your `IDE` to deploy your `unit-test` on compile:
  
 *AfterBuild:* `dotnet tool thebfg target {path/To/unit.test.dll}`
+> Pro Tip: supports *wildcards* `*.tests.dll`, will search recursively
 
 5. Spin up worker on the *same computer*, **or** **many *others***
    
