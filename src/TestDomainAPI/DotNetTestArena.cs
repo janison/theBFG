@@ -16,67 +16,54 @@ namespace theBFG.TestDomainAPI
     /// > dotnet add package coverlet.collector
     /// 
     /// </summary>
-    public class DotNetTestArena : ITestArena
+    public class DotNetTestArena : ProcessBasedTestArena
     {
-        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog)
+        bool isreadingOutputMessage = false;
+        bool lastLine = false;
+        StringBuilder outputBuffer = new StringBuilder();
+        private bool startParsing;
+
+        public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
-            var testEventStream = new Subject<IRxn>();
-            //https://github.com/dotnet/sdk/issues/5514
-            var dotnetHack = GetDotNetOnPlatform();
+            var cmd = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (cmd.Length > 0)
+            {
+                lastLine = false;
 
-            var logName = $"{name}{work.RunThisTest.IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}";
-
-            bool isreadingOutputMessage = false;
-            var lastLine = false;
-            var outputBuffer = new StringBuilder();
-            //todo: make testrunner injectable/swapable
-            return Rxn.Create
-            (
-                dotnetHack,
-                $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"",
-                i =>
+                if (cmd[0] == "Passed")
                 {
-                    if(i == null) return;
-                    
-                    var cmd = i.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (cmd.Length > 0)
-                    {
-                        lastLine = false;
+                    yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2]), worker);
+                }
 
-                        if (cmd[0] == "Passed")
-                        {
-                            testEventStream.OnNext(new UnitTestPartialResult(work.Id, cmd[0], cmd[1], ToDuration(cmd[2]), name));
-                        }
+                if (isreadingOutputMessage)
+                {
+                    outputBuffer.AppendLine(msg);
+                }
 
-                        if (isreadingOutputMessage)
-                        {
-                            outputBuffer.AppendLine(i);
-                        }
+                if (cmd[0] == "Standard")
+                {
+                    isreadingOutputMessage = true;
+                }
+            }
+            else
+            {
+                if (lastLine)
+                {
+                    isreadingOutputMessage = false;
+                    yield return new UnitTestPartialLogResult(work.Id, worker, outputBuffer.ToString());
+                    outputBuffer.Clear();
+                }
 
-                        if (cmd[0] == "Standard")
-                        {
-                            isreadingOutputMessage = true;
-                        }
-                    }
-                    else
-                    {
-                        if (lastLine)
-                        {
-                            isreadingOutputMessage = false;
-                            testEventStream.OnNext(new UnitTestPartialLogResult(work.Id, name, outputBuffer.ToString()));
-                            outputBuffer.Clear();
-                        }
-
-                        if (isreadingOutputMessage)
-                        {
-                            lastLine = true;
-                        }
-                    }
-
-                    testLog.WriteLine(i.LogDebug(logName));
-                },
-                e => testLog.WriteLine(e.LogDebug(logName))
-            ).SelectMany(_ => testEventStream);
+                if (isreadingOutputMessage)
+                {
+                    lastLine = true;
+                }
+            }
+        }
+        
+        protected override string StartTestsCmd(StartUnitTest work)
+        {
+            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"";
         }
 
         private string ToDuration(string s)
@@ -84,57 +71,42 @@ namespace theBFG.TestDomainAPI
             return s.TrimStart('[').TrimEnd(']');
         }
 
-        private string GetDotNetOnPlatform()
-        {
+        protected override string PathToTestArenaProcess()
+        { 
             var dotnetHack = "c:/program files/dotnet/dotnet.exe";
             if (!File.Exists(dotnetHack))
                 dotnetHack = "dotnet";
 
             return dotnetHack;
         }
-
-        public IObservable<IEnumerable<string>> ListTests(StartUnitTest work)
+        
+        protected override IEnumerable<string> OnTestCmdLog(StartUnitTest work, string i)
         {
-            var dotnet = GetDotNetOnPlatform();
-            var tests = new List<string>();
+            if (i != null && i.Contains("are available:"))
+            {
+                startParsing = true;
+                yield break;
+            }
 
-            var startParsing = false;
-            return Rxn.Create
-            (
-                dotnet,
-                $"test {work.Dll.EnsureRooted()} --listtests",
-                i =>
-                {
-                    i.LogDebug();
+            if (startParsing && i.IsNullOrWhitespace())
+            {
+                startParsing = false;
+            }
 
-                    if (i != null && i.Contains("are available:"))
-                    {
-                        startParsing = true;
-                        return;
-                    }
-
-                    if (startParsing && i.IsNullOrWhitespace())
-                    {
-                        startParsing = false;
-                    }
-
-                    if (startParsing)
-                    {
-                        tests.Add(i?.Trim());
-                    }
-                },
-                e => $"failed to parse test: {e}".LogDebug()
-            )
-            .Aggregate(tests.ToObservable(), (a, b) => a)
-            .SelectMany(e => e)
-            ;
+            if (startParsing)
+            {
+                yield return i?.Trim();
+            }
         }
 
-        private string FilterIfSingleTestOnly(StartUnitTest work)
+        protected override string ListTestsCmd(StartUnitTest work)
+        {
+            return $"test {work.Dll.EnsureRooted()} --listtests";
+        }
+
+        protected string FilterIfSingleTestOnly(StartUnitTest work)
         {
             return work.RunThisTest.IsNullOrWhitespace() ? "" : $" --filter Name={work.RunThisTest.Replace(",", "|Name=")}";
         }
     }
-
-
 }

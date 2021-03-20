@@ -376,8 +376,8 @@ namespace theBFG
             var testCluster = resolver.Resolve<bfgCluster>();
             var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
 
-            $"Streaming logs".LogDebug();
-            rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+            //$"Streaming logs".LogDebug();
+            //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
 
             $"Starting worker".LogDebug();
             Interlocked.Increment(ref _workerCount);
