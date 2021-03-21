@@ -58,7 +58,7 @@ namespace theBFG
                 Directory.CreateDirectory(logDir);
             }
 
-            var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now.ToString("s").Replace(":", "")}";
+            var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
             var logFile = File.Create($"{logDir}/testLog_{logId.LogDebug("LOG")}");
             var testLog = new StreamWriter(logFile, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
@@ -100,11 +100,21 @@ namespace theBFG
                     $"Failed running test {e}".LogDebug();
                     return Rxn.Empty<Unit>();
                 })
+                .LastOrDefaultAsync()
+                .Delay(TimeSpan.FromSeconds(1))
                 .SelectMany(_ =>
                 {
-                    testLog.Dispose();
-                    logFile.Dispose();
-                    var logsZip = ZipAndTruncate(logDir, logId);
+                    try
+                    {
+                        testLog.Dispose();
+                        logFile.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        $"While closing log {e}".LogDebug();
+                    }
+
+                    var logsZip = ZipAndTruncate(logDir, $"{logId}_{DateTime.Now:dd-MM-yy-hhmmssfff}");
                     var sendingLogs = File.OpenRead(logsZip);
                     return _appStatus.PublishLog(sendingLogs).Do(_ =>
                     {
