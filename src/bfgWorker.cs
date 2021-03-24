@@ -12,6 +12,7 @@ using Rxns.Hosting;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
+using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
@@ -63,7 +64,7 @@ namespace theBFG
             var testLog = new StreamWriter(logFile, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
-            if (false &&!File.Exists(work.Dll))
+            if (!File.Exists(work.Dll))
             {
                 if (work.UseAppUpdate.IsNullOrWhitespace())
                 {
@@ -89,12 +90,13 @@ namespace theBFG
             }
 
             return keepTestUpdatedIfRequested
-                .SelectMany(testPath =>
+                .Select(testPath =>
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
                     return _arena.Start(Name, work, testLog).SelectMany(_ => _rxnManager.Publish(_));
                 })
+                .Switch()
                 .Catch<Unit, Exception>(e =>
                 {
                     $"Failed running test {e}".LogDebug();

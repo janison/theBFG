@@ -18,11 +18,11 @@ namespace theBFG.TestDomainAPI
     /// </summary>
     public class DotNetTestArena : ProcessBasedTestArena
     {
-        bool isreadingOutputMessage = false;
-        bool lastLine = false;
-        StringBuilder outputBuffer = new StringBuilder();
+        protected bool isreadingOutputMessage = false;
+        protected bool lastLine = false;
+        protected  StringBuilder outputBuffer = new StringBuilder();
         private bool startParsing;
-
+        
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
             var cmd = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);

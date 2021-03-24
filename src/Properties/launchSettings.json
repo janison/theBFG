@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "theBFG": {
+      "commandName": "Project",
+      "commandLineArgs": "target C:\\jan\\ADS\\output\\*.Tests.dll and fire"
+    }
+  }
+}

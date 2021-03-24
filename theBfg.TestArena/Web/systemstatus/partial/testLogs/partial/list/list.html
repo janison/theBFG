@@ -1,0 +1,9 @@
+<div class="col-md-12" ng-controller="ListCtrl">
+        <h2>Latest App testLogs</h2>
+        <table>
+            <tr ng-repeat="u in testLogs">                
+                <td> <a link="{{u.name}}" ng-attr-url="testLog/{{u.name}}/get" file-download></a></td><td>-</td></li>
+            </tr>
+        </table>
+    
+</div>

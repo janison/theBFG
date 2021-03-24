@@ -423,3 +423,8 @@ DerivedData/
 /.idea/
 !/src/package/Rxns*
 !thebfg.png
+/src/reports
+/src/repos
+/src/temp
+/src/updates
+/src/TenantLogs

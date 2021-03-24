@@ -38,13 +38,16 @@ namespace theBFG.TestDomainAPI
                     foreach (var progress in OnLog(name, work, i))
                         testEventStream.OnNext(progress);
 
-                    testLog.WriteLine(i.LogDebug(logName));
+                    if(testLog.BaseStream.CanWrite)
+                        testLog.WriteLine(i.LogDebug(logName));
                 },
                 e => testLog.WriteLine(e.LogDebug(logName))
             ).FinallyR(() => testEventStream.OnCompleted())
             .SelectMany(_ => testEventStream)
             .FinallyR(() =>
             {
+                if (!testLog.BaseStream.CanWrite) return;
+
                 testLog.WriteLine("");
                 testLog.WriteLine("");
                 //triggers the end of a test
@@ -53,7 +56,7 @@ namespace theBFG.TestDomainAPI
 
         protected abstract string StartTestsCmd(StartUnitTest work);
 
-        private string ToDuration(string s)
+        protected string ToDuration(string s)
         {
             return s.TrimStart('[').TrimEnd(']');
         }

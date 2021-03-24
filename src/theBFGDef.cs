@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.DDD;
+using Rxns.Health;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
@@ -13,6 +15,7 @@ using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.Metrics;
 using Rxns.NewtonsoftJson;
+using Rxns.Playback;
 using Rxns.WebApiNET5;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using theBFG.TestDomainAPI;
@@ -49,10 +52,11 @@ namespace theBFG
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .Includes<AspNetCoreWebApiAdapterModule>()
                     .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
-                    .CreatesOncePerApp<DotNetTestArena>()
+                 //   .CreatesOncePerApp<DotNetTestArena>()
+                    .CreatesOncePerApp<VsTestArena>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
+                    .CreatesOncePerApp<bfgTestArenaProgressHub>()
                     .RespondsToSvcCmds<Reload>()
-
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestPartialLogResult>()
@@ -93,8 +97,14 @@ namespace theBFG
                             var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
                         }).Until();
 
-                    }));
-                ;
+                    }))
+                    .CreatesOncePerApp<InMemoryTapeRepo>()
+                    ;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    dd.CreatesOncePerApp<WindowsSystemInformationService>();
+                }
             };
         };
 
@@ -112,7 +122,8 @@ namespace theBFG
                     .RespondsToSvcCmds<StartUnitTest>()
                     .CreatesOncePerApp<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
-                    .CreatesOncePerApp<DotNetTestArena>()
+                  //  .CreatesOncePerApp<DotNetTestArena>()
+                        .CreatesOncePerApp<VsTestArena>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestPartialLogResult>()

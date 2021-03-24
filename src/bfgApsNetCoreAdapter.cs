@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Rxns.Hosting;
 using Rxns.WebApiNET5;
 
@@ -11,7 +12,7 @@ namespace theBFG
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @"C:\jan\Rxns\Rxns.AppSatus\Web\dist" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
+            Html5Root = @$"c:\svn\bfg\thebfg.testarena\Web\dist" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
         };
 
         public theBFGAspNetCoreAdapter()

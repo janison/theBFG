@@ -43,6 +43,8 @@ dotnet install tool thebfg</Description>
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
         <PackageReference Include="System.Reactive" Version="4.0.0" />
         <PackageReference Include="Autofac" Version="3.5.0" />
+        <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />
+        <PackageReference Include="System.Management" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -55,6 +57,7 @@ dotnet install tool thebfg</Description>
       <Reference Include="Rxns.WebApiNET5">
         <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.WebApiNET5.dll</HintPath>
       </Reference>
+      
     </ItemGroup>
 
     <ItemGroup>

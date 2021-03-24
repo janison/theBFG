@@ -25,6 +25,7 @@ using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
+using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
@@ -87,9 +88,16 @@ namespace theBFG
             url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
                 .IsNullOrWhiteSpace(cfg.AppStatusUrl);
 
-            List<StartUnitTest> tests = new List<StartUnitTest>();
+            var tests = new List<StartUnitTest>();
 
-            foreach(var target in GetTargets(dll))
+
+            //need to modify GetTagets to watch for changes and potentially return a stream?
+            // it can then augment that with compete to create a CI/CD on compile?
+            //var file = new FileInfo(work.Dll);
+            //var watchForCompiles = Rxn.Create<string>(o => Files.WatchForChanges(file.DirectoryName, file.Name, () => o.OnNext(work.Dll))).StartWith(work.Dll);
+            // GetTargets(dll).Do(_ => tests.Add(_))
+
+            foreach (var target in GetTargets(dll))
                 tests.Add( new StartUnitTest()
                 {
                     UseAppUpdate = appUpdateDllSource ?? "Test",
@@ -98,7 +106,7 @@ namespace theBFG
                     RunThisTest = testName,
                 });
 
-
+            //todo: fix, need to get from container
             var mode = new DotNetTestArena();
 
             if (args.Contains("compete"))
@@ -168,7 +176,7 @@ namespace theBFG
                         "fire".LogDebug();
                         "fire @sut".LogDebug();
                         "fire @url".LogDebug();
-                        "fire rapid {{threadCount | max}} | will fire on multiple threads simultatiously".LogDebug();
+                        "fire rapidly {{threadCount | max}} | will fire on multiple threads simultatiously".LogDebug();
                         "fire coop | shard test-suite execution across multiple nodes".LogDebug();
                         "".LogDebug();
                         "launch sut@sut.dll | deploy apps to worker nodes automatically during CI/CD. Worker integration via complementary C# api: theBfgApi.launch(\"app\", \"dir\")".LogDebug();

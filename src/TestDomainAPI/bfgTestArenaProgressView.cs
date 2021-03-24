@@ -1,42 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Rxns;
 using Rxns.DDD;
-using Rxns.DDD.CQRS;
-using Rxns.Interfaces;
-using Rxns.Metrics;
-using Rxns.Playback;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    public class bfgTestArenaProgressView : AggregatedView<ITestDomainEvent>, IReactTo<IRxn>
-    {
-        public override string ReportName => "TestArena";
-
-
-        public bfgTestArenaProgressView(ITapeRepository reportRepo, AggViewCfg cfg) : base(reportRepo, cfg)
-        {
-        }
-
-        public override IObservable<ITestDomainEvent> GetOrCreateStream()
-        {
-            return this.OnReactionTo<ITestDomainEvent>();
-        }
-    }
-
-    public interface ITestAreaApi
+    public interface ITestArenaApi
     {
         void OnUpdate(ITestDomainEvent e);
     }
 
-    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestAreaApi>
+    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>
     {
         private readonly bfgTestArenaProgressView _testArena;
         private readonly IHubContext<bfgTestArenaProgressHub> _context;
