@@ -15,7 +15,7 @@
         </div>
         <div>            
                 <span width="40">
-                    <span title="Reload" ng-click="cmdReload()" class="cmd fa fa-rocket fa-2x">
+                    <span title="Reload" ng-click="cmdReload()" ng-class="{error: !testArenaInfo.isConnected, infor: testArenaInfo.isConnected}" class="cmd fa fa-rocket fa-2x">
                     </span>
                         <i title="Errors" ng-click="cmdShowTopic('Failed')" class="cmd" style="font-size:larger; padding-right:5px; padding-left: 5px;" ng-class="{error : testGlance.errors != '0', infor : testGlance.errors == '0'}">                    
                             {{testGlance.errors}}
@@ -26,9 +26,9 @@
                 <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
                 <span><span ng-click="cmdShowTopic('flakey')" class="cmd fa fa-rmb fa-2x" title="Flakey"></span> {{testGlance.flakey}}</span>            
                 <span><span ng-click="cmdShowTopic('log')" class="cmd fa fa-clock-o fa-2x"></span> {{msSince(testGlance.startedAt)}}</span>
-                <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>
+                <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>                
                 <span><span class="cmd fa fa-search-plus fa-2x"></span><input type="text" ng-model="searchTerm" width="50"/></span>
-                <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>        
+                <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>                     
         </div>
 
         <div>

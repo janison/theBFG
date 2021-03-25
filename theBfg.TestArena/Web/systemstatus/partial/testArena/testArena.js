@@ -14,6 +14,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.testSummary = [];
         $scope.testOutcomes = [];
         $scope.sendCmdDisabled = true;
+        $scope.testArenaInfo = {
+            isConnected: false
+        };
 
         $scope.workerInfo = [{
 
@@ -36,7 +39,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
     }
 
-    
+    testArenaApi.isConnected.subscribe(function(isonline) {
+        $scope.testArenaInfo.isConnected = isonline;
+    });
 
     resetResults();
     
