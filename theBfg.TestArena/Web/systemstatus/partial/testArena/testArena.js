@@ -7,6 +7,63 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         var diff =  moment.utc(now.diff(start)).format("HH:mm:ss.SSS");
         return diff;
     }
+
+    
+    $scope.publish = function(destination, cmd) {
+        testArenaApi.sendCommand(destination, cmd);
+    };
+
+    
+    $scope.cmdReload = function() {
+        testArenaApi.sendCommand("", "Reload");
+    }
+
+    $scope.cmdShowTopic = function(result) {
+        $scope.filter = result;
+
+        if(result == "Passed" || result == "Failed") {
+            $scope.currentTopic = $scope.tests.filter(t => t.result === result);
+        }
+        else if(result == 'slow') {
+            $scope.currentTopic = $scope.testOutcomes;
+        }        
+        else if(result == 'all') {
+            $scope.currentTopic = $scope.tests;            
+        }
+        else if(result == 'log' || result == 'flakey') {            
+            if($scope.currentTopic.length === 0) {
+                $scope.logDisabled = !$scope.logDisabled;
+            }                      
+
+            $scope.currentTopic = [];                        
+            $scope.filter = '';
+        }
+    }
+
+    $scope.addToTopicIfFilterActive = function(msg) {
+        if($scope.filter === '' || !msg.result) return;
+
+        if(msg.result == "Passed" && $scope.filter === msg.result ) {
+            $scope.currentTopic.push(msg);
+        }
+        else if(msg.result == "Failed" && $scope.filter === msg.result ) {
+            $scope.currentTopic.push(msg);
+        }
+        else if($scope.filter === "slow" && msg.duration && parseInt(msg.duration) > 100) {
+            $scope.currentTopic.push(msg);
+        }        
+        else if($scope.filter == 'all') {
+            $scope.currentTopic.push(msg);            
+        }
+        else if($scope.filter == 'log' || $scope.filter == 'flakey') {
+            $scope.currentTopic = [];
+        }
+    }
+
+    $scope.cmdClear = function() {
+        resetResults();
+    }
+
     resetResults = function() {
         $scope.log = [];
         $scope.tests = [];
@@ -54,7 +111,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.log.pop();            
         }
        
-        if(msg.logMessage) {            
+        //there is a bug here, logs will not be attached to tests and therefor 
+        //not be saved in cases where log is disabled from view
+        if(msg.logMessage && $scope.log[0]) {                        
             $scope.log[0].logMessage = msg.logMessage != '-' ? msg.logMessage : "";            
             return;
         };
@@ -101,12 +160,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if(msg.memUsage) {
 
 
-            if($scope.workerInfo[0].length > maxLogs) {
-                $scope.workerInfo[0].shift();            
+            if($scope.workerInfo[0].values.length > maxLogs) {
+                $scope.workerInfo[0].values.shift();            
             }
 
-            if($scope.workerInfo[1].length > maxLogs) {
-                $scope.workerInfo[1].shift();            
+            if($scope.workerInfo[1].values.length > maxLogs) {
+                $scope.workerInfo[1].values.shift();            
             }
 
             $scope.workerInfo[0].values.push(msg.cpuUsage);                     
@@ -129,59 +188,5 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         });
     });
     
-    $scope.publish = function(destination, cmd) {
-        testArenaApi.sendCommand(destination, cmd);
-    };
-
-    
-    $scope.cmdReload = function() {
-        testArenaApi.sendCommand("", "Reload");
-    }
-
-    $scope.cmdShowTopic = function(result) {
-        $scope.filter = result;
-
-        if(result == "Passed" || result == "Failed") {
-            $scope.currentTopic = $scope.tests.filter(t => t.result === result);
-        }
-        else if(result == 'slow') {
-            $scope.currentTopic = $scope.testOutcomes;
-        }        
-        else if(result == 'all') {
-            $scope.currentTopic = $scope.tests;            
-        }
-        else if(result == 'log' || result == 'flakey') {            
-            if($scope.currentTopic.length === 0) {
-                $scope.logDisabled = !$scope.logDisabled;
-            }                      
-
-            $scope.currentTopic = [];                        
-            $scope.filter = '';
-        }
-    }
-
-    $scope.addToTopicIfFilterActive = function(msg) {
-        if($scope.filter === '') return;
-
-        if(msg.result == "Passed" && $scope.filter === msg.result ) {
-            $scope.currentTopic.push(msg);
-        }
-        else if(msg.result == "Failed" && $scope.filter === msg.result ) {
-            $scope.currentTopic.push(msg);
-        }
-        else if(parseInt(result.duration) > 100 == 'slow') {
-            $scope.currentTopic.push(msg);
-        }        
-        else if(result == 'all') {
-            $scope.currentTopic.push(msg);            
-        }
-        else if(result == 'log' || result == 'flakey') {
-            $scope.currentTopic = [];
-        }
-    }
-
-    $scope.cmdClear = function() {
-        resetResults();
-    }
     
 });

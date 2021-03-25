@@ -234,9 +234,20 @@ angular.module('portal')
               
                   //return; //comment out and below works. needs to find out how to add to graph properly
                   //its not adding to the right parents rows in the svg
-                  d3.selectAll("path.line").remove();
-
+                  
               var lines = canvas.selectAll('.category')
+              .data(dataArray, function(d) {
+                return d.category;
+              });
+        
+              
+                           
+                
+              
+              lines
+              .remove();
+
+              lines = canvas.selectAll('.category')
               .data(dataArray, function(d) {
                 return d.category;
               });
@@ -287,19 +298,7 @@ angular.module('portal')
                 return d3.select(this.parentNode).datum().category;
               });
 
-              paths = lE.select('path')
-
               // Update the line paths
-              paths
-                .transition()
-                  .attr("d", function(d,i) {
-                    console.log("transitioning line with data: ", d);
-                    return line.apply(this, arguments);
-                  });
-              
-                
-                paths.exit()
-                    .remove();
                 
               return;
               
