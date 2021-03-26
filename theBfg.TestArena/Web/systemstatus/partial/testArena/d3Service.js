@@ -10,8 +10,8 @@ angular.module('portal')
       scope: { data: '=' },
       link: function(scope, element) {
         var canvasWidth = document.body.clientWidth / 3;
-        var height = 200;
-
+        var height = element.attr("height");
+        
         var x = d3.scaleLinear()
             .domain([0, 100])
             .range([0, canvasWidth]);
@@ -24,14 +24,13 @@ angular.module('portal')
             .append('g')           ;           
             
         var fix = function(e) {
-            return e === "<" ? "1" : e;
+            return e === ">" ? "1" : e;
         };        
         
         // update
         scope.$watch('data', function(dataArray) {
             
             var update = canvas.selectAll("g").data(dataArray);
-
             
             var enter = update.enter().append("g");
             enter.append("rect")
@@ -66,9 +65,8 @@ angular.module('portal')
   .directive('pieChart', function() {
     return {
       restrict: 'E',
-      scope: { data: '=' },
+      scope: { data: '='},
       link: function(scope, element) {
-      
 
         var width = 250; 
         var height = 250;

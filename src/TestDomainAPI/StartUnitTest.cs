@@ -5,6 +5,8 @@ namespace theBFG.TestDomainAPI
 {
     public class StartUnitTest : ServiceCommand, ITestDomainEvent
     {
+        public DateTime At { get; set;  } = DateTime.Now;
+
         public bool RunAllTest { get; set; }
         public string RunThisTest { get; set; }
         public int RepeatTests { get; set; }

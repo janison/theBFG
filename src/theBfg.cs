@@ -88,7 +88,6 @@ namespace theBFG
             url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
                 .IsNullOrWhiteSpace(cfg.AppStatusUrl);
 
-            var tests = new List<StartUnitTest>();
 
 
             //need to modify GetTagets to watch for changes and potentially return a stream?
@@ -97,55 +96,74 @@ namespace theBFG
             //var watchForCompiles = Rxn.Create<string>(o => Files.WatchForChanges(file.DirectoryName, file.Name, () => o.OnNext(work.Dll))).StartWith(work.Dll);
             // GetTargets(dll).Do(_ => tests.Add(_))
 
-            foreach (var target in GetTargets(dll))
-                tests.Add( new StartUnitTest()
+            //todo: fix, need to get from container
+            var mode = new DotNetTestArena();
+
+            return GetTargets(dll).SelectMany(target =>
+            {
+                var test = new StartUnitTest()
                 {
                     UseAppUpdate = appUpdateDllSource ?? "Test",
                     UseAppVersion = appUpdateVersion,
                     Dll = target,
                     RunThisTest = testName,
-                });
+                };
 
-            //todo: fix, need to get from container
-            var mode = new DotNetTestArena();
-
-            if (args.Contains("compete"))
-            {
-                
-                var userSize = args.Last();
-                int batchSize = 0;
-                Int32.TryParse(userSize, out batchSize);
-
-                batchSize = batchSize == 0 ? 25 : batchSize;
-
-                $"Reloading with {batchSize} tests per/batch".LogDebug();
-
-                return tests.ToObservableSequence().SelectMany(t =>  
-                     mode.ListTests(t).SelectMany(s => s)
-                    .Buffer(batchSize)
-                    .Select(tests => new StartUnitTest()
+                if (args.Contains("compete"))
                 {
-                    UseAppUpdate = appUpdateDllSource ?? "Test",
-                    UseAppVersion = appUpdateVersion,
-                    Dll = dll,
-                    RunThisTest = tests.ToStringEach()
-                })
-                .ToArray());
-            }
-            else
-            {
-                return Observable.Return(tests.ToArray());
-            }
+
+                    var userSize = args.Last();
+                    int batchSize = 0;
+                    Int32.TryParse(userSize, out batchSize);
+
+                    batchSize = batchSize == 0 ? 25 : batchSize;
+
+                    $"Reloading with {batchSize} tests per/batch".LogDebug();
+
+                    return 
+                        mode.ListTests(test).SelectMany(s => s)
+                            .Buffer(batchSize)
+                            .Select(tests => new StartUnitTest()
+                            {
+                                UseAppUpdate = appUpdateDllSource ?? "Test",
+                                UseAppVersion = appUpdateVersion,
+                                Dll = dll,
+                                RunThisTest = tests.ToStringEach()
+                            })
+                            .ToArray();
+                }
+
+                return new [] { test }.ToObservable();
+            });
+
         }
 
-        private static IEnumerable<string> GetTargets(string dll)
+        private static IObservable<string> GetTargets(string dll)
         {
-            if (!dll.Contains("*")) yield return dll;
+            return Rxn.Create<string>(o =>
+            {
+                var watchers = new CompositeDisposable();
+                var pattern = dll.Split('/', '\\');
+                var dir = pattern.Take(pattern.Length - 1).ToStringEach("/");
+                var filePattern = pattern.Last();
 
-            var pattern = dll.Split('/', '\\');
+                if (!dll.Contains("*"))
+                {
+                   o.OnNext(dll);
+                   Files.WatchForChanges(dir, filePattern, () => o.OnNext(filePattern)).DisposedBy(watchers);
+                }
+                else
+                {
+                    
+                    foreach (var file in Directory.GetFileSystemEntries(dir, filePattern))
+                    {
+                        o.OnNext(file);
+                        Files.WatchForChanges(dir, file, () => o.OnNext(file)).DisposedBy(watchers);
+                    }
+                }
 
-            foreach (var file in Directory.GetFileSystemEntries(pattern.Take(pattern.Length - 1).ToStringEach("/"), pattern.Last()))
-                yield return file;
+                return watchers;
+            });
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)

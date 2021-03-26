@@ -16,6 +16,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         ':' + pad(time.getUTCSeconds()) +
         '.' + (time.getUTCMilliseconds() / 1000).toFixed(3).slice(2, 5);
     }
+
+    var startedTestArenaAt = new Date();
     
     $scope.publish = function(destination, cmd) {
         testArenaApi.sendCommand(destination, cmd);
@@ -29,24 +31,23 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     $scope.cmdShowTopic = function(result) {
         $scope.filter = result;
 
-        if(result == "Passed" || result == "Failed") {
+        if (result == "Passed" || result == "Failed") {
             $scope.currentTopic = $scope.tests.filter(t => t.result === result);
-        }
-        else if(result == 'slow') {
+        } else if (result == 'slow') {
             $scope.currentTopic = $scope.testOutcomes;
-        }        
-        else if(result == 'all') {
-            $scope.currentTopic = $scope.tests;            
-        }
-        else if(result == 'log' || result == 'flakey') {            
-            if($scope.currentTopic.length === 0) {
+        } else if (result == 'all') {
+            $scope.currentTopic = $scope.tests;
+        } else if (result == 'log' || result == 'flakey') {
+            if ($scope.currentTopic.length === 0) {
                 $scope.logDisabled = !$scope.logDisabled;
-            }                      
+            }
 
-            $scope.currentTopic = [];                        
+            $scope.currentTopic = [];
             $scope.filter = '';
+        } else if (result == 'testRunsDetails') {
+            $scope.showTestRunDetailed = !$scope.showTestRunDetailed;
         }
-    }
+    };
 
     $scope.addToTopicIfFilterActive = function(msg) {
         if($scope.filter === '' || !msg.result) return;
@@ -79,7 +80,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.testSummary = [];
         $scope.testOutcomes = [];
         $scope.testRuns = [];
-
+        $scope.showTestRunDetailed = false;
+        
         $scope.sendCmdDisabled = true;
         $scope.testArenaInfo = {
             isConnected: false
@@ -114,6 +116,17 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     resetResults();
     
     var updateTestArenaWith = function(msg, maxLogs) {
+
+        // if(!msg.at) {
+        //     console.log("saw unknown message "+ JSON.stringify(msg));
+        // } else {
+        //     msg.at = new Date(msg.at)
+        // };
+
+        // if(msg.at > startedTestArenaAt) {
+
+        // }
+        
         if(msg.testName) {
             $scope.log.unshift(msg);
         }
@@ -185,18 +198,35 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
 
         if(msg.dll) {
+
+            var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
+
             msg.startedAt = new Date();
             msg.info = `In progress ${msg.dll}`;
-            $scope.testRuns.push(msg);
+            if(test) {//hack to make new tests come under same umbrella                
+                test.id = msg.id;
+                test.result = undefined;
+                test.completedAt = undefined;
+            }
+            else {
+                msg.results = [];
+                $scope.testRuns.push(msg);
+            }
         }
 
         if(msg.inResponseTo) {
             var found = false;            
             $scope.testRuns.forEach(t => {
-                if(t.id === msg.inResponseTo) {
-                    t.didPass = msg.result;
+                if(t.id === msg.inResponseTo) {                    
+                    t.result = msg.result === "1" ? "Passed" : "Failed";
                     t.completedAt = new Date();
-                    t.info = `${t.didPass ? "Pass" : "Fail"} ${t.dll} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`;
+
+                    t.results.push({
+                        result: t.result,
+                        duration: new Date(t.completedAt.getTime() - t.startedAt.getTime()).getTime() / 1000
+                    });
+
+                    t.info = `${t.result ? "Pass" : "Fail"} ${t.dll} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`;
                     found = true;
                 }
             });            

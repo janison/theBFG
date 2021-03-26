@@ -2,18 +2,36 @@
     <form name="remote">        
         <div class="grouped">
             <div>
-                <span  ng-repeat="entry in testRuns">
-                    <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRuns')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.info}}"></span>
-                    <span ng-if="entry.completedAt && !entry.didPass" ng-click="cmdShowTopic('testRuns')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.info}}"></span>
-                    <span ng-if="entry.didPass" ng-click="cmdShowTopic('testRuns')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.info}}"></span>
+                <span ng-if="!showTestRunDetailed"  ng-repeat="entry in testRuns">
+                    <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.info}}"></span>
+                    <span ng-if="entry.result === 'Failed'" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.info}}"></span>
+                    <span ng-if="entry.result === 'Passed'" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.info}}"></span>
                 </span>
+                <table ng-if="showTestRunDetailed" class="table table-hover table-striped table-condensed h6">                    
+                     <tbody><!--  ng-if="currentTopic.length != 0 -->                    
+                        <tr ng-repeat="entry in testRuns">
+                            <td ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" >
+                                <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.info}}"></span>
+                                <span ng-if="entry.result === 'Failed'" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.info}}"></span>
+                                <span ng-if="entry.result === 'Passed'" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.info}}"></span>
+                            </td>
+                            <td>{{entry.dll}}</td>                            
+                            <td>{{entry.errors}} / {{entry.total}}</td>
+                            <td>{{entry.duration}}</td>
+                            <td>
+                                <bar-chart class="cmd" height="30" data="entry.results"></bar-chart>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+    
             </div>
                 <div class="pieChart gfirst">
                     <pie-chart class="cmd" ng-click="cmdShowTopic('slow')"  data="testOutcomes"></bar-chart>
                 </div>
             
                 <div class="barchart gsecond">
-                    <bar-chart class="cmd" ng-click="cmdShowTopic('log')"  data="testSummary"></bar-chart>
+                    <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')"  data="testSummary"></bar-chart>
                 </div>            
         </div>
         

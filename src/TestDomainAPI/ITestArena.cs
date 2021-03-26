@@ -15,6 +15,7 @@ namespace theBFG.TestDomainAPI
 
     public interface ITestDomainEvent : IRxn
     {
+        DateTime At { get; }
     }
 
     public class UnitTestPartialResult : ITestDomainEvent
@@ -37,10 +38,14 @@ namespace theBFG.TestDomainAPI
             TestId = testId;
             Worker = worker;
         }
+
+        public DateTime At { get; set;  } = DateTime.Now;
     }
 
     public class UnitTestPartialLogResult : ITestDomainEvent
     {
+        public DateTime At { get; set; } = DateTime.Now;
+
         public string LogMessage { get; set; }
         public string Worker { get; set; }
         public string TestId { get; set; }
