@@ -28,7 +28,7 @@ namespace theBFG
     //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
     public static class theBFGDef
     {
-        public static StartUnitTest[] Cfg;
+        public static IObservable<StartUnitTest[]> Cfg;
 
         public static Func<string[], Action<IRxnLifecycle>> TestArena = (args) =>
         {
@@ -38,10 +38,10 @@ namespace theBFG
             return dd =>
             {
                 //DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
-                if (Cfg.AnyItems())
-                    dd.CreatesOncePerApp(_ => Cfg[0]);
+                if (Cfg != null)
+                    dd.CreatesOncePerApp(_ => Cfg);
 
-                dd.CreatesOncePerApp(_ => Cfg);
+                dd.CreatesOncePerApp(_ => theBFGAspNetCoreAdapter.AspnetCfg);
 
                 //d(dd);
                 dd.CreatesOncePerApp<theBfg>()
@@ -75,6 +75,10 @@ namespace theBFG
                                 });
                             });
                         }
+                    })
+                    .CreatesOncePerApp(_ => new AppStatusCfg()
+                    {
+                        ShouldAutoUnzipLogs = true
                     })
                     //cfg specific
                     .CreatesOncePerApp(() => new AggViewCfg()

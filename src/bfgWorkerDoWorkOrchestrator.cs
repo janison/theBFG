@@ -16,13 +16,11 @@ namespace theBFG
     {
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IAppStatusStore _appCmds;
-        private readonly StartUnitTest _cfg;
-
-        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, StartUnitTest cfg)
+        
+        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds)
         {
             _rxnManager = rxnManager;
             _appCmds = appCmds;
-            _cfg = cfg;
         }
 
         /// <summary>
