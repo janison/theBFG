@@ -1,13 +1,21 @@
+
+
+
 angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, rx, moment) {
+    
+    function pad(number) {
+        if (number < 10) {
+          return '0' + number;
+        }
+        return number;
+      }
 
-    $scope.msSince = function (startedDate) {
-        var start = moment(startedDate);
-        var now = moment(new Date());
-
-        var diff =  moment.utc(now.diff(start)).format("HH:mm:ss.SSS");
-        return diff;
+    var toPrettyTime = function(time) {
+        return ""+ pad(time.getUTCHours()) +
+        ':' + pad(time.getUTCMinutes()) +
+        ':' + pad(time.getUTCSeconds()) +
+        '.' + (time.getUTCMilliseconds() / 1000).toFixed(3).slice(2, 5);
     }
-
     
     $scope.publish = function(destination, cmd) {
         testArenaApi.sendCommand(destination, cmd);
@@ -70,11 +78,14 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.currentTopic = [];
         $scope.testSummary = [];
         $scope.testOutcomes = [];
+        $scope.testRuns = [];
+
         $scope.sendCmdDisabled = true;
         $scope.testArenaInfo = {
             isConnected: false
         };
 
+        
         $scope.workerInfo = [{
 
             category: 'blue',
@@ -159,7 +170,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         if(msg.memUsage) {
 
-
             if($scope.workerInfo[0].values.length > maxLogs) {
                 $scope.workerInfo[0].values.shift();            
             }
@@ -172,6 +182,24 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.workerInfo[1].values.push((parseInt(msg.memUsage) / (16 * 1000)) * 100);                     
 
             return;
+        }
+
+        if(msg.dll) {
+            msg.startedAt = new Date();
+            msg.info = `In progress ${msg.dll}`;
+            $scope.testRuns.push(msg);
+        }
+
+        if(msg.inResponseTo) {
+            var found = false;            
+            $scope.testRuns.forEach(t => {
+                if(t.id === msg.inResponseTo) {
+                    t.didPass = msg.result;
+                    t.completedAt = new Date();
+                    t.info = `${t.didPass ? "Pass" : "Fail"} ${t.dll} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`;
+                    found = true;
+                }
+            });            
         }
 
         console.log("AppInfo: " +JSON.stringify(msg));
