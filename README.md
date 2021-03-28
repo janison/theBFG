@@ -12,7 +12,7 @@ Feature | ...
 `Supercharged CD` | <font size=2>Verfy light-weight. Deploys apps in `ms`. Save time, and frustration, doing more testing, and less waiting or configuring.</font>
 `Real-time reporting` | <font size=2>Use the `theBFG` `host console` to monitor in real-time all aspects of your tests including errors, CPU, MEM and throughput</font>
 `NO DSL or JAVA or other` scripting to learn | Use all the same tools you love & pure C# to define complex intergation test scenarios</font>
-`Continious Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
+`Continuous Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
 `Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you required, 
 `Supercharge EXISTING test-suites` | <font size=2>theBGF supports distributing work to a cluster that will work together to execute it as quickly as possible</font>
 `Cloud scaleout` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
@@ -39,6 +39,8 @@ Feature | ...
 `dotnet tool theBFG fire`
 
 ... and thats it. Each time you `compile` your `unit-test` will be deployed to all the workers you have setup and they will run the tests as you commanded.
+
+> Pro Tip: No after build triggers? No Worries! theBFG also *monitors the target for changes*, reloading and *firing* on *every* update to bring advanced continious testing capabilities to any dev flow
 
 *<h2>Integration or Automation test? Start the SUT and monitor it for failures</h2>*
 
