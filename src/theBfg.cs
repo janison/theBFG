@@ -52,7 +52,6 @@ namespace theBFG
             {
                 var apiName = args.Skip(1).FirstOrDefault();
                 var testHostUrl = args.Skip(2).FirstOrDefault().IsNullOrWhiteSpace("http://localhost:888");
-                theBFGDef.Cfg = DetectIfTargetMode(url, args);
                 theBfg.Args = args;
 
 
@@ -129,12 +128,15 @@ namespace theBFG
                                 UseAppVersion = appUpdateVersion,
                                 Dll = dll,
                                 RunThisTest = tests.ToStringEach()
-                            })
-                            .ToArray();
+                            });
                 }
 
-                return new [] { test }.ToObservable();
-            });
+                return test.ToObservable();
+            })
+            .Buffer(TimeSpan.FromSeconds(1))
+            .Where(l => l.Count > 0)
+            .Select(l => l.ToArray())
+            ;
 
         }
 
@@ -149,12 +151,12 @@ namespace theBFG
 
                 if (!dll.Contains("*"))
                 {
-                   o.OnNext(dll);
-                   Files.WatchForChanges(dir, filePattern, () => o.OnNext(filePattern)).DisposedBy(watchers);
+                    o.OnNext(dll);
+                    Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll)).DisposedBy(watchers);
                 }
                 else
                 {
-                    
+
                     foreach (var file in Directory.GetFileSystemEntries(dir, filePattern))
                     {
                         o.OnNext(file);
@@ -163,7 +165,8 @@ namespace theBFG
                 }
 
                 return watchers;
-            });
+            })
+            .BufferFirstLast(TimeSpan.FromSeconds(5), true, false);
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
@@ -172,7 +175,8 @@ namespace theBFG
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-
+                theBFGDef.Cfg = DetectIfTargetMode(url, args);
+                
                 switch (args.FirstOrDefault()?.ToLower())
                 {
                     case "fire":
@@ -214,7 +218,6 @@ namespace theBFG
             return Rxn.Create<Unit>(o =>
             {
                 ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
-                theBFGDef.Cfg = DetectIfTargetMode(url, args);
                 theBfg.Args = args;
 
                 "Configuring App".LogDebug();
@@ -409,7 +412,7 @@ namespace theBFG
                 }
                 else
                 {
-                    FireRapidly(unitTestToRun);
+                    Fire(unitTestToRun);
                 }
             }
 

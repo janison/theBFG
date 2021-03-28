@@ -11,7 +11,7 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>
+    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>
     {
         public void Publish(IRxn rxn)
         {
@@ -32,13 +32,6 @@ namespace theBFG
                 });
 
             }).Until();
-        }
-
-        public IObservable<CommandResult> Handle(StartUnitTest command)
-        {
-            Queue(command);
-
-            return Rxn.Empty<CommandResult>(); //it will be triggered at the end of the processing should return a queued event?
         }
     }
 }
