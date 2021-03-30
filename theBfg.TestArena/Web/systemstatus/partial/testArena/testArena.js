@@ -1,6 +1,3 @@
-
-
-
 angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, rx, moment) {
     
     function pad(number) {
@@ -218,7 +215,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             var found = false;            
             $scope.testRuns.forEach(t => {
                 if(t.id === msg.inResponseTo) {                    
-                    t.result = msg.result === "1" ? "Passed" : "Failed";
+                    t.result = msg.result === "0" ? "Passed" : "Failed";
                     t.completedAt = new Date();
 
                     t.results.push({

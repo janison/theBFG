@@ -17,7 +17,7 @@
                             </td>
                             <td>{{entry.dll}}</td>                            
                             <td>{{entry.errors}} / {{entry.total}}</td>
-                            <td>{{entry.duration}}</td>
+                            <td ng-attr-title="{{entry.duration}}">{{entry.duration}}</td>
                             <td>
                                 <bar-chart class="cmd" height="30" data="entry.results"></bar-chart>
                             </td>

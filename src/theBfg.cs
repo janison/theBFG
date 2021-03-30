@@ -322,6 +322,17 @@ namespace theBFG
             .Until();
         }
 
+        public void FireCompeteRapidly(IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
+        {
+            Enumerable.Range(0, Environment.ProcessorCount).ForEach(_ =>
+            {
+                SpawnTestWorker(resolver, unitTestToRun).Until();
+            });
+
+            Fire(unitTestToRun);
+        }
+
+
         public void FireRapidly(IObservable<StartUnitTest[]> tests)
         {
             Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ => { Fire(tests); }).Until();
@@ -355,7 +366,7 @@ namespace theBFG
 
             var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
             var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests);
-            var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>());
+            var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
                 .Do(unitTests => BroadcasteStatsToTestArena(_testCluster, unitTests[0], resolver.Resolve<SystemStatusPublisher>(), resolver.Resolve<IManageReactors>()))
@@ -403,14 +414,14 @@ namespace theBFG
 
         /// <summary>
         /// Implements the firing sematics of the bfg, reponding to rapidly condintiously etc
-        
         /// </summary>
         /// <param name="args"></param>
         /// <param name="unitTestToRun"></param>
-        /// <param name="resolver"></param>
         /// <param name="rxnManager"></param>
+        /// <param name="resolver"></param>
         /// <returns></returns>
-        public IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun,  IRxnManager<IRxn> rxnManager)
+        public IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun,
+            IRxnManager<IRxn> rxnManager, IResolveTypes resolver)
         {
             //todo: should be implemented with a rxnmediator, can seperate firestyle into injected logic classes
             if (args.Contains("continuously"))
@@ -430,7 +441,15 @@ namespace theBFG
             {
                 if (args.Contains("rapidly"))
                 {
-                    FireRapidly(unitTestToRun);
+                    if(args.Contains("compete"))
+                    {
+                        FireCompeteRapidly(unitTestToRun, resolver);
+                    }
+                    else
+                    {
+                        FireRapidly(unitTestToRun);
+                    }
+                    
                 }
                 else
                 {
@@ -456,9 +475,9 @@ namespace theBFG
         private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
         private StartUnitTest[] _lastFired = new StartUnitTest[0];
 
-        public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> Cfg)
+        public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> cfg)
         {
-            return Cfg.FirstAsync().Select(tests =>
+            return cfg.FirstAsync().Select(tests =>
             {
                 "Spawning worker".LogDebug(++_workerCount);
 

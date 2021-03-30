@@ -16,4 +16,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Rxns">
+      <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -24,13 +24,14 @@ angular.module('portal')
             .append('g')           ;           
             
         var fix = function(e) {
-            return e === ">" ? "1" : e;
+            return e == "<" ? "1" : e;
         };        
         
         // update
         scope.$watch('data', function(dataArray) {
             
             var update = canvas.selectAll("g").data(dataArray);
+
             
             var enter = update.enter().append("g");
             enter.append("rect")
