@@ -30,11 +30,29 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
+    /// <summary>
+    /// Reloads and fires at the last test session started
+    /// </summary>
     public class Reload : ServiceCommand
     {
 
     }
 
+    /// <summary>
+    /// Unlike the Gatling Gun, the Bfg was always the top weapon in every game. It was accurate, responsive, rewarding to master and had your back in every situation.
+    ///
+    /// I wanted to create a C# testing tool that just brought the C# ecosystem out of the stone ages. Somethign that just worked. Something that would compliment the dev-test flow
+    /// and compensate for the lack of creativety that my IDE vendor delivered. Something that let me leverage my unit test toolbox, yet execute advanced distributed test scenarios.
+    /// Something that helped me iterate quickly and tell me exactly what went wrong and why.
+    ///
+    /// The main thing your have to know is:
+    ///     - That theBFG is a gun.
+    ///     - You target tests.dlls with are spwaned inside a test arena
+    ///     - You fire to run the tests. You reload after every shot.
+    ///     - You monitor everything in real-time via TestArena Web Portal.
+    /// 
+    /// This API gives you the keys to the castle. Use with caution. Eye protection recommended when using rapid fire mode for extended periods.
+    /// </summary>
     public class theBfg : IDisposable, IServiceCommandHandler<Reload>
     {
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);
@@ -71,7 +89,15 @@ namespace theBFG
             });
         }
 
-        public static IObservable<StartUnitTest[]> DetectIfTargetMode(string url, string[] args)
+        /// <summary>
+        /// Tnis function will parse an arg list for a set of firing targets.
+        /// Depending on the firing mode, the function will return a series of
+        /// startunittest sessions that represent the target as it grows over time.
+        /// </summary>
+        /// <param name="args">The startup commands for the bfg</param>
+        /// <param name="arena">When compete mode is detected, the area will be used to list tests to fire on</param>
+        /// <returns></returns>
+        public static IObservable<StartUnitTest[]> DetectAndWatchTargets(string[] args, ITestArena arena)
         {
             var cfg = RxnAppCfg.Detect(args);
             var testCfg = theBigCfg.Detect();
@@ -84,10 +110,7 @@ namespace theBFG
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
             var testName = string.Empty;// args.Skip(3).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppUpdate);
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
-            url = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(url).IsNullOrWhiteSpace("http://localhost:888")//testCfg.AppStatusUrl)
-                .IsNullOrWhiteSpace(cfg.AppStatusUrl);
-
-
+            
 
             //need to modify GetTagets to watch for changes and potentially return a stream?
             // it can then augment that with compete to create a CI/CD on compile?
@@ -96,8 +119,7 @@ namespace theBFG
             // GetTargets(dll).Do(_ => tests.Add(_))
 
             //todo: fix, need to get from container
-            var mode = new DotNetTestArena();
-
+            
             return GetTargets(dll).SelectMany(target =>
             {
                 var test = new StartUnitTest()
@@ -119,8 +141,8 @@ namespace theBFG
 
                     $"Reloading with {batchSize} tests per/batch".LogDebug();
 
-                    return 
-                        mode.ListTests(test).SelectMany(s => s)
+                    return
+                        arena.ListTests(test).SelectMany(s => s)
                             .Buffer(batchSize)
                             .Select(tests => new StartUnitTest()
                             {
@@ -136,6 +158,8 @@ namespace theBFG
             .Buffer(TimeSpan.FromSeconds(1))
             .Where(l => l.Count > 0)
             .Select(l => l.ToArray())
+            .Publish()
+            .RefCount()
             ;
 
         }
@@ -151,22 +175,21 @@ namespace theBFG
 
                 if (!dll.Contains("*"))
                 {
+                    
+                    Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll), true, false, false).DisposedBy(watchers);
                     o.OnNext(dll);
-                    Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll)).DisposedBy(watchers);
                 }
                 else
                 {
 
                     foreach (var file in Directory.GetFileSystemEntries(dir, filePattern))
                     {
-                        o.OnNext(file);
                         Files.WatchForChanges(dir, file, () => o.OnNext(file)).DisposedBy(watchers);
                     }
                 }
 
                 return watchers;
-            })
-            .BufferFirstLast(TimeSpan.FromSeconds(5), true, false);
+            });
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
@@ -175,7 +198,6 @@ namespace theBFG
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-                theBFGDef.Cfg = DetectIfTargetMode(url, args);
                 
                 switch (args.FirstOrDefault()?.ToLower())
                 {

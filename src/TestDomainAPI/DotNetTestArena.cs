@@ -21,8 +21,9 @@ namespace theBFG.TestDomainAPI
         protected bool isreadingOutputMessage = false;
         protected bool lastLine = false;
         protected  StringBuilder outputBuffer = new StringBuilder();
-        private bool startParsing;
-        
+        protected bool startParsing;
+        //^ yep im abusing inhertance without apology
+
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
             var cmd = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -104,7 +105,7 @@ namespace theBFG.TestDomainAPI
             return $"test {work.Dll.EnsureRooted()} --listtests";
         }
 
-        protected string FilterIfSingleTestOnly(StartUnitTest work)
+        protected virtual string FilterIfSingleTestOnly(StartUnitTest work)
         {
             return work.RunThisTest.IsNullOrWhitespace() ? "" : $" --filter Name={work.RunThisTest.Replace(",", "|Name=")}";
         }

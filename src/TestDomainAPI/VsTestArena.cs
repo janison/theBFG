@@ -19,7 +19,11 @@ namespace theBFG.TestDomainAPI
             _freshTest = true;
             return $"{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} /resultsdirectory:{"logs/".EnsureRooted()}";
         }
-
+        
+        protected override string ListTestsCmd(StartUnitTest work)
+        {
+            return $"{work.Dll.EnsureRooted()} --listtests";
+        }
 
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
@@ -56,6 +60,36 @@ namespace theBFG.TestDomainAPI
                     outputBuffer.AppendLine(msg);
                 }
             }
+        }
+
+        protected override IEnumerable<string> OnTestCmdLog(StartUnitTest work, string i)
+        {
+            if (i != null && i.Contains("are available:"))
+            {
+                startParsing = true;
+                yield break;
+            }
+
+            if (startParsing && i.IsNullOrWhitespace())
+            {
+                startParsing = false;
+            }
+
+            if (startParsing && i != null && i.Contains("vstest") && i.EndsWith("exited"))
+            {
+                startParsing = false;
+            }
+
+            if (startParsing)
+            {
+                yield return i?.Trim();
+            }
+        }
+
+
+        protected override string FilterIfSingleTestOnly(StartUnitTest work)
+        {
+            return work.RunThisTest.IsNullOrWhitespace() ? "" : $" /Tests:{work.RunThisTest}";
         }
     }
 }

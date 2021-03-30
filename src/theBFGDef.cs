@@ -96,6 +96,10 @@ namespace theBFG
                     {
                         TimeSpan.FromSeconds(1).Then().Do(_ =>
                         {
+
+                            if (theBFGDef.Cfg == null)
+                                theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<ITestArena>());
+
                             var theBfg = resolver.Resolve<theBfg>();
                             var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
                             var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
