@@ -44,6 +44,7 @@ angular.module('portal')
                 .attr("class", function (d, i) { return !d.result ? "inprogress" : d.result === 'Passed' ?  'infor' : 'error'})
                 .attr("height", function (d, i) { return ((fix(d.duration ?? "1") ) * 10) })
                 .attr("width", 5)    
+                .attr("title",function (d, i) { d.info ?? "" })    
                 .attr("x", function (d, i) { 
                     var v = x(i);
                     return v; 

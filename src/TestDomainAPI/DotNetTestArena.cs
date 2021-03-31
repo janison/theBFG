@@ -22,6 +22,14 @@ namespace theBFG.TestDomainAPI
         protected bool lastLine = false;
         protected  StringBuilder outputBuffer = new StringBuilder();
         protected bool startParsing;
+
+        private bool _freshTest;
+
+        private StartUnitTest _work;
+
+        private int _passed;
+
+        private int _failed;
         //^ yep im abusing inhertance without apology
 
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
@@ -33,6 +41,11 @@ namespace theBFG.TestDomainAPI
 
                 if (cmd[0] == "Passed" || cmd[0] == "Failed")
                 {
+                    if (cmd[0].StartsWith('P'))
+                        _passed++;
+                    else if (cmd[0].StartsWith('F'))
+                        _failed++;
+
                     yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], cmd.Length > 2 ? ToDuration(cmd[2]) : "0", worker);
                 }
 
@@ -52,6 +65,14 @@ namespace theBFG.TestDomainAPI
                 {
                     isreadingOutputMessage = false;
                     yield return new UnitTestPartialLogResult(work.Id, worker, outputBuffer.ToString());
+
+                    yield return new UnitTestOutcome()
+                    {
+                        Passed = _passed,
+                        Failed = _failed,
+                        InResponseTo = _work.Id
+                    };
+                
                     outputBuffer.Clear();
                 }
 
@@ -64,12 +85,13 @@ namespace theBFG.TestDomainAPI
         
         protected override string StartTestsCmd(StartUnitTest work)
         {
-            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"";
-        }
 
-        private string ToDuration(string s)
-        {
-            return s.TrimStart('[').TrimEnd(']');
+            _work = work;
+            _freshTest = true;
+            _passed = 0;
+            _failed = 0;
+
+            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"";
         }
 
         protected override string PathToTestArenaProcess()

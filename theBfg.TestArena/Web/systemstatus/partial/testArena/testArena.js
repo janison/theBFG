@@ -123,6 +123,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         // if(msg.at > startedTestArenaAt) {
 
         // }
+        console.log("1AppInfo: " +JSON.stringify(msg));
         
         if(msg.testName) {
             $scope.log.unshift(msg);
@@ -165,6 +166,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 $scope.testGlance.errors++;
             }
 
+            msg.info = `${msg.result} in ${msg.duration}`;
 
 
             $scope.testGlance.slow = $scope.testOutcomes.length;              
@@ -202,7 +204,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             msg.info = `In progress ${msg.dll}`;
             if(test) {//hack to make new tests come under same umbrella                
                 test.id = msg.id;
-                test.result = undefined;
                 test.completedAt = undefined;
             }
             else {
@@ -211,15 +212,17 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
         }
 
-        if(msg.inResponseTo) {
+        if(msg.inResponseTo && msg.hasOwnProperty("passed")) {
             var found = false;            
             $scope.testRuns.forEach(t => {
-                if(t.id === msg.inResponseTo) {                    
-                    t.result = msg.result === "0" ? "Passed" : "Failed";
+                if(t.id === msg.inResponseTo) {                                        
                     t.completedAt = new Date();
 
-                    t.results.push({
-                        result: t.result,
+                    t.results.push({            
+                        info: `${msg.failed + " / " ?? ""}/${msg.passed + msg.failed} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`,
+                        failed: msg.failed,
+                        passed: msg.passed,
+                        result: msg.failed > 0 ? "Failed" : "Passed",
                         duration: new Date(t.completedAt.getTime() - t.startedAt.getTime()).getTime() / 1000
                     });
 

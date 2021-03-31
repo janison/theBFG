@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Rxns;
 using Rxns.Interfaces;
 
 namespace theBFG.TestDomainAPI
 {
-    public class VsTestArena : DotNetTestArena
+    public class VsTestArena : ProcessBasedTestArena
     {
         private bool _freshTest;
+        protected bool isreadingOutputMessage = false;
+        protected bool lastLine = false;
+        protected StringBuilder outputBuffer = new StringBuilder();
+        protected bool startParsing;
+        private int _passed;
+        private int _failed;
+        private StartUnitTest _work;
 
         protected override string PathToTestArenaProcess()
         {
@@ -16,7 +24,11 @@ namespace theBFG.TestDomainAPI
 
         protected override string StartTestsCmd(StartUnitTest work)
         {
+            _work = work;
             _freshTest = true;
+            _passed = 0;
+            _failed = 0;
+
             return $"{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} /resultsdirectory:{"logs/".EnsureRooted()}";
         }
         
@@ -34,6 +46,11 @@ namespace theBFG.TestDomainAPI
 
                 if (cmd[0] == "Passed" || cmd[0] == "Failed")
                 {
+                    if (cmd[0].StartsWith('P'))
+                        _passed++;
+                    else if (cmd[0].StartsWith('F'))
+                        _failed++;
+
                     if (outputBuffer.Length > 0)
                     {
                         if (_freshTest)
@@ -45,7 +62,17 @@ namespace theBFG.TestDomainAPI
                         var withResultONFirstLine = outputBuffer.ToString(0, outputBuffer.Length < 2 ? 0 : outputBuffer.Length - 2);
                         var outputResultMarker = (int)withResultONFirstLine?.IndexOf(Environment.NewLine);
                         
-                        yield return new UnitTestPartialLogResult(work.Id, worker, outputResultMarker > 0 ? withResultONFirstLine.Substring(outputResultMarker + 2, withResultONFirstLine.Length - outputResultMarker - 2) : "-");
+                        if(outputResultMarker > 0)
+                            yield return new UnitTestPartialLogResult(work.Id, worker, withResultONFirstLine.Substring(outputResultMarker + 2));
+                        else
+                        {
+                            yield return new UnitTestOutcome()
+                            {
+                                Passed = _passed,
+                                Failed = _failed,
+                                InResponseTo = _work.Id
+                            };
+                        }
 
                         outputBuffer.Clear();
                     }
@@ -87,9 +114,10 @@ namespace theBFG.TestDomainAPI
         }
 
 
-        protected override string FilterIfSingleTestOnly(StartUnitTest work)
+        protected string FilterIfSingleTestOnly(StartUnitTest work)
         {
             return work.RunThisTest.IsNullOrWhitespace() ? "" : $" /Tests:{work.RunThisTest}";
         }
+
     }
 }

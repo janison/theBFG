@@ -135,7 +135,8 @@ namespace theBFG
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestPartialLogResult>()
-                    .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
+                    .Emits<UnitTestOutcome>()
+                .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
                     .CreatesOncePerApp(_ => new AppServiceRegistry()
                     {
                         AppStatusUrl = testHostUrl
@@ -146,6 +147,7 @@ namespace theBFG
                         var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver).Until();
                     }));
                 
+                //forward all test events to the test arena
                 DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
             };
         };
