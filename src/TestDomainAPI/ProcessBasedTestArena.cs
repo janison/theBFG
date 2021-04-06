@@ -19,7 +19,7 @@ namespace theBFG.TestDomainAPI
 
         public abstract IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg);
 
-        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog)
+        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir)
         {
             var testEventStream = new Subject<IRxn>();
             //https://github.com/dotnet/sdk/issues/5514
@@ -36,7 +36,7 @@ namespace theBFG.TestDomainAPI
             return Rxn.Create
             (
                 dotnetHack,
-                StartTestsCmd(work),
+                StartTestsCmd(work, logDir),
                 i =>
                 {
                     if (i == null) return;
@@ -60,7 +60,7 @@ namespace theBFG.TestDomainAPI
           ;
         }
 
-        protected abstract string StartTestsCmd(StartUnitTest work);
+        protected abstract string StartTestsCmd(StartUnitTest work, string logDir);
 
         protected string ToDuration(string s)
         {

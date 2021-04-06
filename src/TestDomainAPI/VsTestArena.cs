@@ -15,9 +15,9 @@ namespace theBFG.TestDomainAPI
             return @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe";
         }
 
-        protected override string StartTestsCmd(StartUnitTest work)
+        protected override string StartTestsCmd(StartUnitTest work, string logDir)
         {
-            return $"{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} /resultsdirectory:{"logs/".EnsureRooted()} /logger:\"console;verbosity=detailed\"";
+            return $"{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} /resultsdirectory:{logDir.EnsureRooted()} /logger:\"console;verbosity=detailed\" /logger:\"trx;LogFileName={work.Id}.trx\"";
         }
 
         protected override string ListTestsCmd(StartUnitTest work)

@@ -94,7 +94,7 @@ namespace theBFG
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
-                    return _arena.Start(Name, work, testLog).SelectMany(_ => _rxnManager.Publish(_));
+                    return _arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
                 })
                 .Switch()
                 .Catch<Unit, Exception>(e =>

@@ -113,9 +113,9 @@ namespace theBFG.TestDomainAPI
             _unitTestId = string.Empty;
         }
 
-        protected override string StartTestsCmd(StartUnitTest work)
+        protected override string StartTestsCmd(StartUnitTest work, string logDir)
         {
-            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger:\" --no-build --logger \"console;verbosity=detailed;trx;LogFileName={work.Id}.trx\"";
+            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {logDir.EnsureRooted()} --collect:\"XPlat Code Coverage\" --no-build --logger \"console;verbosity=detailed;\" --logger \"trx;LogFileName={work.Id}.trx\"";
         }
 
         protected override string PathToTestArenaProcess()
