@@ -90,7 +90,7 @@ namespace theBFG.TestDomainAPI
             }
         }
 
-        public override IEnumerable<IRxn> OnEnd(string dll)
+        public override IEnumerable<ITestDomainEvent> OnEnd(string dll)
         {
             yield return new UnitTestPartialLogResult() { Worker = _worker, TestId = _work.Id, LogMessage = outputBuffer.ToString(), UnitTestId = _unitTestId };
 
@@ -115,7 +115,7 @@ namespace theBFG.TestDomainAPI
 
         protected override string StartTestsCmd(StartUnitTest work)
         {
-           return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger trx --no-build --logger \"console;verbosity=detailed\"";
+            return $"test{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} --results-directory {"logs/".EnsureRooted()} --collect:\"XPlat Code Coverage\" --logger:\" --no-build --logger \"console;verbosity=detailed;trx;LogFileName={work.Id}.trx\"";
         }
 
         protected override string PathToTestArenaProcess()

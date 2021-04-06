@@ -13,7 +13,7 @@ namespace theBFG.TestDomainAPI
 {
     public abstract class ProcessBasedTestArena : ITestArena
     {
-        public abstract IEnumerable<IRxn> OnEnd(string dll);
+        public abstract IEnumerable<ITestDomainEvent> OnEnd(string dll);
         protected abstract void OnStart(StartUnitTest work);
 
 

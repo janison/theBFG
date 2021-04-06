@@ -51,7 +51,8 @@ namespace theBFG
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
             _isBusy.OnNext(true);
-            var logDir = $"logs/{Name.Replace('#', '-')}_{_runId++}";
+            var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
+            var logDir = $"logs/{logId}";
             $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
             if (!Directory.Exists(logDir))
@@ -59,8 +60,7 @@ namespace theBFG
                 Directory.CreateDirectory(logDir);
             }
 
-            var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
-            var logFile = File.Create($"{logDir}/testLog_{logId.LogDebug("LOG")}");
+            var logFile = File.Create($"{logDir}/testArena.log");
             var testLog = new StreamWriter(logFile, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
