@@ -132,20 +132,35 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if(msg.testName && $scope.log.length > maxLogs) {
             $scope.log.pop();            
         }
+
+        // if(msg.tests) {
+        //     if(!$scope.log[msg.testId]) {
+        //         $scope.log[msg.testId] = { };
+        //     }
+
+        //     $scope.log[msg.testId].status = "Waiting";
+        // }
        
         //there is a bug here, logs will not be attached to tests and therefor 
         //not be saved in cases where log is disabled from view
-        if(msg.logMessage && $scope.log[0]) {                        
-            $scope.log[0].logMessage = msg.logMessage != '-' ? msg.logMessage : "";            
-            return;
+        if(msg.logMessage) {                        
+            var existinLog = $scope.log.filter(w => w.unitTestId === msg.unitTestId);
+            var existinTest = $scope.tests.filter(w => w.unitTestId === msg.unitTestId);
+
+            if(existinLog) {
+                existinLog[0].logMessage = msg.logMessage;            
+            }
+
+            if(existinTest) {
+                existinTest[0].logMessage = msg.logMessage;            
+            }
         };
 
-        if($scope.log[msg.id]) {
-            $scope.log[msg.id].status = "In progress";
-            return;
-        } 
+        // if($scope.log[msg.testId]) {
+        //     $scope.log[msg.testId].status = "In progress";
+        // } 
         
-        if(msg.result && msg.duration) {
+        if(msg.result && msg.testName) {
 
             if($scope.testSummary.length > maxLogs) {
                 $scope.testSummary.shift();
@@ -175,8 +190,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.testSummary.push(msg);
             $scope.tests.push(msg);          
             $scope.addToTopicIfFilterActive(msg);
-
-            return;
         }
 
 
@@ -196,14 +209,13 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             return;
         }
 
-        if(msg.dll) {
+        if(msg.dll && !msg.hasOwnProperty("passed")) {
 
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
 
             msg.startedAt = new Date();
             msg.info = `In progress ${msg.dll}`;
-            if(test) {//hack to make new tests come under same umbrella                
-                test.id = msg.id;
+            if(test) {//hack to make new tests come under same umbrella                                
                 test.completedAt = undefined;
             }
             else {
@@ -215,7 +227,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if(msg.inResponseTo && msg.hasOwnProperty("passed")) {
             var found = false;            
             $scope.testRuns.forEach(t => {
-                if(t.id === msg.inResponseTo) {                                        
+                if(t.dll === msg.dll) {                                        
                     t.completedAt = new Date();
 
                     t.results.push({            

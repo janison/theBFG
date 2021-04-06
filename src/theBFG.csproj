@@ -15,6 +15,29 @@ dotnet install tool thebfg</Description>
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="logs\**" />
+      <Compile Remove="reports\**" />
+      <Compile Remove="repos\**" />
+      <Compile Remove="temp\**" />
+      <Compile Remove="TenantLogs\**" />
+      <Content Remove="logs\**" />
+      <Content Remove="reports\**" />
+      <Content Remove="repos\**" />
+      <Content Remove="temp\**" />
+      <Content Remove="TenantLogs\**" />
+      <EmbeddedResource Remove="logs\**" />
+      <EmbeddedResource Remove="reports\**" />
+      <EmbeddedResource Remove="repos\**" />
+      <EmbeddedResource Remove="temp\**" />
+      <EmbeddedResource Remove="TenantLogs\**" />
+      <None Remove="logs\**" />
+      <None Remove="reports\**" />
+      <None Remove="repos\**" />
+      <None Remove="temp\**" />
+      <None Remove="TenantLogs\**" />
+    </ItemGroup>
+
+    <ItemGroup>
       <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

@@ -13,6 +13,10 @@ namespace theBFG.TestDomainAPI
 {
     public abstract class ProcessBasedTestArena : ITestArena
     {
+        public abstract IEnumerable<IRxn> OnEnd(string dll);
+        protected abstract void OnStart(StartUnitTest work);
+
+
         public abstract IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg);
 
         public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog)
@@ -27,6 +31,8 @@ namespace theBFG.TestDomainAPI
             var lastLine = false;
             var outputBuffer = new StringBuilder();
             //todo: make testrunner injectable/swapable
+
+            OnStart(work);
             return Rxn.Create
             (
                 dotnetHack,
@@ -42,16 +48,16 @@ namespace theBFG.TestDomainAPI
                         testLog.WriteLine(i.LogDebug(logName));
                 },
                 e => testLog.WriteLine(e.LogDebug(logName))
-            ).FinallyR(() => testEventStream.OnCompleted())
-            .SelectMany(_ => testEventStream)
+            )
             .FinallyR(() =>
             {
-                if (!testLog.BaseStream.CanWrite) return;
-
-                testLog.WriteLine("");
-                testLog.WriteLine("");
-                //triggers the end of a test
-            });
+                foreach(var e in OnEnd(work.Dll))
+                    testEventStream.OnNext(e);
+                
+                testEventStream.OnCompleted();
+            })
+            .SelectMany(_ => testEventStream)
+          ;
         }
 
         protected abstract string StartTestsCmd(StartUnitTest work);

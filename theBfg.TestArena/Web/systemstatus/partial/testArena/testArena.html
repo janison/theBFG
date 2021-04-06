@@ -10,16 +10,16 @@
                 <table ng-if="showTestRunDetailed" class="table table-hover table-striped table-condensed h6">                    
                      <tbody><!--  ng-if="currentTopic.length != 0 -->                    
                         <tr ng-repeat="entry in testRuns">
-                            <td ng-class="{error: entry.results[0].failed !== 0, infor: entry.results[0].failed === 0}" >
+                            <td width=5% ng-class="{error: entry.results[0].failed !== 0, infor: entry.results[0].failed === 0}" >
                                 <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="In Progress..."></span>
-                                <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.results.length}} test outcomes"></span>
+                                <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-thumbs-o-down error" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                                 <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                             </td>
-                            <td>{{entry.dll}}</td>                            
-                            <td ng-if="entry.completedAt && entry.results[0].failed !== 0">{{entry.results[0].failed}} / {{(entry.results[0].failed + entry.results[0].passed)}}</td>
-                            <td>{{(entry.results[0].passed)}}</td>
-                            <td ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
-                            <td>
+                            <td width=5% >{{entry.dll}}</td>                            
+                            <td width=5% ng-if="entry.completedAt && entry.results[0].failed !== 0">{{entry.results[0].failed}} / {{(entry.results[0].failed + entry.results[0].passed)}}</td>
+                            <td width=5% ng-if="entry.completedAt && entry.results[0].failed === 0">{{(entry.results[0].passed)}}</td>
+                            <td width=5% ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
+                            <td width=80%>
                                 <bar-chart class="cmd" height="30" data="entry.results"></bar-chart>
                             </td>
                         </tr>

@@ -9,6 +9,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reflection;
 using System.Threading;
 using Autofac;
 using Rxns;
@@ -108,7 +109,9 @@ namespace theBFG
                 fire = args.Reverse().Skip(2).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
 
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
-            var testName = string.Empty;// args.Skip(3).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppUpdate);
+            var testName = dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
+
+            dll = dll.Split('$')[0];
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             
 
@@ -158,10 +161,9 @@ namespace theBFG
             .Buffer(TimeSpan.FromSeconds(1))
             .Where(l => l.Count > 0)
             .Select(l => l.ToArray())
-            .Publish()
+            .Replay(1)
             .RefCount()
             ;
-
         }
 
         private static IObservable<string> GetTargets(string dll)
@@ -185,6 +187,7 @@ namespace theBFG
                     foreach (var file in Directory.GetFileSystemEntries(dir, filePattern))
                     {
                         Files.WatchForChanges(dir, file, () => o.OnNext(file)).DisposedBy(watchers);
+                        o.OnNext(file);
                     }
                 }
 
@@ -420,8 +423,7 @@ namespace theBFG
         /// <param name="rxnManager"></param>
         /// <param name="resolver"></param>
         /// <returns></returns>
-        public IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun,
-            IRxnManager<IRxn> rxnManager, IResolveTypes resolver)
+        public IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IRxnManager<IRxn> rxnManager, IResolveTypes resolver)
         {
             //todo: should be implemented with a rxnmediator, can seperate firestyle into injected logic classes
             if (args.Contains("continuously"))
@@ -477,7 +479,7 @@ namespace theBFG
 
         public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> cfg)
         {
-            return cfg.FirstAsync().Select(tests =>
+            return cfg.Take(1).Select(tests =>
             {
                 "Spawning worker".LogDebug(++_workerCount);
 
