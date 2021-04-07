@@ -78,6 +78,12 @@ namespace theBFG.TestDomainAPI
                     yield break;
                 }
 
+                if (cmd[0] == ">>SCREENSHOT<<")
+                {
+                    yield return new UnitTestAssetResult() { Worker = _worker, LogUrl = "screenshot", TestId = _work.Id, UnitTestId = _unitTestId };
+                    yield break;
+                }
+
                 if (isreadingOutputMessage)
                 {
                     outputBuffer.AppendLine(msg);

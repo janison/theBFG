@@ -75,6 +75,16 @@ namespace theBFG.TestDomainAPI
         public bool WasSuccessful { get; set; }
     }
 
+    public class UnitTestAssetResult : ITestDomainEvent
+    {
+        public DateTime At { get; set; } = DateTime.Now;
+
+        public string Worker { get; set; }
+        public string TestId { get; set; }
+        public string UnitTestId { get; set; }
+        public string LogUrl { get; set; }
+    }
+
     public class UnitTestOutcome : ITestDomainEvent
     {
         public DateTime At { get; set; } = DateTime.Now;

@@ -33,7 +33,7 @@ namespace theBFG
         public string Route { get; }
         public IObservable<bool> IsBusy => _isBusy;
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
-        private IZipService _zipService;
+        private readonly IZipService _zipService;
 
         public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, ITestArena arena)
         {
@@ -118,8 +118,15 @@ namespace theBFG
 
                     var logsZip = ZipAndTruncate(logDir, $"{logId}_{DateTime.Now:dd-MM-yy-hhmmssfff}");
                     var sendingLogs = File.OpenRead(logsZip);
-                    return _appStatus.PublishLog(sendingLogs).Do(_ =>
+                    return _appStatus.PublishLog(sendingLogs).Do(logUrl =>
                     {
+                        _rxnManager.Publish(new UnitTestAssetResult()
+                        {
+                            LogUrl = logUrl,
+                            TestId = work.Id,
+                            Worker = Name
+                        }).Until();
+
                         sendingLogs.Dispose();
                         File.Delete(logsZip);
                     });

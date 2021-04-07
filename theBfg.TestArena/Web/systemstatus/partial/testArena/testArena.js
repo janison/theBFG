@@ -156,6 +156,19 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
         };
 
+        if(msg.logUrl) {
+
+            var existingRun = !msg.unitTestId ? $scope.testRuns.filter(w => w.results.filter(a => a.testId === msg.testId))
+            : $scope.tests.filter(a => a.unitTestId === msg.unitTestId);            
+
+            if(existingRun[0]) {
+                if(!existingRun[0].assets) {
+                    existingRun[0].assets = [];
+                }
+                existingRun[0].assets.push(msg.logUrl);            
+            }
+        }
+
         // if($scope.log[msg.testId]) {
         //     $scope.log[msg.testId].status = "In progress";
         // } 
@@ -220,6 +233,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
             else {
                 msg.results = [];
+                msg.assets = [];
                 $scope.testRuns.push(msg);
             }
         }
@@ -233,7 +247,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                     t.results.push({            
                         info: `${msg.failed + " / " ?? ""}/${msg.passed + msg.failed} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`,
                         failed: msg.failed,
-                        passed: msg.passed,
+                        passed: msg.passed,                        
+                        testId: msg.inResponseTo,
                         result: msg.failed > 0 ? "Failed" : "Passed",
                         duration: new Date(t.completedAt.getTime() - t.startedAt.getTime()).getTime() / 1000
                     });

@@ -69,6 +69,7 @@ namespace theBFG
                     .RespondsToSvcCmds<Reload>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
+                    .Emits<UnitTestAssetResult>()
                     .Emits<UnitTestPartialLogResult>()
                     .CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
                     .CreatesOncePerApp(_ => new AspnetCoreCfg()
@@ -155,6 +156,7 @@ namespace theBFG
                   //      .CreatesOncePerApp<VsTestArena>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
+                    .Emits<UnitTestAssetResult>()
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
