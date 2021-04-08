@@ -14,6 +14,7 @@ namespace theBFG
     public interface ITestArenaApi
     {
         void OnUpdate(ITestDomainEvent e);
+        void SendCommand(string route, string command);
     }
 
     public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>

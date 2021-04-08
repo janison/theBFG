@@ -27,23 +27,30 @@ Feature | ...
 
 3. Install bfg
 
-    `dotnet install tool thebfg`
+    `dotnet tool install thebfg -g`
 
 5. Configure your `IDE` to deploy your `unit-test` on compile:
  
-*AfterBuild:* `dotnet tool thebfg target {path/To/unit.test.dll}`
+*AfterBuild:* `thebfg target {path/To/unit.test.dll}`
 
 1. Spin up worker on the *same computer*, **or** **many *others***
    
-`dotnet tool theBFG fire`
+`thebfg fire`
 
 ... and thats it. Each time you `compile` your `unit-test` will be deployed to all the workers you have setup and they will run the tests as you commanded.
+
+> Pro Tips: 
+> - use *wildcard* `*.tests.dll` to target all tests of specific patterns inside a folder, will search recursively
+> - use *\$* to target specific tests `...test.dll$any_test_you_want` inside a `.dll`
+> 
+> - No after build triggers? No Worries! theBFG also *monitors the target for changes*, reloading and *firing* on *every* update to bring advanced continious testing capabilities to any dev flow
+ 
 
 *<h2>Integration or Automation test? Start the SUT and monitor it for failures</h2>*
 
 6. Configure your `IDE` to deploy the  `app-under-test` on compile:
    
-`dotnet thebfg launch {app} {path/To/unit.test.dll}`
+`thebfg launch {app} {path/To/unit.test.dll}`
 
 7. Update your `test.dll` to download the App and get a reference to it
 
@@ -60,13 +67,10 @@ var stop = theBFG.launch("app", "app/target/dir").Until();
 ....
 repeat for as many `Apps` as your integration test depends on.
 
-> Pro Tips: 
-> - use *wildcard* `*.tests.dll` to target all tests of specific patterns inside a folder, will search recursively
-> - use *\$* to target specific tests `...test.dll$any_test_you_want` inside a `.dll`
-> 
-> - No after build triggers? No Worries! theBFG also *monitors the target for changes*, reloading and *firing* on *every* update to bring advanced continious testing capabilities to any dev flow
 
-# Modes
+# Quick Reference
+
+## Modes
 
 By default, your tests will run in the same ordering and sequence as your `IDE`
 
@@ -89,6 +93,87 @@ Options | **batchSize**: *number* \| *reactive* <font size=1>(watches the consum
 
 > **Pro tip:** use the bfgAPI to better control and *instead* feed a `IObservable<Timespan>` to any of these *options*!
 
+## Commands
+
+theBFG is truely a TDD multi-tool. It allows complex test scenarios to be orchestrated with its API accessible either via:
++ `>` the cmd line / terminal / bash
+  
+or
+
++ `@` thebfg command via *console* or *Test Arena*
+
+or
+
++ `<PackageReference include="thebfg">` thebfg *dotnet* API & `theBfg.reloadWith(">cmd")`
+
+### Unit or Integration Testing
+* Run test arena and worker in same process
+  
+   ```
+   > thebfg launch test.dll and fire
+   ```
+  ```
+  @ StartUnitTest test.dll
+  ```  
+
+* Run Test Arena as a dedicated host that you can later send commands too either locally or remotely
+  
+  ```
+  > thebfg launch
+  ```
+
+* Send test to an existing Test Arena on `localhost`
+  ```
+  >thebfg launch test.dll @localhost
+  ```
+
+## Cluster testing
+
+* Setup a worker on any networked host and automatically join a Test Arena on another host
+
+  ```
+  > thebfg fire
+  ```
+
+  or
+
+  ```
+  > thebfg fire @host
+  ```
+
+* Make workers compete to execute test suite in parallel
+
+  ```
+  > thebfg launch test.dll and fire compete
+  ```
+
+  or fire multiple workers in process at the same time
+
+  ```
+  > thebfg launch test.dll and fire compete rapidly
+  ```
+
+### Performance Testing
+
+* Run a test worker for each CPU on the host
+  
+  ```
+  > thebfg fire rapidly
+  ```
+
+  or go loco with 50 threads
+
+  ```
+  > thebfg fire rapidly 50
+  ```
+
+### Reliability Testing
+
+* Run test suite over and over again repeadily, logging any failures
+```
+> thebfg launch test.dll and fire continiously
+```
+
 # Test Runners
 
 Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in essence all it does it wrap the output streams, parsing and triggering different events along the way to feed the Test Arena. You can use this same technique, or a closer integration using theBFG API, to tune theBFG to your specific flow.
@@ -97,19 +182,9 @@ Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in e
 
 # The TestArena
 
+<image>
+
 TheBFG TestArena is a hyper-CD tool that allows you to understand whats going on *in realtime* through a web browser. It a minimal layer that is designed to supercharge TDD, while being pluggable into other systems / charts / CD pipelines as necessary.
-
-## Own your data
-
-All metics can be exported at the end of a run
-
-`dotnet thebfg reload {export/Path}`
-
-## Monitor Errors
-
-Any exception that is thrown in your test is surfaced through the portal
-
-<img src=broken.jpg>
 
 ## Real-time logs
 
@@ -117,7 +192,7 @@ Watch application output as it happens
 
 Augment the stream with your own logging
 
-`Cluster.Log.OnInfo/OnError/etc(msg)`
+`TestArena.Log.OnInfo/OnError/etc(msg)`
 
 <img src=broken.jpg>
 
@@ -131,6 +206,26 @@ Access Test Arena metrics and other bfg cluster vitals through a web-browser
 
  ```
  ```
+ 
+# Automatic log shipping
+
+* All workers will upload to the Test Arena during runs
+  * Coverage results produced for all test `coverage.cobertura.xml`
+  * `.Trx` files for inputs into other tools like [SonarCube](http://sonarcube.com)
+  * Quick-links to all test assets via [TestArena](#the-testarena) portal
+  * Ship your own assets by broadcasting `<UnitTestAssetResult>` *events*
+
+## Monitor Errors
+
+Any exception that is thrown in your test is surfaced through the portal
+
+
+## Own your data
+
+All data collected by the BFG will be 
+
+
+<img src=broken.jpg>
 
 ## Real-time ports 
 
@@ -147,6 +242,7 @@ use [SignalR](http://dotnet.microsoft.com/) to subscribe to a real-time event fe
 <img src=broken.jpg>
 
 
-Changelog|comment
--|-
-1.0-beta | (in progress) Baseline API implemention
+Date| Changelog|comment
+-|-|-
+2/2/21 | 1.0.0-beta | Baseline API implemention
+8/4/21 | 1.0.0 | Stable first release

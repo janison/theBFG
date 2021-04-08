@@ -114,15 +114,6 @@ namespace theBFG
             dll = dll.Split('$')[0];
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             
-
-            //need to modify GetTagets to watch for changes and potentially return a stream?
-            // it can then augment that with compete to create a CI/CD on compile?
-            //var file = new FileInfo(work.Dll);
-            //var watchForCompiles = Rxn.Create<string>(o => Files.WatchForChanges(file.DirectoryName, file.Name, () => o.OnNext(work.Dll))).StartWith(work.Dll);
-            // GetTargets(dll).Do(_ => tests.Add(_))
-
-            //todo: fix, need to get from container
-            
             return GetTargets(dll).SelectMany(target =>
             {
                 var test = new StartUnitTest()
@@ -166,7 +157,7 @@ namespace theBFG
             ;
         }
 
-        private static IObservable<string> GetTargets(string dll)
+        public static IObservable<string> GetTargets(string dll)
         {
             return Rxn.Create<string>(o =>
             {
@@ -496,7 +487,7 @@ namespace theBFG
                     resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
                     resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
                     resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
-                    resolver.Resolve<ITestArena>()
+                    resolver.Resolve<ITestArena[]>()
                     );
 
                 if (!tests.AnyItems() || tests[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(tests[0].UseAppVersion))

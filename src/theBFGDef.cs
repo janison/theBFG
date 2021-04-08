@@ -66,6 +66,8 @@ namespace theBFG
                     .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .CreatesOncePerApp<bfgTestArenaProgressHub>()
+                    .CreatesOncePerApp<DotNetTestArena>()
+                    .CreatesOncePerApp<VsTestArena>()
                     .RespondsToSvcCmds<Reload>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
@@ -125,15 +127,7 @@ namespace theBFG
                     dd.CreatesOncePerApp<WindowsSystemInformationService>();
                 }
 
-                if (ver == string.Empty || ver.StartsWith("dotnet", StringComparison.InvariantCultureIgnoreCase))
-                {
-
-                    dd.CreatesOncePerApp<DotNetTestArena>();
-                }
-                else
-                {
-                    dd.CreatesOncePerApp<VsTestArena>();
-                }
+                
 
             };
         };
@@ -144,23 +138,23 @@ namespace theBFG
             {
                 d(dd);
 
-                dd.
-                CreatesOncePerApp<theBfg>()
-                .CreatesOncePerApp<SsdpDiscoveryService>()
+                dd
+                    .CreatesOncePerApp<theBfg>()
+                    .CreatesOncePerApp<SsdpDiscoveryService>()
                     .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
                     .CreatesOncePerApp<bfgCluster>()
                     .RespondsToSvcCmds<StartUnitTest>()
                     .CreatesOncePerApp<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .CreatesOncePerApp<DotNetTestArena>()
-                  //      .CreatesOncePerApp<VsTestArena>()
+                    .CreatesOncePerApp<VsTestArena>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestAssetResult>()
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
-                .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
+                    .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
                     .CreatesOncePerApp(_ => new AppServiceRegistry()
                     {
                         AppStatusUrl = testHostUrl
@@ -173,20 +167,6 @@ namespace theBFG
                 
                 //forward all test events to the test arena
                 DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
-
-                if (theBfg.Args.Contains("using"))
-                {
-                    var ver = DetectTestFramework(theBfg.Args);
-                    if (ver == string.Empty || ver.StartsWith("dotnet", StringComparison.InvariantCultureIgnoreCase))
-                    {
-
-                        dd.CreatesOncePerApp<DotNetTestArena>();
-                    }
-                    else
-                    {
-                        dd.CreatesOncePerApp<VsTestArena>();
-                    }
-                }
             };
         };
     }

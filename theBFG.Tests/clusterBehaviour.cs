@@ -61,9 +61,9 @@ namespace theBFG.Tests
             try
             {
                 var workerLifetime = new Subject<Unit>();
-                theBfg.ReloadWithTestWorker(args: "fire".Split(' ')).LastAsync().Until();
+                theBfg.ReloadAnd(args: "fire".Split(' ')).LastAsync().Until();
 
-                theBfg.ReloadWithTestArena(args: $"target {theGimp}".Split(' ')).LastAsync().Until();
+                theBfg.ReloadAnd(args: $"target {theGimp}".Split(' ')).LastAsync().Until();
 
                 "waiting for test to complete".LogDebug();
                 workerLifetime.WaitR();

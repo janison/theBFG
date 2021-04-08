@@ -16,7 +16,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     var startedTestArenaAt = new Date();
     
-    $scope.publish = function(destination, cmd) {
+    $scope.publish = function(destination, cmd) {        
         testArenaApi.sendCommand(destination, cmd);
     };
 
@@ -239,24 +239,30 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
 
         if(msg.inResponseTo && msg.hasOwnProperty("passed")) {
-            var found = false;            
-            $scope.testRuns.forEach(t => {
-                if(t.dll === msg.dll) {                                        
-                    t.completedAt = new Date();
 
-                    t.results.push({            
-                        info: `${msg.failed + " / " ?? ""}/${msg.passed + msg.failed} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`,
-                        failed: msg.failed,
-                        passed: msg.passed,                        
-                        testId: msg.inResponseTo,
-                        result: msg.failed > 0 ? "Failed" : "Passed",
-                        duration: new Date(t.completedAt.getTime() - t.startedAt.getTime()).getTime() / 1000
-                    });
+            var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
 
-                    t.info = `${t.result ? "Pass" : "Fail"} ${t.dll} in ${toPrettyTime(new Date(t.completedAt.getTime() - t.startedAt.getTime()))}`;
-                    found = true;
-                }
-            });            
+           
+            if(!test) {                                        
+                msg.results = [];
+                msg.assets = [];                
+                $scope.testRuns.push(msg);
+                test = msg;
+            }
+            
+            test.completedAt = new Date();
+
+            test.results.push({            
+                info: `${msg.failed + " / " ?? ""}/${msg.passed + msg.failed} in ${toPrettyTime(new Date(test.completedAt.getTime() - test.startedAt.getTime()))}`,
+                failed: msg.failed,
+                passed: msg.passed,                        
+                testId: msg.inResponseTo,
+                result: msg.failed > 0 ? "Failed" : "Passed",
+                duration: new Date(test.completedAt.getTime() - test.startedAt.getTime()).getTime() / 1000
+            });
+
+            test.info = `${test.result ? "Pass" : "Fail"} ${test.dll} in ${toPrettyTime(new Date(test.completedAt.getTime() - test.startedAt.getTime()))}`;
+           
         }
 
         console.log("AppInfo: " +JSON.stringify(msg));

@@ -38,7 +38,6 @@ namespace theBFG
         public IObservable<CommandResult> Handle(StartUnitTest command)
         {
             Queue(command);
-
             //the result will be broadcast when the queue processes the command
             return Rxn.Empty<CommandResult>();
         }

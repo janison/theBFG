@@ -16,6 +16,7 @@
                                 <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                             </td>
                             <td width=5% > 
+                                <span title="Reload" ng-click="publish('', 'StartUnitTest '+ entry.dll)" class="cmd fa fa-rocket"></span>
                                 <span class="popuptrigger" ng-click="showLogs = !showLogs" >
                                     {{entry.dll}}
                                 <div class="popup">

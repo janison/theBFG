@@ -12,6 +12,9 @@ namespace theBFG.TestDomainAPI
       
         protected override string PathToTestArenaProcess()
         {
+            //lookup path from registry
+            //HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\12.0_Config
+            //<VisualStudioFolder>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0@ShellFolder)</VisualStudioFolder> <VsTestFolder>$([System.IO.Path]::Combine("$(VisualStudioFolder)", "Common7", "IDE", "CommonExtensions", "Microsoft", "TestWindow"))\</VsTestFolder> <VSTestExe>$(VsTestFolder)vstest.console.exe</VSTestExe> 
             return @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe";
         }
 

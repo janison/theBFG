@@ -3,16 +3,27 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.0-beta</PackageVersion>
-        <Authors>captainjono</Authors>
-        <Description>A cloud-native C# unit / integration / load testing tool that clusters automatically
-
-
-dotnet install tool thebfg</Description>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>CaptainJono</Authors>
+        <Description>A cloud-native C# unit / integration / load / hyper-TDD testing tool that clusters automatically
+          dotnet install tool thebfg
+        </Description>
         <Copyright>MIT</Copyright>
         <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
-        <PackageTags>unit testing mstest nunit dotnet test cluster load performance integration</PackageTags>
-    </PropertyGroup>
+      <RepositoryUrl>https://github.com/captainjono/rxns/theBFG/</RepositoryUrl>
+      <PackageIcon>thebfg.png</PackageIcon>
+      <PackageLicense>http://www.opensource.org/licenses/mit-license.php</PackageLicense>
+
+      <PackageTags>unit testing vstest tdd bdd xunit mstest nunit dotnet test cluster load performance scale integration</PackageTags>
+      <IsPackable>true</IsPackable>
+      <PackAsTool>true</PackAsTool>
+      <ToolCommandName>thebfg</ToolCommandName>
+      <PackageOutputPath>./nupkg</PackageOutputPath>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      <PackageProjectUrl>https://github.com/captainjono/rxns</PackageProjectUrl>
+      <RepositoryUrl>https://github.com/captainjono/rxns</RepositoryUrl>
+    
+  </PropertyGroup>
 
     <ItemGroup>
       <Compile Remove="logs\**" />
@@ -38,27 +49,46 @@ dotnet install tool thebfg</Description>
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="TestArena\bower_components\font-awesome\fonts\FontAwesome.otf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <Content Include="..\thebfg.png" Pack="true" PackagePath="" Link="thebfg.png" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.svg">
+      <EmbeddedResource Include="TestArena\app.full.min.css">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff2">
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\app.full.min.js">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\index.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\shared_components\signalr.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\FontAwesome.otf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff2">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>
@@ -84,18 +114,18 @@ dotnet install tool thebfg</Description>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="TestArena\app.full.min.css">
+      <Resource Include="TestArena\app.full.min.css">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="TestArena\app.full.min.js">
+      </Resource>
+      <Resource Include="TestArena\app.full.min.js">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="TestArena\index.html">
+      </Resource>
+      <Resource Include="TestArena\index.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="TestArena\shared_components\signalr.js">
+      </Resource>
+      <Resource Include="TestArena\shared_components\signalr.js">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      </Resource>
     </ItemGroup>
 
 </Project>

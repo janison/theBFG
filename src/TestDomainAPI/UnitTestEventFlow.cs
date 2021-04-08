@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Rxns;
 using Rxns.DDD.Commanding;
 using Rxns.Interfaces;
 
@@ -26,6 +29,52 @@ namespace theBFG.TestDomainAPI
         public StartUnitTest()
         {
 
+        }
+
+        public StartUnitTest(string dll)
+        {
+            Dll = dll;
+        }
+
+        public override string ToString()
+        {
+            if(!Dll.IsNullOrWhitespace() && UseAppVersion.IsNullOrWhitespace())
+                return $"{GetType().Name} {Dll}";
+            else
+            {
+                return "{0} {1}".FormatWith(GetType().Name, GetType().GetProperties().Where(p => p.Name != "Id" || p.Name != "At").Select(p => this.GetProperty(p.Name)).ToStringEach(" "));
+            }
+
+        }
+
+        /// <summary>
+        /// StartUnitTest False  0 False C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll Test Latest  
+        /// </summary>
+        public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate, string UseAppVersion)
+        {
+            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
+            
+            this.RepeatTests = int.Parse(RepeatTests.IsNullOrWhiteSpace("0"));
+            this.InParallel = bool.Parse(InParallel.IsNullOrWhiteSpace("false"));
+            this.Dll = Dll;
+            this.RunThisTest = Dll.Split('$').Skip(1).FirstOrDefault();
+            this.UseAppUpdate = UseAppUpdate;
+            this.UseAppVersion = UseAppVersion;
+            //            this.AppStatusUrl = AppStatusUrl;
+            //          this.Range = Range;
+        }
+
+        public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate)
+        {
+            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
+            this.RepeatTests = int.Parse(RepeatTests.IsNullOrWhiteSpace("0"));
+            this.InParallel = bool.Parse(InParallel.IsNullOrWhiteSpace("false"));
+            this.Dll = Dll;
+            this.RunThisTest = Dll.Split('$').Skip(1).FirstOrDefault();
+            this.UseAppUpdate = UseAppUpdate;
+            //this.UseAppVersion = UseAppVersion;
+            //            this.AppStatusUrl = AppStatusUrl;
+            //          this.Range = Range;
         }
     }
 
