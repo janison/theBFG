@@ -96,7 +96,7 @@ namespace theBFG
 
                     foreach (var arena in _arena)
                     {
-                        if(arena.ListTests(work).Any().WaitR())
+                        if(arena.ListTests(work.Dll).Any().WaitR())
                             return arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
                     }
 

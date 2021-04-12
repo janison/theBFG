@@ -3,19 +3,19 @@
 </h1>
 </div> 
 
-> A cloud-native C#  *unit* / *integration* / *load* testing **tool** that *`clusters`* *automatically*
+> A cloud-native .NET *unit* / *integration* / *load* testing **tool** that *`clusters`* *automatically*
 
 
 Feature | ...
 -|-
 `Zero-configuration` | <font size=2> the host will automatically detect listeners using the `SSDP` protocal (*but yes, you can provide config in multiple ways if required*)</font>
-`Supercharged CD` | <font size=2>Verfy light-weight. Deploys apps in `ms`. Save time, and frustration, doing more testing, and less waiting or configuring.</font>
-`Real-time reporting` | <font size=2>Use the `theBFG` `host console` to monitor in real-time all aspects of your tests including errors, CPU, MEM and throughput</font>
+`Hyper-CD` | <font size=2>Verfy light-weight. Deploys apps in `ms`. Save time, and frustration, doing more testing, and less waiting or configuring.</font>
+`Real-time reporting` | <font size=2>Use the `theBFG` [Test Arena](#the-testarena) to monitor in real-time all aspects of your tests including errors, worker CPU, MEM and throughput</font>
 `NO DSL or JAVA or other` scripting to learn | Use all the same tools you love & pure C# to define complex intergation test scenarios</font>
 `Continuous Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
 `Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you required, 
 `Supercharge EXISTING test-suites` | <font size=2>theBGF supports distributing work to a cluster that will work together to execute it as quickly as possible</font>
-`Cloud scaleout` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
+`Cloud scale-out` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
 `NO API bleed` | <font size=2>If you out-grow `theBFG` or otherwise dont require its sevices anymore, delete its reference, its config classes and its gone. No refactor required.</font>
 
 
@@ -246,3 +246,5 @@ Date| Changelog|comment
 -|-|-
 2/2/21 | 1.0.0-beta | Baseline API implemention
 8/4/21 | 1.0.0 | Stable first release
+8/4/21 | 1.0.1 | Adds auto detection of test runner
+9/4/21 | 1.0.2 | House keeping

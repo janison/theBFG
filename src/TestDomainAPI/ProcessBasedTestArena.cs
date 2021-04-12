@@ -69,7 +69,7 @@ namespace theBFG.TestDomainAPI
 
         protected abstract string PathToTestArenaProcess();
 
-        public IObservable<IEnumerable<string>> ListTests(StartUnitTest work)
+        public IObservable<IEnumerable<string>> ListTests(string dll)
         {
             var testArenaProcess = PathToTestArenaProcess();
             var tests = new List<string>();
@@ -77,12 +77,12 @@ namespace theBFG.TestDomainAPI
             return Rxn.Create
             (
                 testArenaProcess,
-                ListTestsCmd(work),
+                ListTestsCmd(dll),
                 i =>
                 {
                     i.LogDebug();
 
-                    foreach (var test in OnTestCmdLog(work, i))
+                    foreach (var test in OnTestCmdLog(i))
                         tests.Add(test);
                 },
                 e => $"failed to parse test: {e}".LogDebug()
@@ -92,9 +92,9 @@ namespace theBFG.TestDomainAPI
             ;
         }
 
-        protected abstract IEnumerable<string> OnTestCmdLog(StartUnitTest work, string s);
+        protected abstract IEnumerable<string> OnTestCmdLog(string s);
 
-        protected abstract string ListTestsCmd(StartUnitTest work);
+        protected abstract string ListTestsCmd(string dll);
 
     }
 }

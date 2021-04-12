@@ -222,9 +222,32 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             return;
         }
 
-        if(msg.dll && !msg.hasOwnProperty("passed")) {
+        if(msg.dll && msg.hasOwnProperty("discoveredTests"))
+        {
+            var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];                        
 
-            var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
+            if(test) {//hack to make new tests come under same umbrella                                
+                
+            }
+            else {
+                var dll =  {
+                    dll: msg.dll,
+                    info: "Not Run",
+                    results: [],
+                    assets: [],
+                    failed: 0,
+                    passed: 0,
+                    total: msg.discoveredTests.length
+                };
+
+                $scope.testRuns.push(dll);
+                
+            }
+        }
+
+        else if(msg.dll && !msg.hasOwnProperty("passed")) {
+
+            var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];            
 
             msg.startedAt = new Date();
             msg.info = `In progress ${msg.dll}`;
@@ -245,11 +268,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
            
             if(!test) {                                        
                 msg.results = [];
-                msg.assets = [];                
+                msg.assets = [];                                
                 $scope.testRuns.push(msg);
                 test = msg;
             }
             
+            test.total = 0;
             test.completedAt = new Date();
 
             test.results.push({            

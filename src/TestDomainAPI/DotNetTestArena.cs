@@ -133,7 +133,7 @@ namespace theBFG.TestDomainAPI
             return dotnetHack;
         }
         
-        protected override IEnumerable<string> OnTestCmdLog(StartUnitTest work, string i)
+        protected override IEnumerable<string> OnTestCmdLog(string i)
         {
             if (i != null && i.Contains("are available:"))
             {
@@ -152,9 +152,9 @@ namespace theBFG.TestDomainAPI
             }
         }
 
-        protected override string ListTestsCmd(StartUnitTest work)
+        protected override string ListTestsCmd(string dll)
         {
-            return $"test {work.Dll.EnsureRooted()} --listtests";
+            return $"test {dll.EnsureRooted()} --listtests";
         }
 
         protected virtual string FilterIfSingleTestOnly(StartUnitTest work)

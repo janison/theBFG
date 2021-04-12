@@ -93,10 +93,7 @@ namespace theBFG.Tests
         {
             var ta = new DotNetTestArena();
 
-            var allTest = ta.ListTests(new StartUnitTest()
-            {
-                Dll = theGimp,
-            }).WaitR().ToArray();
+            var allTest = ta.ListTests(theGimp).WaitR().ToArray();
 
             allTest.Count().Should().Be(6, "4 tests should be found in theTestGimp");
 

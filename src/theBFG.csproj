@@ -3,14 +3,14 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.0</PackageVersion>
+        <PackageVersion>1.0.2</PackageVersion>
         <Authors>CaptainJono</Authors>
         <Description>A cloud-native C# unit / integration / load / hyper-TDD testing tool that clusters automatically
-          dotnet install tool thebfg
+          dotnet tool install thebfg -g
         </Description>
         <Copyright>MIT</Copyright>
         <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
-      <RepositoryUrl>https://github.com/captainjono/rxns/theBFG/</RepositoryUrl>
+      <RepositoryUrl>https://github.com/captainjono/theBFG/</RepositoryUrl>
       <PackageIcon>thebfg.png</PackageIcon>
       <PackageLicense>http://www.opensource.org/licenses/mit-license.php</PackageLicense>
 
@@ -20,10 +20,7 @@
       <ToolCommandName>thebfg</ToolCommandName>
       <PackageOutputPath>./nupkg</PackageOutputPath>
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-      <PackageProjectUrl>https://github.com/captainjono/rxns</PackageProjectUrl>
-      <RepositoryUrl>https://github.com/captainjono/rxns</RepositoryUrl>
-    
-  </PropertyGroup>
+    </PropertyGroup>
 
     <ItemGroup>
       <Compile Remove="logs\**" />

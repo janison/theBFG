@@ -23,12 +23,12 @@ namespace theBFG.TestDomainAPI
             return $"{FilterIfSingleTestOnly(work)} {work.Dll.EnsureRooted()} /resultsdirectory:{logDir.EnsureRooted()} /logger:\"console;verbosity=detailed\" /logger:\"trx;LogFileName={work.Id}.trx\"";
         }
 
-        protected override string ListTestsCmd(StartUnitTest work)
+        protected override string ListTestsCmd(string dll)
         {
-            return $"{work.Dll.EnsureRooted()} --listtests";
+            return $"{dll.EnsureRooted()} --listtests";
         }
         
-        protected override IEnumerable<string> OnTestCmdLog(StartUnitTest work, string i)
+        protected override IEnumerable<string> OnTestCmdLog(string i)
         {
             if (i != null && i.Contains("are available:"))
             {

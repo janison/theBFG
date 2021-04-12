@@ -8,6 +8,6 @@ namespace theBFG.TestDomainAPI
     public interface ITestArena
     {
         IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir);
-        IObservable<IEnumerable<string>> ListTests(StartUnitTest work);
+        IObservable<IEnumerable<string>> ListTests(string dll);
     }
 }

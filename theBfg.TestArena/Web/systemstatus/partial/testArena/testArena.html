@@ -3,15 +3,17 @@
         <div class="grouped">
             <div>
                 <span ng-if="!showTestRunDetailed"  ng-repeat="entry in testRuns">
-                    <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.dll}}"></span>
+                    <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.dll}}"></span>
+                    <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>
                 </span>
                 <table ng-if="showTestRunDetailed" class="table table-hover table-striped table-condensed h6">                    
                      <tbody><!--  ng-if="currentTopic.length != 0 -->                    
                         <tr ng-repeat="entry in testRuns" ng-init="showLogs = false">
-                            <td width=5% ng-class="{error: entry.results[0].failed !== 0, infor: entry.results[0].failed === 0}" >
-                                <span ng-if="!entry.completedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="In Progress..."></span>
+                            <td width=5% ng-class="{none: !entry.completedAt && entry.total, error: entry.results.length > 0 && entry.results[0].failed !== 0, infor: entry.results.length > 0 && entry.results[0].failed === 0}" >
+                                <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="In Progress..."></span>
+                                <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="Not run yet..."></span>
                                 <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-thumbs-o-down error" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                                 <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                             </td>
@@ -29,6 +31,7 @@
                             </td>
                             </span>                                                    
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed !== 0">{{entry.results[0].failed}} / {{(entry.results[0].failed + entry.results[0].passed)}}</td>
+                            <td width=5% ng-if="!entry.completedAt && entry.total !== 0">{{entry.total}}</td>
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed === 0">{{(entry.results[0].passed)}}</td>
                             <td width=5% ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
                             <td width=80%>

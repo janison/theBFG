@@ -12,6 +12,14 @@ namespace theBFG.TestDomainAPI
     {
         DateTime At { get; }
     }
+
+    public class UnitTestDiscovered : ITestDomainEvent
+    {
+        public DateTime At { get; set;  } = DateTime.Now;
+
+        public string Dll { get; set; }
+        public string[] DiscoveredTests{ get; set; }
+    }
     
     public class StartUnitTest : ServiceCommand, ITestDomainEvent
     {

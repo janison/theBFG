@@ -29,6 +29,34 @@ using Rxns.WebApiNET5.NET5WebApiAdapters;
 using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
+/// <summary>
+/// thebfg launch // only discovers tests and presents the UI to allow tests to be clicked once to start em
+///         -   thebfg launch @localhost //need to implement, docoed but not working
+///     thebfg target myinttest.bfc // list of bfg commands in a file that can be executed in a single unit
+///         - create thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
+///                 - show it launch new processes or same? or cfgable?
+/// 
+///     thebfg target all // monitors dirs and auto-executes
+///     - opens test arena with *test*.dll search pattern from current directory. "tests disocvvered"
+///         -   list tests in arena and add to testresults summary as "dicovered"
+///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff?
+///             -   "new" tests added tests
+///         -   add tests to test results as "dissocovered"
+///         - show test counts in 
+///         -   allow clicking a test inside to launch the specific test
+///         -   allow workers to be associated with tags
+/// -           -   allow targeting of tests at specific tag'd workers with startunittest
+///             -   allow startintegrationtest command which is basically like
+///                 allows sets of startunittests to be specified. maybe something also to do wtih amount
+///                 of workers needed for each test? or will that just be an extra parama for startunitest?
+/// -           -   show workers resource ussage as graphs which are  ----------- this big each and they scroll after laying
+///                 out and overflowing the container. Like the taskmgr  layout. only need to show stats per machine, not worker so we dont repeat whats on t
+///                 the same machine
+///             - need to fix saving / persistance of data.
+///             -   thebfg self destruct to clear the metric cache and reset everything
+///             - thebfg launch and EXIT
+///                 - should print out a error log at the end with a final summary info then exit (for ci/cd scenarios etc)
+/// </summary>
 namespace theBFG
 {
     /// <summary>
@@ -111,10 +139,10 @@ namespace theBFG
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
             var testName = dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
 
-            dll = dll.Split('$')[0];
+            dll = dll?.Split('$')[0];
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             
-            return GetTargets(dll).SelectMany(target =>
+            return dll.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest[]>() : GetTargets(dll).SelectMany(target =>
             {
                 var test = new StartUnitTest()
                 {
@@ -136,7 +164,7 @@ namespace theBFG
                     $"Reloading with {batchSize} tests per/batch".LogDebug();
 
                     return
-                        arena.ListTests(test).SelectMany(s => s)
+                        arena.ListTests(test.Dll).SelectMany(s => s)
                             .Buffer(batchSize)
                             .Select(tests => new StartUnitTest()
                             {
@@ -157,6 +185,7 @@ namespace theBFG
             ;
         }
 
+
         public static IObservable<string> GetTargets(string dll)
         {
             return Rxn.Create<string>(o =>
@@ -168,6 +197,12 @@ namespace theBFG
 
                 if (!dll.Contains("*"))
                 {
+                    if (!(dll.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                        dll.EndsWith(".csproj", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        
+                        return Disposable.Empty;
+                    }
                     
                     Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll), true, false, false).DisposedBy(watchers);
                     o.OnNext(dll);
@@ -175,7 +210,7 @@ namespace theBFG
                 else
                 {
 
-                    foreach (var file in Directory.GetFileSystemEntries(dir, filePattern))
+                    foreach (var file in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories))
                     {
                         Files.WatchForChanges(dir, file, () => o.OnNext(file)).DisposedBy(watchers);
                         o.OnNext(file);
@@ -201,6 +236,9 @@ namespace theBFG
                     case "target":
                         return ReloadWithTestArena(url, args).Subscribe(o);
                         break;
+
+                    case "launch":
+                        return ReloadWithTestArena(url, args).Subscribe(o);
                     case null:
 
                         "theBFG instructions:".LogDebug();
@@ -209,13 +247,12 @@ namespace theBFG
                         "".LogDebug();
                         "".LogDebug();
                         "Usage:".LogDebug();
-                        "target sut@sut.dll".LogDebug();
-                        "target sut@sut.dll and fire".LogDebug();
+                        "target test.dll".LogDebug();
+                        "target Test@test.dll and fire".LogDebug();
                         "fire".LogDebug();
-                        "fire @sut".LogDebug();
                         "fire @url".LogDebug();
                         "fire rapidly {{threadCount | max}} | will fire on multiple threads simultatiously".LogDebug();
-                        "fire coop | shard test-suite execution across multiple nodes".LogDebug();
+                        "fire compete | shard test-suite execution across multiple nodes".LogDebug();
                         "".LogDebug();
                         "launch sut@sut.dll | deploy apps to worker nodes automatically during CI/CD. Worker integration via complementary C# api: theBfgApi.launch(\"app\", \"dir\")".LogDebug();
                         "".LogDebug();
@@ -350,7 +387,6 @@ namespace theBFG
 
         public IDisposable StartTestArena(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
-
             "Starting up TestArena".LogDebug();
 
             if (_started.HasValue)
@@ -359,6 +395,12 @@ namespace theBFG
             }
 
             var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
+
+            return new CompositeDisposable(stopAdvertising);
+        }
+
+        public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
+        {
             var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests);
             var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
@@ -366,8 +408,7 @@ namespace theBFG
                 .Do(unitTests => BroadcasteStatsToTestArena(_testCluster, unitTests[0], resolver.Resolve<SystemStatusPublisher>(), resolver.Resolve<IManageReactors>()))
                 .Until();
 
-            return new CompositeDisposable(stopAdvertising, stopAutoLaunchingTestsIntoArena, stopFiring, broadCaste);
-
+            return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, stopFiring, broadCaste);
         }
 
         public IObservable<bfgWorker> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
@@ -379,7 +420,7 @@ namespace theBFG
                 return StartRapidWorkers(resolver, unitTestToRun);
             }
             
-            if (args.Contains("fire"))
+            if (args.Contains("fire") || args.Contains("launch"))
             {
                 return SpawnTestWorker(resolver, unitTestToRun);
             }
@@ -470,31 +511,31 @@ namespace theBFG
 
         public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> cfg)
         {
+            "Spawning worker".LogDebug(++_workerCount);
+
+            var testCluster = resolver.Resolve<bfgCluster>();
+            var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
+
+            //$"Streaming logs".LogDebug();
+            //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+
+            $"Starting worker".LogDebug();
+
+            var testWorker = new bfgWorker(
+                $"TestWorker#{_workerCount}", "local",
+                resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
+                resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
+                resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
+                resolver.Resolve<ITestArena[]>()
+            );
+
+            testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker })
+                .SelectMany(e => rxnManager.Publish(e)).Until();
+
             return cfg.Take(1).Select(tests =>
             {
-                "Spawning worker".LogDebug(++_workerCount);
-
-                var testCluster = resolver.Resolve<bfgCluster>();
-                var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
-
-                //$"Streaming logs".LogDebug();
-                //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
-
-                $"Starting worker".LogDebug();
-
-                var testWorker = new bfgWorker(
-                    $"TestWorker#{_workerCount}", "local",
-                    resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
-                    resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
-                    resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
-                    resolver.Resolve<ITestArena[]>()
-                    );
-
                 if (!tests.AnyItems() || tests[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(tests[0].UseAppVersion))
                     testWorker.DiscoverAndDoWork();
-
-                testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() {Worker = testWorker})
-                    .SelectMany(e => rxnManager.Publish(e)).Until();
 
                 return testWorker;
             });
@@ -552,6 +593,18 @@ namespace theBFG
 
                 return CommandResult.Success().AsResultOf(command);
             });
+        }
+
+        public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string dll, ITestArena[] arenas)
+        {
+            return GetTargets(dll)
+                .Where(d => !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") && !d.BasicallyContains(".TestPlatform.")) 
+                .Select(t => new UnitTestDiscovered()
+            {
+                Dll = t, 
+                DiscoveredTests = arenas.Select(a => a.ListTests(t).WaitR()).FirstOrDefault(a => a.AnyItems())?.ToArray() ?? new string[0] //fix waitr
+            })
+            .Where(e => e.DiscoveredTests.AnyItems());
         }
     }
 

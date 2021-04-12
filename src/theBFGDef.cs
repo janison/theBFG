@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
@@ -116,6 +117,21 @@ namespace theBFG
                             var theBfg = resolver.Resolve<theBfg>();
                             var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
                             var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+
+                            if (args.FirstOrDefault().BasicallyEquals("launch"))
+                            {
+                                var searchPattern = args.Skip(1).FirstOrDefault() ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
+                                
+                                $"Discovering unit tests: {searchPattern}".LogDebug();
+                                 theBfg.DiscoverUnitTests(searchPattern, resolver.Resolve<ITestArena[]>())
+                                     .Delay(TimeSpan.FromSeconds(5))
+                                     .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
+                                     .Until();
+                            }
+                            else
+                            {
+                                var launchUnitTests = theBfg.LaunchUnitTests(args, Cfg, resolver);
+                            }
                         }).Until();
 
                     }))
