@@ -14,14 +14,14 @@ namespace theBFG.TestDomainAPI
     /// <summary>
     /// To use coverage, add this to your test project
     /// > dotnet add package coverlet.collector
-    /// 
+    ///
+    /// Not thread safe
     /// </summary>
     public class DotNetTestArena : ProcessBasedTestArena
     {
         protected bool isreadingOutputMessage = true;
         protected bool lastLine = false;
         protected  StringBuilder outputBuffer = new StringBuilder();
-        protected bool startParsing;
         protected StartUnitTest _work;
         private int _passed;
         private int _failed;
@@ -29,7 +29,10 @@ namespace theBFG.TestDomainAPI
         private bool _freshTest;
 
         private string _worker;
-        //^ yep im abusing inhertance without apology
+
+        //todo: fix state, this class is not multi-threadable
+        protected bool startParsing;
+        protected bool baddll;
 
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
@@ -135,25 +138,37 @@ namespace theBFG.TestDomainAPI
         
         protected override IEnumerable<string> OnTestCmdLog(string i)
         {
+            if (baddll || i.BasicallyContains("failed to discover tests"))
+                yield break;
+
             if (i != null && i.Contains("are available:"))
             {
                 startParsing = true;
                 yield break;
             }
 
-            if (startParsing && i.IsNullOrWhitespace())
+            if (startParsing && i != null && i.Contains("vstest") && i.EndsWith("exited"))
             {
                 startParsing = false;
             }
 
-            if (startParsing)
+            if (!i.IsNullOrWhitespace() && i.BasicallyContains("Exception discovering") && i.BasicallyContains("TestPlatformException"))
             {
-                yield return i?.Trim();
+                baddll = true;
+            }
+
+            if (startParsing && i != null && i.StartsWith("  ") && !i.StartsWith("   at "))
+            {
+                yield return i.Trim();
             }
         }
 
+
         protected override string ListTestsCmd(string dll)
         {
+            baddll = false;
+            startParsing = true;
+
             return $"test {dll.EnsureRooted()} --listtests";
         }
 

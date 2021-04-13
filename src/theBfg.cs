@@ -297,7 +297,7 @@ namespace theBFG
                 {
                     startedAt = Stopwatch.StartNew();
                     _lastFired = tests;
-                    "Test".LogDebug(++iteration);
+                    $"{tests.Length} Tests about to run".LogDebug(++iteration);
                     startedAt.Restart();
 
                     foreach (var test in tests)
@@ -526,7 +526,7 @@ namespace theBFG
                 resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
                 resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
                 resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
-                resolver.Resolve<ITestArena[]>()
+                resolver.Resolve<Func<ITestArena[]>>()
             );
 
             testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker })
@@ -595,16 +595,33 @@ namespace theBFG
             });
         }
 
-        public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string dll, ITestArena[] arenas)
+        public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string dll, Func<ITestArena[]> arenas)
         {
-            return GetTargets(dll)
-                .Where(d => !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") && !d.BasicallyContains(".TestPlatform.")) 
-                .Select(t => new UnitTestDiscovered()
+            return Rxn.Create<UnitTestDiscovered>(o =>
             {
-                Dll = t, 
-                DiscoveredTests = arenas.Select(a => a.ListTests(t).WaitR()).FirstOrDefault(a => a.AnyItems())?.ToArray() ?? new string[0] //fix waitr
-            })
-            .Where(e => e.DiscoveredTests.AnyItems());
+                    return GetTargets(dll)
+                        .Where(d => 
+                            !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") &&
+                            !d.BasicallyContains("obj/") && !d.BasicallyContains("obj\\") &&
+                            !d.BasicallyContains(".TestPlatform.") && !d.BasicallyContains(".xunit.") &&
+                            !d.BasicallyContains(".nunit."))
+                        .Do(t =>
+                        {
+                            arenas().SelectMany(a => a.ListTests(t)).FirstAsync(w => w.AnyItems()).Select(
+                                tests =>
+                                {
+                                    return new UnitTestDiscovered()
+                                    {
+                                        Dll = t,
+                                        DiscoveredTests = tests.ToArray()
+                                    };
+                                })
+                                .Do(o.OnNext)
+                                .Until();
+                        })
+                        .Subscribe();//todo fix hanging
+                }
+            ).Publish().RefCount();
         }
     }
 

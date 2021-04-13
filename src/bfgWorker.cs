@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -26,7 +28,7 @@ namespace theBFG
         private readonly IAppStatusServiceClient _appStatus;
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IUpdateServiceClient _updateService;
-        private readonly ITestArena[] _arena;
+        private readonly Func<ITestArena[]> _arena;
         private readonly IAppServiceRegistry _registry;
         private int _runId;
         public string Name { get; }
@@ -35,7 +37,7 @@ namespace theBFG
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
         private readonly IZipService _zipService;
 
-        public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, ITestArena[] arena)
+        public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, Func<ITestArena[]> arena)
         {
             _registry = registry;
             _services = services;
@@ -94,9 +96,10 @@ namespace theBFG
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
-                    foreach (var arena in _arena)
+                    foreach (var arena in _arena())
                     {
-                        if(arena.ListTests(work.Dll).Any().WaitR())
+                        var tests = arena.ListTests(work.Dll).WaitR();
+                        if (tests.AnyItems())
                             return arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
                     }
 

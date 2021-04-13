@@ -67,8 +67,8 @@ namespace theBFG
                     .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .CreatesOncePerApp<bfgTestArenaProgressHub>()
-                    .CreatesOncePerApp<DotNetTestArena>()
-                    .CreatesOncePerApp<VsTestArena>()
+                    .CreatesOncePerRequest<DotNetTestArena>()
+                    .CreatesOncePerRequest<VsTestArena>()
                     .RespondsToSvcCmds<Reload>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
@@ -123,7 +123,7 @@ namespace theBFG
                                 var searchPattern = args.Skip(1).FirstOrDefault() ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
                                 
                                 $"Discovering unit tests: {searchPattern}".LogDebug();
-                                 theBfg.DiscoverUnitTests(searchPattern, resolver.Resolve<ITestArena[]>())
+                                 theBfg.DiscoverUnitTests(searchPattern, resolver.Resolve<Func<ITestArena[]>>())
                                      .Delay(TimeSpan.FromSeconds(5))
                                      .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
                                      .Until();
@@ -162,8 +162,8 @@ namespace theBFG
                     .RespondsToSvcCmds<StartUnitTest>()
                     .CreatesOncePerApp<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
-                    .CreatesOncePerApp<DotNetTestArena>()
-                    .CreatesOncePerApp<VsTestArena>()
+                    .CreatesOncePerRequest<DotNetTestArena>()
+                    .CreatesOncePerRequest<VsTestArena>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestAssetResult>()

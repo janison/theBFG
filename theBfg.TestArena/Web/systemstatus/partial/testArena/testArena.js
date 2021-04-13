@@ -228,6 +228,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             if(test) {//hack to make new tests come under same umbrella                                
                 
+                test.total = msg.discoveredTests.length
             }
             else {
                 var dll =  {
@@ -249,12 +250,14 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];            
 
-            msg.startedAt = new Date();
-            msg.info = `In progress ${msg.dll}`;
             if(test) {//hack to make new tests come under same umbrella                                
-                test.completedAt = undefined;
+                test.completedAt = undefined;                
+                test.startedAt = new Date();
+                test.info = `In progress ${msg.dll}`;
             }
-            else {
+            else {                
+                msg.startedAt = new Date();
+                msg.info = `In progress ${msg.dll}`;
                 msg.results = [];
                 msg.assets = [];
                 $scope.testRuns.push(msg);
@@ -272,9 +275,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 $scope.testRuns.push(msg);
                 test = msg;
             }
-            
-            test.total = 0;
+                        
             test.completedAt = new Date();
+            test.startedAt = test.startedAt ?? new Date();
 
             test.results.push({            
                 info: `${msg.failed + " / " ?? ""}/${msg.passed + msg.failed} in ${toPrettyTime(new Date(test.completedAt.getTime() - test.startedAt.getTime()))}`,

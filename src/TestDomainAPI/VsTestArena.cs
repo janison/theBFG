@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Rxns;
-using Rxns.Interfaces;
 
 namespace theBFG.TestDomainAPI
 {
+    /// <summary>
+    /// Exposes vstest.console.exe as a test arena
+    /// 
+    /// Not thread safe
+    /// </summary>
     public class VsTestArena : DotNetTestArena
     {
-        protected bool startParsing;
-      
         protected override string PathToTestArenaProcess()
         {
             //lookup path from registry
@@ -25,30 +26,35 @@ namespace theBFG.TestDomainAPI
 
         protected override string ListTestsCmd(string dll)
         {
+            baddll = false;
+            startParsing = false;
             return $"{dll.EnsureRooted()} --listtests";
         }
         
         protected override IEnumerable<string> OnTestCmdLog(string i)
         {
+            if (baddll)
+                yield break;
+
             if (i != null && i.Contains("are available:"))
             {
                 startParsing = true;
                 yield break;
             }
-
-            if (startParsing && i.IsNullOrWhitespace())
-            {
-                startParsing = false;
-            }
-
+            
             if (startParsing && i != null && i.Contains("vstest") && i.EndsWith("exited"))
             {
                 startParsing = false;
             }
 
-            if (startParsing)
+            if (!i.IsNullOrWhitespace() && i.BasicallyContains("Exception discovering"))
             {
-                yield return i?.Trim();
+                baddll = true;
+            }
+
+            if (startParsing && i != null && i.StartsWith("  ") && !i.StartsWith("   at "))
+            {
+                yield return i.Trim();
             }
         }
 
