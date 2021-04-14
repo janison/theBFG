@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Builder;
@@ -24,10 +25,6 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    //todo:
-    //need to push bfg to nuget
-    //need to push rxns webapi to nuget
-    //need to allow the webapi to startup in isolation or with config options to turn off rxns services, allow appstatus portal to be overriden?
     public static class theBFGDef
     {
         public static IObservable<StartUnitTest[]> Cfg;
@@ -114,17 +111,30 @@ namespace theBFG
                             if (theBFGDef.Cfg == null)
                                 theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<ITestArena>());
 
+                            
                             var theBfg = resolver.Resolve<theBfg>();
                             var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
                             var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+
+
+                            if (args.LastOrDefault().BasicallyEquals("exit") || args.LastOrDefault().BasicallyEquals("quit"))
+                            {
+                                var calledOnce = false;
+                                Cfg = Cfg.Do(testInSession =>
+                                {
+                                    if(calledOnce) return;
+
+                                    calledOnce = true;
+                                    theBfg.ExitAfter(testInSession, resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
+                                });
+                            }
 
                             if (args.FirstOrDefault().BasicallyEquals("launch"))
                             {
                                 var searchPattern = args.Skip(1).FirstOrDefault() ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
                                 
-                                $"Discovering unit tests: {searchPattern}".LogDebug();
+                                $"Discovering unit tests with: {searchPattern}".LogDebug();
                                  theBfg.DiscoverUnitTests(searchPattern, resolver.Resolve<Func<ITestArena[]>>())
-                                     .Delay(TimeSpan.FromSeconds(5))
                                      .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
                                      .Until();
                             }
@@ -132,6 +142,8 @@ namespace theBFG
                             {
                                 var launchUnitTests = theBfg.LaunchUnitTests(args, Cfg, resolver);
                             }
+
+
                         }).Until();
 
                     }))

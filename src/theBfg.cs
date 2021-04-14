@@ -30,32 +30,40 @@ using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
 /// <summary>
-/// thebfg launch // only discovers tests and presents the UI to allow tests to be clicked once to start em
-///         -   thebfg launch @localhost //need to implement, docoed but not working
-///     thebfg target myinttest.bfc // list of bfg commands in a file that can be executed in a single unit
-///         - create thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
-///                 - show it launch new processes or same? or cfgable?
+///
+/// Backlog
 /// 
-///     thebfg target all // monitors dirs and auto-executes
-///     - opens test arena with *test*.dll search pattern from current directory. "tests disocvvered"
-///         -   list tests in arena and add to testresults summary as "dicovered"
-///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff?
+/// D: thebfg launch 
+/// D: thebfg launch *test*.dll
+/// D:        - show test counts in
+/// 
+/// D:      -   allow clicking a test inside to launch the specific test
+/// D:            - thebfg launch and EXIT
+/// D:                - should print out a error log at the end with a final summary info then exit (for ci/cd scenarios etc)
+///
+/// todo:
+///         - show discovered tests in test arena when .dll selected
+/// ///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///             -   "new" tests added tests
-///         -   add tests to test results as "dissocovered"
-///         - show test counts in 
-///         -   allow clicking a test inside to launch the specific test
-///         -   allow workers to be associated with tags
-/// -           -   allow targeting of tests at specific tag'd workers with startunittest
+///         - thebfg launch @localhost //need to implement, docoed but not working
+///         - thebfg target myinttest.bfc // list of bfg commands in a file that can be executed in a single unit
 ///             -   allow startintegrationtest command which is basically like
 ///                 allows sets of startunittests to be specified. maybe something also to do wtih amount
 ///                 of workers needed for each test? or will that just be an extra parama for startunitest?
+///         - thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
+///                 - show it launch new processes or same? or cfgable?
+/// 
+///          thebfg target all // monitors dirs and auto-executes 
+///   
+///         -   allow workers to be associated with tags
+/// -           -   allow targeting of tests at specific tag'd workers with startunittest
 /// -           -   show workers resource ussage as graphs which are  ----------- this big each and they scroll after laying
 ///                 out and overflowing the container. Like the taskmgr  layout. only need to show stats per machine, not worker so we dont repeat whats on t
 ///                 the same machine
+/// 
 ///             - need to fix saving / persistance of data.
 ///             -   thebfg self destruct to clear the metric cache and reset everything
-///             - thebfg launch and EXIT
-///                 - should print out a error log at the end with a final summary info then exit (for ci/cd scenarios etc)
+
 /// </summary>
 namespace theBFG
 {
@@ -133,7 +141,7 @@ namespace theBFG
 
             var dll = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
             var fire = args.Reverse().Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
-            if(fire != "fire")
+            if (fire != "fire")
                 fire = args.Reverse().Skip(2).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
 
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
@@ -141,7 +149,7 @@ namespace theBFG
 
             dll = dll?.Split('$')[0];
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
-            
+
             return dll.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest[]>() : GetTargets(dll).SelectMany(target =>
             {
                 var test = new StartUnitTest()
@@ -200,10 +208,10 @@ namespace theBFG
                     if (!(dll.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
                         dll.EndsWith(".csproj", StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        
+
                         return Disposable.Empty;
                     }
-                    
+
                     Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll), true, false, false).DisposedBy(watchers);
                     o.OnNext(dll);
                 }
@@ -227,7 +235,7 @@ namespace theBFG
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-                
+
                 switch (args.FirstOrDefault()?.ToLower())
                 {
                     case "fire":
@@ -274,10 +282,10 @@ namespace theBFG
                 theBfg.Args = args;
 
                 "Configuring App".LogDebug();
-                
-                
+
+
                 theBFGAspNetCoreAdapter.Appcfg = RxnAppCfg.Detect(args);
-                
+
                 return AspNetCoreWebApiAdapter.StartWebServices<theBFGAspNetCoreAdapter>(theBFGAspNetCoreAdapter.Cfg, args).ToObservable()
                     .LastAsync()
                     .Select(_ => new Unit())
@@ -307,7 +315,7 @@ namespace theBFG
                 }).Until();
         }
 
-        public IDisposable DoWorkContiniously(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun,  Action fireStyle)
+        public IDisposable DoWorkContiniously(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action fireStyle)
         {
             return unitTestToRun.Select(tests =>
             {
@@ -378,7 +386,8 @@ namespace theBFG
         {
             rxnManage.CreateSubscription<UpdateSystemCommand>()
                 .Do(_ => { _notUpdating = false; })
-                .Until(); }
+                .Until();
+        }
 
 
         int iteration = 0;
@@ -419,7 +428,7 @@ namespace theBFG
             {
                 return StartRapidWorkers(resolver, unitTestToRun);
             }
-            
+
             if (args.Contains("fire") || args.Contains("launch"))
             {
                 return SpawnTestWorker(resolver, unitTestToRun);
@@ -468,14 +477,14 @@ namespace theBFG
                 }
                 else
                 {
-                    DoWorkContiniously(rxnManager, unitTestToRun,() => Fire(unitTestToRun));
+                    DoWorkContiniously(rxnManager, unitTestToRun, () => Fire(unitTestToRun));
                 }
             }
             else
             {
                 if (args.Contains("rapidly"))
                 {
-                    if(args.Contains("compete"))
+                    if (args.Contains("compete"))
                     {
                         FireCompeteRapidly(unitTestToRun, resolver);
                     }
@@ -483,7 +492,7 @@ namespace theBFG
                     {
                         FireRapidly(unitTestToRun);
                     }
-                    
+
                 }
                 else
                 {
@@ -500,7 +509,7 @@ namespace theBFG
 
         private string Scrub(string useAppVersion)
         {
-            return new[] {"rapidly", "continuously", "fire"}.FirstOrDefault(i => i == useAppVersion) == null
+            return new[] { "rapidly", "continuously", "fire" }.FirstOrDefault(i => i == useAppVersion) == null
                 ? useAppVersion
                 : null;
         }
@@ -599,31 +608,110 @@ namespace theBFG
         {
             return Rxn.Create<UnitTestDiscovered>(o =>
             {
-                    return GetTargets(dll)
-                        .Where(d => 
-                            !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") &&
-                            !d.BasicallyContains("obj/") && !d.BasicallyContains("obj\\") &&
-                            !d.BasicallyContains(".TestPlatform.") && !d.BasicallyContains(".xunit.") &&
-                            !d.BasicallyContains(".nunit."))
-                        .Do(t =>
-                        {
-                            arenas().SelectMany(a => a.ListTests(t)).FirstAsync(w => w.AnyItems()).Select(
-                                tests =>
+                return GetTargets(dll)
+                    .Where(d =>
+                        !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") &&
+                        !d.BasicallyContains("obj/") && !d.BasicallyContains("obj\\") &&
+                        !d.BasicallyContains(".TestPlatform.") && !d.BasicallyContains(".xunit.") &&
+                        !d.BasicallyContains(".nunit."))
+                    .Do(t =>
+                    {
+                        arenas().SelectMany(a => a.ListTests(t)).FirstAsync(w => w.AnyItems()).Select(
+                            tests =>
+                            {
+                                return new UnitTestDiscovered()
                                 {
-                                    return new UnitTestDiscovered()
-                                    {
-                                        Dll = t,
-                                        DiscoveredTests = tests.ToArray()
-                                    };
-                                })
-                                .Do(o.OnNext)
-                                .Until();
-                        })
-                        .Subscribe();//todo fix hanging
-                }
-            ).Publish().RefCount();
+                                    Dll = t,
+                                    DiscoveredTests = tests.ToArray()
+                                };
+                            })
+                            .Do(o.OnNext)
+                            .Until();
+                    })
+                    .Subscribe();//todo fix hanging
+            })
+                .Publish().RefCount();
+        }
+
+        public IDisposable ExitAfter(StartUnitTest[] testsToWatch, IObservable<UnitTestResult> testResults)
+        {
+            var allFinished = testsToWatch.Length;
+            var passed = 0;
+            var failed = 0;
+
+            //todo: break down this function into small bits
+            return testResults.Where(r =>
+            {
+                var resultWeAreTnterestedIn = testsToWatch.FirstOrDefault(t => t.Id == r.InResponseTo);
+
+                if (resultWeAreTnterestedIn != null)
+                {
+                    --allFinished;
+
+                    if (r.WasSuccessful)
+                        passed++;
+                    else
+                        failed++;
+
+                    $@"
+===============================================================================
+-------------------------------------------------------------------------------
+{(r.WasSuccessful ? @" (                              
+ )\ )                     (     
+(()/(    )            (   )\ )  
+ /(_))( /(  (   (    ))\ (()/(  
+(_))  )(_)) )\  )\  /((_) ((_)) 
+| _ \((_)_ ((_)((_)(_))   _| |  
+|  _// _` |(_-<(_-</ -_)/ _` |  
+|_|  \__,_|/__//__/\___|\__,_|  
+                                " : @" _______  _______  ___   ___      _______  ______  
+|       ||   _   ||   | |   |    |       ||      | 
+|    ___||  |_|  ||   | |   |    |    ___||  _    |
+|   |___ |       ||   | |   |    |   |___ | | |   |
+|    ___||       ||   | |   |___ |    ___|| |_|   |
+|   |    |   _   ||   | |       ||   |___ |       |
+|___|    |__| |__||___| |_______||_______||______|")} 
+
+----------------------------------------------------------------------------------
+{resultWeAreTnterestedIn.Dll}
+----------------------------------------------------------------------------------".LogDebug();
+                    }
+                        
+
+                    return allFinished < 1;
+                })
+                .Take(1)
+                .Do(result =>
+            {
+
+                @$"
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+  __  .__          __________   _____       
+_/  |_|  |__   ____\______   \_/ ____\____  
+\   __\  |  \_/ __ \|    |  _/\   __\/ ___\ 
+ |  | |   Y  \  ___/|    |   \ |  | / /_/  >
+ |__| |___|  /\___  >______  / |__| \___  / 
+           \/     \/       \/      /_____/
+
+-------------------------------------------------------------------------------
+{(failed > 0 ? $"Failed {failed} of {failed + passed}" : $"{passed} Passed")}
+-------------------------------------------------------------------------------
+
+{(failed > 0 ? "Chin up! Next time!" 
+            : "Good work! Keep it up!")}                
+----------------------------------------------------------------------------------
+------------------------------------------------------------------ CaptainJono ---
+==================================================================================
+".LogDebug();
+
+                theBfg.IsCompleted.OnNext(new Unit());
+                theBfg.IsCompleted.OnCompleted();
+
+                return;
+            })
+            .FirstAsync()
+            .Until();
         }
     }
-
-    
 }
