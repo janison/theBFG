@@ -89,7 +89,8 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new AppStatusCfg()
                     {
-                        ShouldAutoUnzipLogs = true
+                        ShouldAutoUnzipLogs = true,
+                        AppRoot = ".bfg"
                     })
                     //cfg specific
                     .CreatesOncePerApp(() => new AggViewCfg()
@@ -182,6 +183,10 @@ namespace theBFG
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
+                    .CreatesOncePerApp(_ => new AppStatusCfg()
+                    {
+                        AppRoot = ".bfg"
+                    })
                     .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
                     .CreatesOncePerApp(_ => new AppServiceRegistry()
                     {

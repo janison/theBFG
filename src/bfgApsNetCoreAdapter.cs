@@ -3,7 +3,9 @@ using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.StaticFiles.Infrastructure;
 using Microsoft.Extensions.FileProviders;
+using Rxns;
 using Rxns.Hosting;
+using Rxns.Hosting.Updates;
 using Rxns.WebApiNET5;
 
 namespace theBFG
@@ -13,18 +15,23 @@ namespace theBFG
     public class theBFGAspNetCoreAdapter : ConfigureAndStartAspnetCore
     {
         public static IRxnAppCfg Appcfg = null;
+        public static IAppStatusCfg AppStatuscfg = new AppStatusCfg()
+        {
+            AppRoot = ".bfg".EnsureRooted()
+        };
+
         public static IWebApiCfg Cfg = new WebApiCfg()
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @$"c:\svn\bfg\thebfg.testarena\Web\dist" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
+            Html5Root = @$"{ new DirectoryInfo(".").Parent.FullName}\thebfg.testarena\Web\dist" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
         };
 
         public static IAspnetCoreCfg AspnetCfg = new AspnetCoreCfg()
         {
             Cfg = server =>
             {
-                var logFileShareLocation = new PhysicalFileProvider(@"C:\svn\bfg\src\TenantLogs");
+                var logFileShareLocation = new PhysicalFileProvider(Path.Combine(AppStatuscfg.AppRoot, "TenantLogs"));
 
                 server
                     .UseFileServer(new FileServerOptions

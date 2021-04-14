@@ -28,6 +28,7 @@ namespace theBFG
         private readonly IAppStatusServiceClient _appStatus;
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IUpdateServiceClient _updateService;
+        private readonly IAppStatusCfg _cfg;
         private readonly Func<ITestArena[]> _arena;
         private readonly IAppServiceRegistry _registry;
         private int _runId;
@@ -37,7 +38,7 @@ namespace theBFG
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
         private readonly IZipService _zipService;
 
-        public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, Func<ITestArena[]> arena)
+        public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, IAppStatusCfg cfg, Func<ITestArena[]> arena)
         {
             _registry = registry;
             _services = services;
@@ -45,6 +46,7 @@ namespace theBFG
             _appStatus = appStatus;
             _rxnManager = rxnManager;
             _updateService = updateService;
+            _cfg = cfg;
             _arena = arena;
             Name = name;
             Route = route;
@@ -54,7 +56,7 @@ namespace theBFG
         {
             _isBusy.OnNext(true);
             var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
-            var logDir = $"logs/{logId}";
+            var logDir =  Path.Combine(_cfg.AppRoot, "logs", logId);
             $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
             if (!Directory.Exists(logDir))
@@ -62,7 +64,7 @@ namespace theBFG
                 Directory.CreateDirectory(logDir);
             }
 
-            var logFile = File.Create($"{logDir}/testArena.log");
+            var logFile = File.Create(Path.Combine(logDir, "testArena.log"));
             var testLog = new StreamWriter(logFile, leaveOpen: true);
             var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
@@ -160,7 +162,7 @@ namespace theBFG
                 throw new Exception($"Cant achieve {dir}");
             }
 
-            var logFile = $"logs_{logId}.zip";
+            var logFile = Path.Combine(_cfg.AppRoot, $"logs_{logId}.zip");
             using (var file = File.Create(logFile))
                 _zipService.Zip(dir).CopyTo(file);
 

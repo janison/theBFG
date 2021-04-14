@@ -32,14 +32,6 @@ using theBFG.TestDomainAPI;
 /// <summary>
 ///
 /// Backlog
-/// 
-/// D: thebfg launch 
-/// D: thebfg launch *test*.dll
-/// D:        - show test counts in
-/// 
-/// D:      -   allow clicking a test inside to launch the specific test
-/// D:            - thebfg launch and EXIT
-/// D:                - should print out a error log at the end with a final summary info then exit (for ci/cd scenarios etc)
 ///
 /// todo:
 ///         - show discovered tests in test arena when .dll selected
@@ -410,7 +402,7 @@ namespace theBFG
 
         public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
-            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests);
+            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, resolver.Resolve<IAppStatusCfg>());
             var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
@@ -438,14 +430,14 @@ namespace theBFG
         }
 
 
-        public IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun)
+        public IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, IAppStatusCfg cfg)
         {
             return unitTestToRun.Delay(TimeSpan.FromSeconds(2))
                 .Do(runTheseUnitTests =>
                 {
                     RxnApps.CreateAppUpdate(runTheseUnitTests[0].UseAppUpdate,
                             Scrub(runTheseUnitTests[0].UseAppVersion),
-                            new FileInfo(runTheseUnitTests[0].Dll).DirectoryName, true, "http://localhost:888")
+                            new FileInfo(runTheseUnitTests[0].Dll).DirectoryName, false, cfg, "http://localhost:888")
                         .Catch<Unit, Exception>(
                             e =>
                             {
@@ -535,6 +527,7 @@ namespace theBFG
                 resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
                 resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
                 resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
+                resolver.Resolve<IAppStatusCfg>(),
                 resolver.Resolve<Func<ITestArena[]>>()
             );
 

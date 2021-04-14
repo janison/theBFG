@@ -110,7 +110,7 @@ or
 * Run test arena and worker in same process
   
    ```
-   > thebfg launch test.dll and fire
+   > thebfg target test.dll and fire
    ```
   ```
   @ StartUnitTest test.dll
@@ -122,10 +122,22 @@ or
   > thebfg launch
   ```
 
+* TDD your heart out, discover all tests in every project in your checkout dir in seconds, later targeting 'em with a single click via the [Test Arena](#the-testarena)
+  
+  ```
+  > thebfg launch reposRoot/*.tests.dll
+  ```
+
 * Send test to an existing Test Arena on `localhost`
   ```
-  >thebfg launch test.dll @localhost
+  >thebfg target test.dll @localhost
   ```
+
+* Exit theBFg after the target tests complete
+
+```
+>thebfg target test.dll and exit
+```
 
 ## Cluster testing
 
@@ -142,7 +154,7 @@ or
   ```
 
 * Make workers compete to execute test suite in parallel
-
+T
   ```
   > thebfg launch test.dll and fire compete
   ```
@@ -222,8 +234,12 @@ Any exception that is thrown in your test is surfaced through the portal
 
 ## Own your data
 
-All data collected by the BFG will be 
+All data collected by the BFG will be placed in a `.bfg` folder next to where you executed the command.
 
+Benifits include:
+- Create different environments in different dirs to meet differing needs. 
+- Move this folder around to move tests and metrics between hosts.
+- Partially or completely check the folder into source control to share environments between team members.
 
 <img src=broken.jpg>
 

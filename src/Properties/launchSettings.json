@@ -2,7 +2,7 @@
   "profiles": {
     "theBFG": {
       "commandName": "Project",
-      "commandLineArgs": "target C:\\jan\\ADS\\output\\*.Tests.dll and fire"
+      "commandLineArgs": "target C:/jan/ADS\\output\\Janison.ContentAccessLayer.Tests.dll and fire and exit"
     }
   }
 }
