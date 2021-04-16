@@ -25,6 +25,7 @@ using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
+
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using Rxns.Windows;
 using theBFG.TestDomainAPI;
@@ -55,6 +56,9 @@ using theBFG.TestDomainAPI;
 /// 
 ///             - need to fix saving / persistance of data.
 ///             -   thebfg self destruct to clear the metric cache and reset everything
+
+
+
 
 /// </summary>
 namespace theBFG
@@ -126,95 +130,135 @@ namespace theBFG
         /// <param name="args">The startup commands for the bfg</param>
         /// <param name="arena">When compete mode is detected, the area will be used to list tests to fire on</param>
         /// <returns></returns>
-        public static IObservable<StartUnitTest[]> DetectAndWatchTargets(string[] args, ITestArena arena)
+        public static IObservable<StartUnitTest[]> DetectAndWatchTargets(string[] args, Func<ITestArena[]> forCompete, IServiceCommandFactory integrationTestParsing, IObservable<UnitTestResult> integrationTestResults)
         {
-            var cfg = RxnAppCfg.Detect(args);
             var testCfg = theBigCfg.Detect();
 
-            var dll = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
-            var fire = args.Reverse().Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
-            if (fire != "fire")
-                fire = args.Reverse().Skip(2).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll);
+            var dllOrTestSynax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll).Split('$')[0];//heck to remove the unwated tokens
 
-            var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
-            var testName = dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
-
-            dll = dll?.Split('$')[0];
-            var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
-
-            return dll.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest[]>() : GetTargets(dll).SelectMany(target =>
+            return GetTargets(dllOrTestSynax, args, forCompete, integrationTestParsing, integrationTestResults)
+                    .Buffer(TimeSpan.FromSeconds(1))
+                    .Where(l => l.Count > 0)
+                    .Select(l => l.ToArray())
+                    .Replay(1)
+                    .RefCount()
+                    ;
+        }
+        
+        public static IObservable<StartUnitTest> GetTargets(string testSyntax, string[] args, Func<ITestArena[]> forCompete, IServiceCommandFactory parseTestSyntax, IObservable<UnitTestResult> forParallelExection)
+        {
+            return testSyntax.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest>() :
+            Rxn.DfrCreate<StartUnitTest>(() =>
             {
-                var test = new StartUnitTest()
+                if (!(testSyntax.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                      testSyntax.EndsWith(".csproj", StringComparison.InvariantCultureIgnoreCase) ||
+                      testSyntax.EndsWith(".bfc", StringComparison.InvariantCultureIgnoreCase)))
                 {
-                    UseAppUpdate = appUpdateDllSource ?? "Test",
-                    UseAppVersion = appUpdateVersion,
-                    Dll = target,
-                    RunThisTest = testName,
-                };
-
-                if (args.Contains("compete"))
+                    "Target must be either .dll or .csproj or .bfc".LogDebug();
+                    return Rxn.Empty<StartUnitTest>();
+                }
+                
+                if (testSyntax.EndsWith(".bfc"))
                 {
-
-                    var userSize = args.Last();
-                    int batchSize = 0;
-                    Int32.TryParse(userSize, out batchSize);
-
-                    batchSize = batchSize == 0 ? 25 : batchSize;
-
-                    $"Reloading with {batchSize} tests per/batch".LogDebug();
-
-                    return
-                        arena.ListTests(test.Dll).SelectMany(s => s)
-                            .Buffer(batchSize)
-                            .Select(tests => new StartUnitTest()
-                            {
-                                UseAppUpdate = appUpdateDllSource ?? "Test",
-                                UseAppVersion = appUpdateVersion,
-                                Dll = dll,
-                                RunThisTest = tests.ToStringEach()
-                            });
+                    return GetTargetsFromBfc(testSyntax, parseTestSyntax, forParallelExection);
                 }
 
-                return test.ToObservable();
-            })
-            .Buffer(TimeSpan.FromSeconds(1))
-            .Where(l => l.Count > 0)
-            .Select(l => l.ToArray())
-            .Replay(1)
-            .RefCount()
-            ;
-        }
-
-
-        public static IObservable<string> GetTargets(string dll)
-        {
-            return Rxn.Create<string>(o =>
-            {
-                var watchers = new CompositeDisposable();
-                var pattern = dll.Split('/', '\\');
-                var dir = pattern.Take(pattern.Length - 1).ToStringEach("/");
-                var filePattern = pattern.Last();
-
-                if (!dll.Contains("*"))
+                if (!testSyntax.Contains("*"))
                 {
-                    if (!(dll.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
-                        dll.EndsWith(".csproj", StringComparison.InvariantCultureIgnoreCase)))
-                    {
-
-                        return Disposable.Empty;
-                    }
-
-                    Files.WatchForChanges(dir, filePattern, () => o.OnNext(dll), true, false, false).DisposedBy(watchers);
-                    o.OnNext(dll);
+                    return GetTargetsFromDll(args, testSyntax, forCompete);
                 }
                 else
                 {
 
-                    foreach (var file in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories))
+                    return GetTargetsFromPath(args, testSyntax, forCompete);
+                }
+            });
+        }
+
+        private static IObservable<StartUnitTest> GetTargetsFromPath(string[] args, string testSyntax, Func<ITestArena[]> arena)
+        {
+            var pattern = testSyntax.Split('/', '\\');
+
+            var dir = pattern.Take(pattern.Length - 1).ToStringEach("/");
+            var filePattern = pattern.Last();
+            var watchers = new CompositeDisposable();
+
+
+            return Rxn.Create<StartUnitTest>(o =>
+            {
+                foreach (var dll in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories))
+                {
+                    Files.WatchForChanges(dir, dll, () => GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until()).DisposedBy(watchers);
+                }
+
+                return watchers;
+            });
+        }
+
+        private static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
+        {
+            var testCfg = theBigCfg.Detect();
+
+            var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
+            var testName = dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
+            var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
+            //todo fix this, should embed version inside dll expression
+
+            if (args.Contains("compete"))
+            {
+                var userSize = args.Last();
+                int batchSize = 0;
+                Int32.TryParse(userSize, out batchSize);
+
+                batchSize = batchSize == 0 ? 25 : batchSize;
+
+                $"Reloading with {batchSize} tests per/batch".LogDebug();
+
+                return ListTests(dll, arena).SelectMany(s => s)
+                    .Buffer(batchSize)
+                    .Select(tests => new StartUnitTest()
                     {
-                        Files.WatchForChanges(dir, file, () => o.OnNext(file)).DisposedBy(watchers);
-                        o.OnNext(file);
+                        UseAppUpdate = appUpdateDllSource,
+                        UseAppVersion = appUpdateVersion,
+                        Dll = dll,
+                        RunThisTest = tests.ToStringEach()
+                    });
+            }
+
+            return new StartUnitTest()
+            {
+                UseAppUpdate = appUpdateDllSource,
+                UseAppVersion = appUpdateVersion,
+                Dll = dll,
+                RunThisTest = testName,
+            }.ToObservable();
+        }
+
+        public static IObservable<StartUnitTest> GetTargetsFromBfc(string bfcFile, IServiceCommandFactory parseTestSyntax, IObservable<UnitTestResult> forParallelExection)
+        {
+            var pattern = bfcFile.Split('/', '\\');
+
+            var dir = pattern.Take(pattern.Length - 1).ToStringEach("/");
+            var filePattern = pattern.Last();
+            var watchers = new CompositeDisposable();
+
+            return Rxn.Create<StartUnitTest>(o =>
+            {
+                Files.WatchForChanges(dir, filePattern, () =>
+                {
+                    TestWorkflow.StartIntegrationTest(File.ReadAllText(bfcFile), parseTestSyntax, forParallelExection).Do(dll => o.OnNext(dll)).Until();
+                }, true, false, false)
+                .DisposedBy(watchers);
+
+                if (bfcFile.EndsWith(".bfc", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (!File.Exists(bfcFile))
+                    {
+                        $"Could not find theBFG command file: {bfcFile}".LogDebug();
+                        o.OnCompleted();
                     }
+
+                    TestWorkflow.StartIntegrationTest(File.ReadAllText(bfcFile), parseTestSyntax, forParallelExection).Do(dll => o.OnNext(dll)).Until();
                 }
 
                 return watchers;
@@ -597,24 +641,26 @@ namespace theBFG
             });
         }
 
-        public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string dll, Func<ITestArena[]> arenas)
+        public static IObservable<IEnumerable<string>> ListTests(string testDll, Func<ITestArena[]> arenas)
+        {
+            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems());
+        }
+
+        public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string testDllSelector, string[] args, Func<ITestArena[]> arenas)
         {
             return Rxn.Create<UnitTestDiscovered>(o =>
             {
-                return GetTargets(dll)
-                    .Where(d =>
-                        !d.BasicallyContains("packages/") && !d.BasicallyContains("packages\\") &&
-                        !d.BasicallyContains("obj/") && !d.BasicallyContains("obj\\") &&
-                        !d.BasicallyContains(".TestPlatform.") && !d.BasicallyContains(".xunit.") &&
-                        !d.BasicallyContains(".nunit."))
+                return GetTargets(testDllSelector, args, null, null, null)
+                    .Where(d => NotAFrameworkFile(d))
                     .Do(t =>
                     {
-                        arenas().SelectMany(a => a.ListTests(t)).FirstAsync(w => w.AnyItems()).Select(
+                        ListTests(testDllSelector, arenas)
+                            .Select(
                             tests =>
                             {
                                 return new UnitTestDiscovered()
                                 {
-                                    Dll = t,
+                                    Dll = t.Dll,
                                     DiscoveredTests = tests.ToArray()
                                 };
                             })
@@ -624,6 +670,14 @@ namespace theBFG
                     .Subscribe();//todo fix hanging
             })
                 .Publish().RefCount();
+        }
+
+        private static bool NotAFrameworkFile(StartUnitTest d)
+        {
+            return !d.Dll.BasicallyContains("packages/") && !d.Dll.BasicallyContains("packages\\") &&
+                   !d.Dll.BasicallyContains("obj/") && !d.Dll.BasicallyContains("obj\\") &&
+                   !d.Dll.BasicallyContains(".TestPlatform.") && !d.Dll.BasicallyContains(".xunit.") &&
+                   !d.Dll.BasicallyContains(".nunit.");
         }
 
         public IDisposable ExitAfter(StartUnitTest[] testsToWatch, IObservable<UnitTestResult> testResults)

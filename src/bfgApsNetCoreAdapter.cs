@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.StaticFiles.Infrastructure;
 using Microsoft.Extensions.FileProviders;
 using Rxns;
 using Rxns.Hosting;
@@ -10,8 +10,6 @@ using Rxns.WebApiNET5;
 
 namespace theBFG
 {
-    
-
     public class theBFGAspNetCoreAdapter : ConfigureAndStartAspnetCore
     {
         public static IRxnAppCfg Appcfg = null;
@@ -24,14 +22,18 @@ namespace theBFG
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @$"{ new DirectoryInfo(".").Parent.FullName}\thebfg.testarena\Web\dist" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
+            Html5Root = @$"{new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}\TestArena" // @"/Users/janison/rxns/Rxns.AspSatus/Web/dist/" //the rxns appstatus portal // @"TestArena" //
         };
 
         public static IAspnetCoreCfg AspnetCfg = new AspnetCoreCfg()
         {
             Cfg = server =>
             {
-                var logFileShareLocation = new PhysicalFileProvider(Path.Combine(AppStatuscfg.AppRoot, "TenantLogs"));
+                var logDir = Path.Combine(AppStatuscfg.AppRoot, "TenantLogs");
+                if (!Directory.Exists(logDir))
+                    Directory.CreateDirectory(logDir);
+
+                var logFileShareLocation = new PhysicalFileProvider(logDir);
 
                 server
                     .UseFileServer(new FileServerOptions

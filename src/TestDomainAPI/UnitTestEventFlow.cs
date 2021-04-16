@@ -20,7 +20,15 @@ namespace theBFG.TestDomainAPI
         public string Dll { get; set; }
         public string[] DiscoveredTests{ get; set; }
     }
-    
+
+    /// <summary>
+    /// An alias for StartUnitTest
+    /// </summary>
+    public class Target : StartUnitTest
+    {
+
+    }
+
     public class StartUnitTest : ServiceCommand, ITestDomainEvent
     {
         public DateTime At { get; set; } = DateTime.Now;

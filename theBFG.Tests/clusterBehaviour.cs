@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
@@ -8,8 +10,11 @@ using System.Reactive.Subjects;
 using System.Threading;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.DDD;
+using Rxns.DDD.Commanding;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
 using theBFG.TestDomainAPI;
@@ -106,6 +111,113 @@ namespace theBFG.Tests
         {
             //this is implemented now, need to write test
         }
+
+        [TestMethod]
+        [Timeout(5000)]
+        public void should_support_integration_test_workflow_parallel()
+        {
+            var parallelExecution = $@"
+                StartUnitTest  {theGimp}!the_test_3,StartUnitTest  {theGimp}!the_test_2, StartUnitTest  {theGimp}!the_test_2,StartUnitTest  {theGimp}!the_test_2,
+                StartUnitTest  {theGimp}!the_test_1,     
+                StartUnitTest  {theGimp}!the_test_1,StartUnitTest  {theGimp}!the_test_1,     StartUnitTest  {theGimp}!the_test_1,     StartUnitTest  {theGimp}!the_test_1,          
+                ";
+
+            var called = 0;
+            var results = new Subject<UnitTestResult>();
+            var appCmds = Substitute.For<IServiceCommandFactory>();
+            
+            appCmds.Get("StartUnitTest", Arg.Any<object[]>()).Returns(ci =>
+            {
+                var cmdArg = (ci.ArgAt<object[]>(1)[0] as IEnumerable<string>).ToStringEach(" ");
+
+                cmdArg.Should().Contain("theTestGimp.dll!the_test_", "the params should be correctly parsed");
+
+                return new StartUnitTest();
+            });
+
+            TestWorkflow.StartIntegrationTest(parallelExecution, appCmds, results).Do(t =>
+            {
+                called++;
+                "Saw Unit test".LogDebug();
+                results.OnNext((UnitTestResult) new UnitTestResult() {WasSuccessful = true}.AsResultOf(t));
+            }).WaitR();
+            called.Should().Be(9, "9 commands are in the parallel test");
+
+            called = 0;
+        }
+
+        [TestMethod]
+        //[Timeout(5000)]
+        public void should_support_integration_test_workflow_rapidfire()
+        {
+            var rapidFireMode = $@"
+                StartUnitTest  {theGimp}!the_test_3;5
+                StartUnitTest  {theGimp}!the_test_2;2
+                StartUnitTest  {theGimp}!the_test_1;1
+                StartUnitTest  {theGimp}!the_test_1;0
+                StartUnitTest  {theGimp}!the_test_1;
+                ";
+
+            var called = 0;
+            var results = new Subject<UnitTestResult>();
+            var appCmds = Substitute.For<IServiceCommandFactory>();
+
+            appCmds.Get("StartUnitTest", Arg.Any<object[]>()).Returns(ci =>
+            {
+                var cmdArg = (ci.ArgAt<object[]>(1)[0] as IEnumerable<string>).ToStringEach(" ");
+                
+                cmdArg.Should().Contain("theTestGimp.dll!the_test_", "the params should be correctly parsed");
+                cmdArg.Should().NotContain(";", "the expression should parse the target correctly and not include rapid syntax");
+                
+                return new StartUnitTest();
+            });
+            
+            TestWorkflow.StartIntegrationTest(rapidFireMode, appCmds, results).Do(t =>
+            {
+                called++;
+                "Saw Unit test".LogDebug();
+                results.OnNext((UnitTestResult)new UnitTestResult() { WasSuccessful = true }.AsResultOf(t));
+            }).WaitR();
+
+            called.Should().Be(9, "rapidfire syntax was used to trigger the tests");
+
+            called = 0;
+        }
+
+        [TestMethod]
+        [Timeout(5000)]
+        public void should_support_integration_test_workflow_serial()
+        {
+            var serialExecution = $@"
+                StartUnitTest  {theGimp}!the_test_3, 
+                StartUnitTest  {theGimp}!the_test_2,     
+                StartUnitTest  {theGimp}!the_test_1,     
+                ";
+
+            var called = 0;
+            var results = new Subject<UnitTestResult>();
+            var appCmds = Substitute.For<IServiceCommandFactory>();
+            var reserveOrder = 3;
+
+            appCmds.Get("StartUnitTest", Arg.Any<object[]>()).Returns(ci =>
+            {
+                var cmdArg = (ci.ArgAt<object[]>(1)[0] as IEnumerable<string>).ToStringEach(" ");
+
+                cmdArg.LastOrDefault().Should().Be(reserveOrder--.ToString()[0], "the test validates reverse order");
+                
+                return new StartUnitTest();
+            });
+
+            TestWorkflow.StartIntegrationTest(serialExecution, appCmds, results).Do(t =>
+            {
+                called++;
+                "Saw Unit test".LogDebug();
+                results.OnNext((UnitTestResult)new UnitTestResult() { WasSuccessful = true }.AsResultOf(t));
+            }).WaitR();
+
+            called.Should().Be(3, "3 commands are in the serial test");
+        }
+
 
 
         [TestMethod]

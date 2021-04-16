@@ -44,11 +44,20 @@ Feature | ...
 > - use *\$* to target specific tests `...test.dll$any_test_you_want` inside a `.dll`
 > 
 > - No after build triggers? No Worries! theBFG also *monitors the target for changes*, reloading and *firing* on *every* update to bring advanced continious testing capabilities to any dev flow
- 
 
-*<h2>Integration or Automation test? Start the SUT and monitor it for failures</h2>*
+*<h2>Integration test?</h2>*
 
-6. Configure your `IDE` to deploy the  `app-under-test` on compile:
+`thebfg target myTargets.bfc`
+
+*myTagerts.bfc*
+```
+Target thisTest.dll, Target andThatTest.dll, Target atTheSameTime.dll
+Target afterAllThoseCompleteSpawn3OfThese.dll;3
+```
+
+*<h2>Automation test? Start the SUT and monitor it for failures</h2>*
+
+1. Configure your `IDE` to deploy the  `app-under-test` on compile:
    
 `thebfg launch {app} {path/To/unit.test.dll}`
 
@@ -66,6 +75,7 @@ var stop = theBFG.launch("app", "app/target/dir").Until();
 
 ....
 repeat for as many `Apps` as your integration test depends on.
+
 
 
 # Quick Reference
@@ -154,7 +164,7 @@ or
   ```
 
 * Make workers compete to execute test suite in parallel
-T
+
   ```
   > thebfg launch test.dll and fire compete
   ```
@@ -164,6 +174,33 @@ T
   ```
   > thebfg launch test.dll and fire compete rapidly
   ```
+
+### Integration Testing
+
+* Create test execution plans that adhere to basic workflows with command files with using `TestExpression`
+
+  ```
+  thebfg target myTestWorkflow.bfc
+  ```
+
+* TestExpression components: `<bfgCmd>` `<params>` `[;,]` 
+
+* Parallel test execution
+```
+target some.dll,target another.dll
+```
+
+* Serial test execution
+```
+target 1st.dll
+target 2nd.dll
+target 3rd.dll
+```
+
+* Target specific tests, 100 times
+```
+target test.dll!a_specific_test;100
+```
 
 ### Performance Testing
 

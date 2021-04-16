@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Builder;
@@ -10,6 +9,7 @@ using Microsoft.AspNetCore.Http.Connections;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.DDD;
+using Rxns.DDD.Commanding;
 using Rxns.Health;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting;
@@ -110,8 +110,7 @@ namespace theBFG
                         {
 
                             if (theBFGDef.Cfg == null)
-                                theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<ITestArena>());
-
+                                theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
                             
                             var theBfg = resolver.Resolve<theBfg>();
                             var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
@@ -135,7 +134,7 @@ namespace theBFG
                                 var searchPattern = args.Skip(1).FirstOrDefault() ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
                                 
                                 $"Discovering unit tests with: {searchPattern}".LogDebug();
-                                 theBfg.DiscoverUnitTests(searchPattern, resolver.Resolve<Func<ITestArena[]>>())
+                                 theBfg.DiscoverUnitTests(searchPattern, args, resolver.Resolve<Func<ITestArena[]>>())
                                      .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
                                      .Until();
                             }
@@ -173,6 +172,8 @@ namespace theBFG
                     .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
                     .CreatesOncePerApp<bfgCluster>()
                     .RespondsToSvcCmds<StartUnitTest>()
+                    .RespondsToSvcCmds<Target>()
+                    .RespondsToSvcCmds<StartIntegrationTest>()
                     .CreatesOncePerApp<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .CreatesOncePerRequest<DotNetTestArena>()
