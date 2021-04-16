@@ -34,17 +34,17 @@ using theBFG.TestDomainAPI;
 ///
 /// Backlog
 ///
+///
+/// 
 /// todo:
+///         - fix web dist issue
 ///         - show discovered tests in test arena when .dll selected
 /// ///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///             -   "new" tests added tests
 ///         - thebfg launch @localhost //need to implement, docoed but not working
-///         - thebfg target myinttest.bfc // list of bfg commands in a file that can be executed in a single unit
-///             -   allow startintegrationtest command which is basically like
-///                 allows sets of startunittests to be specified. maybe something also to do wtih amount
 ///                 of workers needed for each test? or will that just be an extra parama for startunitest?
 ///         - thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
-///                 - show it launch new processes or same? or cfgable?
+///                 - should it launch new processes or same? or cfgable?
 /// 
 ///          thebfg target all // monitors dirs and auto-executes 
 ///   
@@ -64,25 +64,18 @@ using theBFG.TestDomainAPI;
 namespace theBFG
 {
     /// <summary>
-    /// Reloads and fires at the last test session started
-    /// </summary>
-    public class Reload : ServiceCommand
-    {
-
-    }
-
-    /// <summary>
-    /// Unlike the Gatling Gun, the Bfg was always the top weapon in every game. It was accurate, responsive, rewarding to master and had your back in every situation.
+    /// Unlike the Gatling Gun, the Bfg was always the top weapon in the games I played. It was accurate, responsive, rewarding to master and had your back in every situation.
     ///
-    /// I wanted to create a C# testing tool that just brought the C# ecosystem out of the stone ages. Somethign that just worked. Something that would compliment the dev-test flow
-    /// and compensate for the lack of creativety that my IDE vendor delivered. Something that let me leverage my unit test toolbox, yet execute advanced distributed test scenarios.
-    /// Something that helped me iterate quickly and tell me exactly what went wrong and why.
+    /// I wanted to create a C# testing tool that brought the C# ecosystem out of the gatling stone ages. Somethign that just worked with the tooling and test frameorks we already used. Something that would compliment the dev-test flow
+    /// and compensate for the lack of creativety that my IDE vendor delivered. Something that let me leverage my existing toolbox to orchestrate advanced distributed test scenarios.
+    /// A tool which helped me iterate quickly and tell me exactly what went wrong and why without giving me RSI.
     ///
-    /// The main thing your have to know is:
-    ///     - That theBFG is a gun.
-    ///     - You target tests.dlls with are spwaned inside a test arena
-    ///     - You fire to run the tests. You reload after every shot.
-    ///     - You monitor everything in real-time via TestArena Web Portal.
+    /// Key concepts:
+    ///     - That theBFG is a gun that likes to punish tests.
+    ///     - Each deathmatch test takes place inside test arena.
+    ///     - You fire to run the tests. Reloading and Firing as normal.
+    ///     - You monitor everything in real-time via TestArena Portal.
+    ///     - Either theBfg wins, or your test wins. Goodluck.
     /// 
     /// This API gives you the keys to the castle. Use with caution. Eye protection recommended when using rapid fire mode for extended periods.
     /// </summary>
@@ -150,15 +143,15 @@ namespace theBFG
             return testSyntax.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest>() :
             Rxn.DfrCreate<StartUnitTest>(() =>
             {
-                if (!(testSyntax.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
-                      testSyntax.EndsWith(".csproj", StringComparison.InvariantCultureIgnoreCase) ||
-                      testSyntax.EndsWith(".bfc", StringComparison.InvariantCultureIgnoreCase)))
+                if (!(testSyntax.Contains(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                      testSyntax.Contains(".csproj", StringComparison.InvariantCultureIgnoreCase) ||
+                      testSyntax.Contains(".bfc", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     "Target must be either .dll or .csproj or .bfc".LogDebug();
                     return Rxn.Empty<StartUnitTest>();
                 }
                 
-                if (testSyntax.EndsWith(".bfc"))
+                if (testSyntax.Contains(".bfc"))
                 {
                     return GetTargetsFromBfc(testSyntax, parseTestSyntax, forParallelExection);
                 }
@@ -169,7 +162,6 @@ namespace theBFG
                 }
                 else
                 {
-
                     return GetTargetsFromPath(args, testSyntax, forCompete);
                 }
             });
@@ -188,7 +180,7 @@ namespace theBFG
             {
                 foreach (var dll in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories))
                 {
-                    Files.WatchForChanges(dir, dll, () => GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until()).DisposedBy(watchers);
+                    GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until();
                 }
 
                 return watchers;
@@ -204,34 +196,44 @@ namespace theBFG
             var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             //todo fix this, should embed version inside dll expression
 
-            if (args.Contains("compete"))
+            var dlld = new FileInfo(dll);
+
+            var watchDllUpdatesOverTime = Rxn.Create<StartUnitTest>(o => Files.WatchForChanges(dlld.DirectoryName, dlld.Name, () => GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until()))
+                    .Select(_ => dll);
+
+            return watchDllUpdatesOverTime
+                .StartWith(dll)
+                .SelectMany(d =>
             {
-                var userSize = args.Last();
-                int batchSize = 0;
-                Int32.TryParse(userSize, out batchSize);
+                if (args.Contains("compete"))
+                {
+                    var userSize = args.Last();
+                    int batchSize = 0;
+                    Int32.TryParse(userSize, out batchSize);
 
-                batchSize = batchSize == 0 ? 25 : batchSize;
+                    batchSize = batchSize == 0 ? 25 : batchSize;
 
-                $"Reloading with {batchSize} tests per/batch".LogDebug();
+                    $"Reloading with {batchSize} tests per/batch".LogDebug();
 
-                return ListTests(dll, arena).SelectMany(s => s)
-                    .Buffer(batchSize)
-                    .Select(tests => new StartUnitTest()
-                    {
-                        UseAppUpdate = appUpdateDllSource,
-                        UseAppVersion = appUpdateVersion,
-                        Dll = dll,
-                        RunThisTest = tests.ToStringEach()
-                    });
-            }
+                    return ListTests(d, arena).SelectMany(s => s)
+                        .Buffer(batchSize)
+                        .Select(tests => new StartUnitTest()
+                        {
+                            UseAppUpdate = appUpdateDllSource,
+                            UseAppVersion = appUpdateVersion,
+                            Dll = d,
+                            RunThisTest = tests.ToStringEach()
+                        });
+                }
 
-            return new StartUnitTest()
-            {
-                UseAppUpdate = appUpdateDllSource,
-                UseAppVersion = appUpdateVersion,
-                Dll = dll,
-                RunThisTest = testName,
-            }.ToObservable();
+                return new StartUnitTest()
+                {
+                    UseAppUpdate = appUpdateDllSource,
+                    UseAppVersion = appUpdateVersion,
+                    Dll = d,
+                    RunThisTest = testName,
+                }.ToObservable();
+            });
         }
 
         public static IObservable<StartUnitTest> GetTargetsFromBfc(string bfcFile, IServiceCommandFactory parseTestSyntax, IObservable<UnitTestResult> forParallelExection)
@@ -481,7 +483,7 @@ namespace theBFG
                 {
                     RxnApps.CreateAppUpdate(runTheseUnitTests[0].UseAppUpdate,
                             Scrub(runTheseUnitTests[0].UseAppVersion),
-                            new FileInfo(runTheseUnitTests[0].Dll).DirectoryName, false, cfg, "http://localhost:888")
+                            new FileInfo(runTheseUnitTests[0].Dll).DirectoryName, false, cfg, "http://localhost:888", new string[] {".bfg" })
                         .Catch<Unit, Exception>(
                             e =>
                             {

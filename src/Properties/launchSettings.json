@@ -2,7 +2,7 @@
   "profiles": {
     "theBFG": {
       "commandName": "Project",
-      "commandLineArgs": "target C:/jan/ADS\\output\\Janison.ContentAccessLayer.Tests.dll and fire and exit"
+      "commandLineArgs": "target C:\\svn\\bfg\\theTestGimp\\bin\\Debug\\netcoreapp3.1\\thetestgimp.dll and fire"
     }
   }
 }

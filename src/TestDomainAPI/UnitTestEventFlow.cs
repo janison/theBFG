@@ -13,6 +13,9 @@ namespace theBFG.TestDomainAPI
         DateTime At { get; }
     }
 
+    /// <summary>
+    /// A test potential unit test session has been located.
+    /// </summary>
     public class UnitTestDiscovered : ITestDomainEvent
     {
         public DateTime At { get; set;  } = DateTime.Now;
@@ -29,6 +32,17 @@ namespace theBFG.TestDomainAPI
 
     }
 
+    /// <summary>
+    /// Reloads and fires at the last test session started
+    /// </summary>
+    public class Reload : ServiceCommand
+    {
+
+    }
+
+    /// <summary>
+    /// Starts a new unit test session.
+    /// </summary>
     public class StartUnitTest : ServiceCommand, ITestDomainEvent
     {
         public DateTime At { get; set; } = DateTime.Now;
@@ -64,6 +78,9 @@ namespace theBFG.TestDomainAPI
         }
 
         /// <summary>
+        /// these overloads are optimised for text/based calling via servicecommands
+        ///
+        /// ie.
         /// StartUnitTest False  0 False C:/svn/bfg/theTestGimp/bin/Debug/netcoreapp3.1/theTestGimp.dll Test Latest  
         /// </summary>
         public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate, string UseAppVersion)
@@ -80,6 +97,9 @@ namespace theBFG.TestDomainAPI
             //          this.Range = Range;
         }
 
+        /// <summary>
+        /// these overloads are optimised for text/based calling via servicecommands
+        /// </summary>
         public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate)
         {
             this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
