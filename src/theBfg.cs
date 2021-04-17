@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -187,6 +188,7 @@ namespace theBFG
             });
         }
 
+        
         private static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
         {
             var testCfg = theBigCfg.Detect();
@@ -198,8 +200,7 @@ namespace theBFG
 
             var dlld = new FileInfo(dll);
 
-            var watchDllUpdatesOverTime = Rxn.Create<StartUnitTest>(o => Files.WatchForChanges(dlld.DirectoryName, dlld.Name, () => GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until()))
-                    .Select(_ => dll);
+            var watchDllUpdatesOverTime = GetOrCreateWatcher(dlld, args, arena);
 
             return watchDllUpdatesOverTime
                 .StartWith(dll)
@@ -236,6 +237,17 @@ namespace theBFG
             });
         }
 
+        private static readonly IDictionary<string, IObservable<string>> _watchers = new ConcurrentDictionary<string, IObservable<string>>();
+        private static IObservable<string> GetOrCreateWatcher(FileInfo dlld, string[] args, Func<ITestArena[]> arena)
+        {
+            if (_watchers.ContainsKey(dlld.FullName))
+                return Rxn.Empty<string>(); //already subscribed to updates
+
+            var watcher = Files.WatchForChanges(dlld.DirectoryName, dlld.Name, true, false, false);
+            _watchers.Add(dlld.FullName, watcher);
+            return watcher;
+        }
+
         public static IObservable<StartUnitTest> GetTargetsFromBfc(string bfcFile, IServiceCommandFactory parseTestSyntax, IObservable<UnitTestResult> forParallelExection)
         {
             var pattern = bfcFile.Split('/', '\\');
@@ -246,11 +258,8 @@ namespace theBFG
 
             return Rxn.Create<StartUnitTest>(o =>
             {
-                Files.WatchForChanges(dir, filePattern, () =>
-                {
-                    TestWorkflow.StartIntegrationTest(File.ReadAllText(bfcFile), parseTestSyntax, forParallelExection).Do(dll => o.OnNext(dll)).Until();
-                }, true, false, false)
-                .DisposedBy(watchers);
+                Files.WatchForChanges(dir, filePattern, true, false, false).SelectMany(_ => TestWorkflow.StartIntegrationTest(File.ReadAllText(bfcFile), parseTestSyntax, forParallelExection).Do(dll => o.OnNext(dll)))
+                    .Until().DisposedBy(watchers);
 
                 if (bfcFile.EndsWith(".bfc", StringComparison.InvariantCultureIgnoreCase))
                 {
