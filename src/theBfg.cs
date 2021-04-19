@@ -42,8 +42,6 @@ using theBFG.TestDomainAPI;
 ///         - show discovered tests in test arena when .dll selected
 /// ///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///             -   "new" tests added tests
-///         - thebfg launch @localhost //need to implement, docoed but not working
-///                 of workers needed for each test? or will that just be an extra parama for startunitest?
 ///         - thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
 ///                 - should it launch new processes or same? or cfgable?
 /// 
@@ -83,14 +81,14 @@ namespace theBFG
     public class theBfg : IDisposable, IServiceCommandHandler<Reload>
     {
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);
-        public IDisposable TestRunner { get; set; }
+        public static IDisposable TestRunner { get; set; }
         public static string[] Args = new string[0];
 
-        private Func<AppStatusInfo[]> _info = () => new AppStatusInfo[0];
-        private DateTime? _started;
-        private bfgCluster _testCluster;
-        bool _notUpdating = true;
-
+        private static Func<AppStatusInfo[]> _info = () => new AppStatusInfo[0];
+        private static DateTime? _started;
+        private static bfgCluster _testCluster;
+        private static bool  _notUpdating = true;
+        
         public static IObservable<Unit> ReloadWithTestWorker(string url = "http://localhost:888/", params string[] args)
         {
             return Rxn.Create<Unit>(o =>
@@ -128,7 +126,7 @@ namespace theBFG
         {
             var testCfg = theBigCfg.Detect();
 
-            var dllOrTestSynax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll).Split('$')[0];//heck to remove the unwated tokens
+            var dllOrTestSynax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0];//heck to remove the unwated tokens
 
             return GetTargets(dllOrTestSynax, args, forCompete, integrationTestParsing, integrationTestResults)
                     .Buffer(TimeSpan.FromSeconds(1))
@@ -286,14 +284,14 @@ namespace theBFG
                 switch (args.FirstOrDefault()?.ToLower())
                 {
                     case "fire":
-                        return ReloadWithTestWorker(url, args).Subscribe(o);
-                        break;
+                        return ReloadWithTestWorker(ParseTestArenaAddressOrDefault(args), args).Subscribe(o);
+                        
                     case "target":
-                        return ReloadWithTestArena(url, args).Subscribe(o);
-                        break;
-
+                        return ReloadWithTestArena(args).Subscribe(o);
+                    
                     case "launch":
-                        return ReloadWithTestArena(url, args).Subscribe(o);
+                        return LaunchToTestArenaIf(args, url) ?? ReloadWithTestArena(args).Subscribe(o);
+
                     case null:
 
                         "theBFG instructions:".LogDebug();
@@ -321,7 +319,7 @@ namespace theBFG
             });
         }
 
-        public static IObservable<Unit> ReloadWithTestArena(string url = "http://localhost:888/", params string[] args)
+        public static IObservable<Unit> ReloadWithTestArena(params string[] args)
         {
             return Rxn.Create<Unit>(o =>
             {
@@ -329,23 +327,32 @@ namespace theBFG
                 theBfg.Args = args;
 
                 "Configuring App".LogDebug();
-
-
                 theBFGAspNetCoreAdapter.Appcfg = RxnAppCfg.Detect(args);
 
                 return AspNetCoreWebApiAdapter.StartWebServices<theBFGAspNetCoreAdapter>(theBFGAspNetCoreAdapter.Cfg, args).ToObservable()
-                    .LastAsync()
-                    .Select(_ => new Unit())
-                    .Subscribe(o);
+                           .LastAsync()
+                           .Select(_ => new Unit())
+                           .Subscribe(o);
             });
         }
 
-        public theBfg(bfgCluster cluster)
+        private static IDisposable LaunchToTestArenaIf(string[] args, string url)
         {
-            _testCluster = cluster;
+            var testArenaSyntax = args.FirstOrDefault(w => w.StartsWith("@"));
+
+            if (testArenaSyntax.IsNullOrWhitespace()) return null;
+            
+            var appsyntax = args.Skip(1).FirstOrDefault()?.Split('@');
+            var name = appsyntax.FirstOrDefault();
+            var dll = appsyntax.Skip(1).FirstOrDefault().Split(':').FirstOrDefault();
+            var appUpdateVersion = appsyntax.Skip(1).FirstOrDefault().Split(':').Skip(1).FirstOrDefault();
+            url = ParseTestArenaAddressOrDefault(args) ?? url;
+            
+            return LaunchAppToTestArena(name, appUpdateVersion.IsNullOrWhiteSpace("beta-"), dll, url, new AppStatusCfg()).FinallyR(() => theBfg.IsCompleted.OnCompleted()).Until();
         }
 
-        public IDisposable Fire(IObservable<StartUnitTest[]> unitTests = null)
+
+        public static IDisposable Fire(IObservable<StartUnitTest[]> unitTests = null)
         {
             return (unitTests ?? _lastFired.ToObservable())
                 .Do(tests =>
@@ -408,7 +415,7 @@ namespace theBFG
             .Until();
         }
 
-        public void FireCompeteRapidly(IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
+        public static void FireCompeteRapidly(IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
         {
             Enumerable.Range(0, Environment.ProcessorCount).ForEach(_ =>
             {
@@ -419,17 +426,17 @@ namespace theBFG
         }
 
 
-        public void FireRapidly(IObservable<StartUnitTest[]> tests)
+        public static void FireRapidly(IObservable<StartUnitTest[]> tests)
         {
             Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ => { Fire(tests); }).Until();
         }
 
-        public IObservable<bfgWorker> StartRapidWorkers(IResolveTypes resolver, IObservable<StartUnitTest[]> unitTestToRun)
+        public static IObservable<bfgWorker> StartRapidWorkers(IResolveTypes resolver, IObservable<StartUnitTest[]> unitTestToRun)
         {
             return unitTestToRun.SelectMany(tests => Enumerable.Range(0, Environment.ProcessorCount).ToObservable().SelectMany(_ => SpawnTestWorker(resolver, unitTestToRun)));
         }
 
-        public void WatchForTestUpdates(IRxnManager<IRxn> rxnManage)
+        public static void WatchForTestUpdates(IRxnManager<IRxn> rxnManage)
         {
             rxnManage.CreateSubscription<UpdateSystemCommand>()
                 .Do(_ => { _notUpdating = false; })
@@ -437,11 +444,11 @@ namespace theBFG
         }
 
 
-        int iteration = 0;
-        private Stopwatch startedAt = new Stopwatch();
+        private static int iteration = 0;
+        private static Stopwatch startedAt = new Stopwatch();
 
 
-        public IDisposable StartTestArena(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
+        public static IDisposable StartTestArena(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
             "Starting up TestArena".LogDebug();
 
@@ -457,7 +464,7 @@ namespace theBFG
 
         public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
-            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, resolver.Resolve<IAppStatusCfg>());
+            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, ParseTestArenaAddressOrDefault(args), resolver.Resolve<IAppStatusCfg>());
             var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
@@ -467,7 +474,14 @@ namespace theBFG
             return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, stopFiring, broadCaste);
         }
 
-        public IObservable<bfgWorker> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
+        private static string ParseTestArenaAddressOrDefault(string[] args)
+        {
+            var url = args.FirstOrDefault(a => a.StartsWith('@'))?.TrimStart('@');
+
+            return url ?? "http://localhost:888";
+        }
+
+        public static IObservable<bfgWorker> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
         {
             _testCluster = resolver.Resolve<bfgCluster>();
 
@@ -485,22 +499,34 @@ namespace theBFG
         }
 
 
-        public IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, IAppStatusCfg cfg)
+        public static IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, string testArenaAddress, IAppStatusCfg cfg)
         {
             return unitTestToRun.Delay(TimeSpan.FromSeconds(2))
                 .Do(runTheseUnitTests =>
                 {
-                    RxnApps.CreateAppUpdate(runTheseUnitTests[0].UseAppUpdate,
-                            Scrub(runTheseUnitTests[0].UseAppVersion),
-                            new FileInfo(runTheseUnitTests[0].Dll).DirectoryName, false, cfg, "http://localhost:888", new string[] {".bfg" })
-                        .Catch<Unit, Exception>(
-                            e =>
-                            {
-                                ReportStatus.Log.OnError("Could not download test. Cant join cluster :(", e);
-                                throw e;
-                            }).WaitR();
+                    LaunchAppToTestArena(runTheseUnitTests[0].UseAppUpdate, runTheseUnitTests[0].UseAppVersion, runTheseUnitTests[0].Dll, testArenaAddress, cfg).Until();
                 })
                 .Until();
+        }
+
+        public static IObservable<Unit> LaunchAppToTestArena(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
+
+        {
+            return RxnApps.CreateAppUpdate(
+                    appName,
+                    Scrub(appVersion),
+                    new FileInfo(appDll).DirectoryName,
+                    false,
+                    cfg,
+                    testArenaAddress,
+                    new string[] {".bfg"}
+                )
+                .Catch<Unit, Exception>(
+                    e =>
+                    {
+                        ReportStatus.Log.OnError("Could not download test. Cant join cluster :(", e);
+                        throw e;
+                });
         }
 
         /// <summary>
@@ -554,7 +580,7 @@ namespace theBFG
             });
         }
 
-        private string Scrub(string useAppVersion)
+        private static string Scrub(string useAppVersion)
         {
             return new[] { "rapidly", "continuously", "fire" }.FirstOrDefault(i => i == useAppVersion) == null
                 ? useAppVersion
@@ -562,8 +588,7 @@ namespace theBFG
         }
 
         private static int _workerCount;
-        private Func<IEnumerable<IMonitorAction<IRxn>>> _before;
-        private StartUnitTest[] _lastFired = new StartUnitTest[0];
+        private static StartUnitTest[] _lastFired = new StartUnitTest[0];
 
         public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> cfg)
         {
@@ -611,7 +636,7 @@ namespace theBFG
             //need to fix health which will allow this to be viewed on the appstatus portal. should monitor health of fanout stratergy
             //
             //IMonitorActionFactory<IRxn> health =MonitorHealth
-            RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
+            RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out var _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
 
             _info = () =>
             {

@@ -218,7 +218,15 @@ namespace theBFG.Tests
             called.Should().Be(3, "3 commands are in the serial test");
         }
 
+        [Timeout(1000 * 20)]
+        [TestMethod]
+        public void should_launch_to_testarena()
+        {
+            theBfg.ReloadAnd(args: "launch").Until();
+            theBfg.ReloadAnd(args: "launch testGimp@../../../../theTestGimp/bin/debug/netcoreapp3.1/theTestGimp.dll @http://localhost:888".Split(' ')).Until();
 
+            theBfg.IsCompleted.WaitR();
+        }
 
         [TestMethod]
         public void should_support_compete()
