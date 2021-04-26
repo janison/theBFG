@@ -11,6 +11,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using Autofac;
 using Rxns;
@@ -54,11 +55,9 @@ using theBFG.TestDomainAPI;
 ///                 the same machine
 /// 
 ///             - need to fix saving / persistance of data.
-///             -   thebfg self destruct to clear the metric cache and reset everything
-
-
-
-
+///
+///
+///
 /// </summary>
 namespace theBFG
 {
@@ -88,13 +87,15 @@ namespace theBFG
         private static DateTime? _started;
         private static bfgCluster _testCluster;
         private static bool  _notUpdating = true;
+
+        public static string DataDir = ".bfg";
         
-        public static IObservable<Unit> ReloadWithTestWorker(string url = "http://localhost:888/", params string[] args)
+        public static IObservable<Unit> ReloadWithTestWorker(params string[] args)
         {
             return Rxn.Create<Unit>(o =>
             {
                 var apiName = args.Skip(1).FirstOrDefault();
-                var testHostUrl = args.Skip(2).FirstOrDefault().IsNullOrWhiteSpace("http://localhost:888");
+                var testHostUrl = ParseTestArenaAddressOrDefault(args);
                 theBfg.Args = args;
 
 
@@ -284,13 +285,20 @@ namespace theBFG
                 switch (args.FirstOrDefault()?.ToLower())
                 {
                     case "fire":
-                        return ReloadWithTestWorker(ParseTestArenaAddressOrDefault(args), args).Subscribe(o);
+                        return ReloadWithTestWorker(args).Subscribe(o);
                         
                     case "target":
                         return ReloadWithTestArena(args).Subscribe(o);
                     
                     case "launch":
                         return LaunchToTestArenaIf(args, url) ?? ReloadWithTestArena(args).Subscribe(o);
+
+                    case "self":
+                        return SelfDestructIf(args).FinallyR(() =>
+                        {
+                            theBfg.IsCompleted.OnNext(new Unit());
+                            theBfg.IsCompleted.OnCompleted();
+                        }).Subscribe(o);
 
                     case null:
 
@@ -316,6 +324,31 @@ namespace theBFG
                 }
 
                 return Disposable.Empty;
+            });
+        }
+
+        private static IObservable<Unit> SelfDestructIf(string[] args)
+        {
+            return Rxn.Create(() =>
+            {
+                var destruct = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace("fail");
+                var quiteMode = args.Last().IsNullOrWhiteSpace("nup");
+
+                if (!destruct.BasicallyEquals("destruct")) return;
+
+                if (!quiteMode.BasicallyEquals("quite"))
+                {
+                    "Please type 'y' to delete ALL BFG DATA under this root".LogDebug();
+
+                    if (Console.Read() != 'y')
+                    {
+                        "Aborting".LogDebug();
+                        return;
+                    }
+                }
+
+                Directory.Delete(DataDir, true);
+                "RESET !!!".LogDebug();
             });
         }
 
@@ -448,7 +481,7 @@ namespace theBFG
         private static Stopwatch startedAt = new Stopwatch();
 
 
-        public static IDisposable StartTestArena(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
+        public static IDisposable StartTestArena(IResolveTypes resolver)
         {
             "Starting up TestArena".LogDebug();
 
@@ -476,9 +509,9 @@ namespace theBFG
 
         private static string ParseTestArenaAddressOrDefault(string[] args)
         {
-            var url = args.FirstOrDefault(a => a.StartsWith('@'))?.TrimStart('@');
+            var url = args.FirstOrDefault(w => w.StartsWith('@')).IsNullOrWhiteSpace("http://localhost:888").TrimStart('@');
 
-            return url ?? "http://localhost:888";
+            return url;
         }
 
         public static IObservable<bfgWorker> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
@@ -519,7 +552,7 @@ namespace theBFG
                     false,
                     cfg,
                     testArenaAddress,
-                    new string[] {".bfg"}
+                    new string[] {DataDir}
                 )
                 .Catch<Unit, Exception>(
                     e =>

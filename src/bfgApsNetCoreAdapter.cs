@@ -15,7 +15,7 @@ namespace theBFG
         public static IRxnAppCfg Appcfg = null;
         public static IAppStatusCfg AppStatuscfg = new AppStatusCfg()
         {
-            AppRoot = ".bfg".EnsureRooted()
+            AppRoot = theBfg.DataDir.EnsureRooted()
         };
 
         public static IWebApiCfg Cfg = new WebApiCfg()

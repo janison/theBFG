@@ -90,7 +90,7 @@ namespace theBFG
                     .CreatesOncePerApp(_ => new AppStatusCfg()
                     {
                         ShouldAutoUnzipLogs = true,
-                        AppRoot = ".bfg"
+                        AppRoot = theBfg.DataDir
                     })
                     //cfg specific
                     .CreatesOncePerApp(() => new AggViewCfg()
@@ -113,7 +113,7 @@ namespace theBFG
                                 theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
                             
                             var theBfg = resolver.Resolve<theBfg>();
-                            var stopArena = theBfg.StartTestArena(args, Cfg, resolver);
+                            var stopArena = theBfg.StartTestArena(resolver);
                             var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
 
 
@@ -186,7 +186,7 @@ namespace theBFG
                     .Emits<UnitTestsStarted>()
                     .CreatesOncePerApp(_ => new AppStatusCfg()
                     {
-                        AppRoot = ".bfg"
+                        AppRoot = theBfg.DataDir
                     })
                     .CreatesOncePerApp(_ => new RxnDebugLogger("bfgWorker"))
                     .CreatesOncePerApp(_ => new AppServiceRegistry()

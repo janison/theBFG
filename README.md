@@ -223,6 +223,38 @@ target test.dll!a_specific_test;100
 > thebfg launch test.dll and fire continiously
 ```
 
+### Data Import / Export / Reset
+
+* All data lives inside of the `.bfg` dir
+
+```
+copy .bfg another/root/.bfg
+```
+
+or
+
+```
+cp .bfg another/root/.bfg
+```
+
+* Reset all data
+
+```
+thebfg self destruct
+```
+then 
+
+```
+y
+```
+
+or
+
+* *no confirmation*, just do it
+  
+```
+thebfg self destruct quite
+```
 # Test Runners
 
 Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in essence all it does it wrap the output streams, parsing and triggering different events along the way to feed the Test Arena. You can use this same technique, or a closer integration using theBFG API, to tune theBFG to your specific flow.
