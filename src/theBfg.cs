@@ -39,7 +39,6 @@ using theBFG.TestDomainAPI;
 ///
 /// 
 /// todo:
-///         - fix web dist issue
 ///         - show discovered tests in test arena when .dll selected
 /// ///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///             -   "new" tests added tests
@@ -55,7 +54,8 @@ using theBFG.TestDomainAPI;
 ///                 the same machine
 /// 
 ///             - need to fix saving / persistance of data.
-///
+///             - play sounds on pass or fail of test suite so you dont need to switch windows
+///                 -   short and low annouance
 ///
 ///
 /// </summary>
@@ -294,13 +294,10 @@ namespace theBFG
                         return LaunchToTestArenaIf(args, url) ?? ReloadWithTestArena(args).Subscribe(o);
 
                     case "self":
-                        return SelfDestructIf(args).FinallyR(() =>
-                        {
-                            theBfg.IsCompleted.OnNext(new Unit());
-                            theBfg.IsCompleted.OnCompleted();
-                        }).Subscribe(o);
+                        return SelfDestructIf(args).Subscribe(o);
 
                     case null:
+
 
                         "theBFG instructions:".LogDebug();
                         "1. Take aim at a target".LogDebug();
@@ -349,6 +346,11 @@ namespace theBFG
 
                 Directory.Delete(DataDir, true);
                 "RESET !!!".LogDebug();
+            })
+            .FinallyR(() =>
+            {
+                theBfg.IsCompleted.OnNext(new Unit());
+                theBfg.IsCompleted.OnCompleted();
             });
         }
 

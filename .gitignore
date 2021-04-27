@@ -424,3 +424,4 @@ DerivedData/
 !/src/package/Rxns*
 !thebfg.png
 /src/.bfg
+/theTestGimp/.bfg

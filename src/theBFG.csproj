@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.2</PackageVersion>
+        <PackageVersion>1.0.3</PackageVersion>
         <Authors>CaptainJono</Authors>
         <Description>A cloud-native C# unit / integration / load / hyper-TDD testing tool that clusters automatically
           dotnet tool install thebfg -g
