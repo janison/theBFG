@@ -21,6 +21,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     };
 
     
+    
     $scope.cmdReload = function() {
         testArenaApi.sendCommand("", "Reload");
     }
@@ -78,7 +79,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.testOutcomes = [];
         $scope.testRuns = [];
         $scope.showTestRunDetailed = false;
-        
+        $scope.testsQueued = 0;
         $scope.sendCmdDisabled = true;
         $scope.testArenaInfo = {
             isConnected: false
@@ -152,7 +153,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
 
             if(existinTest) {
-                existinTest[0].logMessage = msg.logMessage;            
+                existinTest[0].logMessage = msg.logMessage;  
+                existinLog[0].dll = existinTest[0].dll;               
             }
         };
 
@@ -174,6 +176,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         // } 
         
         if(msg.result && msg.testName) {
+            $scope.testsQueued--;
 
             if($scope.testSummary.length > maxLogs) {
                 $scope.testSummary.shift();
@@ -202,7 +205,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             $scope.testSummary.push(msg);
             $scope.tests.push(msg);          
-            $scope.addToTopicIfFilterActive(msg);
+            $scope.addToTopicIfFilterActive(msg);            
         }
 
 
@@ -244,6 +247,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 $scope.testRuns.push(dll);
                 
             }
+
+            $scope.testsQueued += msg.discoveredTests.length -1;
         }
 
         else if(msg.dll && !msg.hasOwnProperty("passed")) {
@@ -265,9 +270,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
 
         if(msg.inResponseTo && msg.hasOwnProperty("passed")) {
-
+            
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
-
            
             if(!test) {                                        
                 msg.results = [];
@@ -288,8 +292,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 duration: new Date(test.completedAt.getTime() - test.startedAt.getTime()).getTime() / 1000
             });
 
-            test.info = `${test.result ? "Pass" : "Fail"} ${test.dll} in ${toPrettyTime(new Date(test.completedAt.getTime() - test.startedAt.getTime()))}`;
-           
+            test.info = `${test.result ? "Pass" : "Fail"} ${test.dll} in ${toPrettyTime(new Date(test.completedAt.getTime() - test.startedAt.getTime()))}`;           
         }
 
         console.log("AppInfo: " +JSON.stringify(msg));

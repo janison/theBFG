@@ -67,6 +67,7 @@ namespace theBFG
                     .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
                     .RespondsToSvcCmds<Reload>()
+                    .RespondsToSvcCmds<StartUnitTest>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestAssetResult>()
@@ -129,21 +130,24 @@ namespace theBFG
                                 });
                             }
 
+                            var searchPattern = args.Skip(1).FirstOrDefault();
+
                             if (args.FirstOrDefault().BasicallyEquals("launch"))
                             {
-                                var searchPattern = args.Skip(1).FirstOrDefault() ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
-                                
-                                $"Discovering unit tests with: {searchPattern}".LogDebug();
-                                 theBfg.DiscoverUnitTests(searchPattern, args, resolver.Resolve<Func<ITestArena[]>>())
-                                     .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
-                                     .Until();
+                                searchPattern = searchPattern ??  $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
                             }
                             else
                             {
                                 var launchUnitTests = theBfg.LaunchUnitTests(args, Cfg, resolver);
                             }
 
-
+                            if (searchPattern != null)
+                            {
+                                $"Discovering unit tests with: {searchPattern}".LogDebug();
+                                theBfg.DiscoverUnitTests(searchPattern, args, resolver.Resolve<Func<ITestArena[]>>())
+                                    .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
+                                    .Until();
+                            }
                         }).Until();
 
                     }))
@@ -154,9 +158,6 @@ namespace theBFG
                 {
                     dd.CreatesOncePerApp<WindowsSystemInformationService>();
                 }
-
-                
-
             };
         };
 
