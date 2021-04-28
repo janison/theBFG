@@ -39,13 +39,11 @@ using theBFG.TestDomainAPI;
 ///
 /// 
 /// todo:
-///         - show discovered tests in test arena when .dll selected
-/// ///         - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
-///             -   "new" tests added tests
-///         - thebfg servicecmd to allow same sytax to be used via test arena console as from commandline?
-///                 - should it launch new processes or same? or cfgable?
-/// 
-///          thebfg target all // monitors dirs and auto-executes 
+///      
+///         - show discovered or new tests when tests topic selected
+///                - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
+///         - allow way to use servicecmd to launch a worker in a new processes
+///         - thebfg target all // monitors dirs and auto-executes 
 ///   
 ///         -   allow workers to be associated with tags
 /// -           -   allow targeting of tests at specific tag'd workers with startunittest
@@ -53,9 +51,9 @@ using theBFG.TestDomainAPI;
 ///                 out and overflowing the container. Like the taskmgr  layout. only need to show stats per machine, not worker so we dont repeat whats on t
 ///                 the same machine
 /// 
-///             - need to fix saving / persistance of data.
-///             - play sounds on pass or fail of test suite so you dont need to switch windows
-///                 -   short and low annouance
+///         - need to fix saving / persistance of data.
+///         - play sounds on pass or fail of test suite so you dont need to switch windows
+///             -  short and low annouance
 ///
 ///
 /// </summary>

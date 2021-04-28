@@ -54,9 +54,66 @@ namespace theBFG
 
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
-            _isBusy.OnNext(true);
             var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
-            var logDir =  Path.Combine(_cfg.AppRoot, "logs", logId);
+            var logDir = Path.Combine(_cfg.AppRoot, "logs", logId);
+            StreamWriter testLog = null;
+            FileStream logFile = null;
+
+            return Rxn.Create(() => //setup dirs for test
+            {
+                if (!Directory.Exists(logDir))
+                {
+                    Directory.CreateDirectory(logDir);
+                }
+
+                logFile = File.Create(Path.Combine(logDir, "testArena.log"));
+                testLog = new StreamWriter(logFile, leaveOpen: true);
+            })
+            .SelectMany(_ =>  //keep the test updated while we are running it
+            {
+                _isBusy.OnNext(true);
+                
+                return RunTestSuiteInTestArena(work, testLog, logDir);
+            })
+            .LastOrDefaultAsync()
+            .Delay(TimeSpan.FromSeconds(1))//test is finished, wait for log file to unlock
+            .SelectMany(_ => 
+            {
+                try
+                {
+                    testLog?.Dispose();
+                    logFile?.Dispose();
+                }
+                catch (Exception e)
+                {
+                    $"While closing log {e}".LogDebug();
+                }
+
+                //send the log to the 
+                return ShipLogForTest(logDir, logId, work.Id); //send logs to testArena
+            })
+            .Select(_ => //return result of process
+            {
+                return (UnitTestResult)new UnitTestResult()
+                {
+                    WasSuccessful = true
+                }.AsResultOf(work);
+            })
+            .Catch<UnitTestResult, Exception>(e =>
+            {
+                return ((UnitTestResult) new UnitTestResult()
+                {
+                    WasSuccessful = false
+                }.AsResultOf(work)).ToObservable();
+            })
+            .FinallyR(() =>
+            {
+                _isBusy.OnNext(false);
+            });
+        }
+
+        public IObservable<Unit> RunTestSuiteInTestArena(StartUnitTest work, StreamWriter testLog, string logDir)
+        {
             $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
 
             if (!Directory.Exists(logDir))
@@ -64,9 +121,8 @@ namespace theBFG
                 Directory.CreateDirectory(logDir);
             }
 
-            var logFile = File.Create(Path.Combine(logDir, "testArena.log"));
-            var testLog = new StreamWriter(logFile, leaveOpen: true);
-            var keepTestUpdatedIfRequested = work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
+            var keepTestUpdatedIfRequested =
+                work.UseAppUpdate.ToObservable(); //if not using updates, the dest folder is our root
 
             if (!File.Exists(work.Dll))
             {
@@ -83,7 +139,7 @@ namespace theBFG
                 keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,
                     work.UseAppUpdate ?? "Test", new RxnAppCfg()
                     {
-                        AppStatusUrl = "http://localhost:888",// work.AppStatusUrl,
+                        AppStatusUrl = "http://localhost:888", // work.AppStatusUrl,
                         SystemName = work.UseAppUpdate,
                         KeepUpdated = true
                     }, true);
@@ -93,7 +149,7 @@ namespace theBFG
                 work.Dll = FindIfNotExists(work.Dll);
             }
 
-            return keepTestUpdatedIfRequested
+            return keepTestUpdatedIfRequested //run the test
                 .Select(testPath =>
                 {
                     $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
@@ -107,52 +163,32 @@ namespace theBFG
 
                     return Rxn.Empty<Unit>();
                 })
-                .Switch()
-                .Catch<Unit, Exception>(e =>
-                {
-                    $"Failed running test {e}".LogDebug();
-                    return Rxn.Empty<Unit>();
-                })
-                .LastOrDefaultAsync()
-                .Delay(TimeSpan.FromSeconds(1))
-                .SelectMany(_ =>
-                {
-                    try
-                    {
-                        testLog.Dispose();
-                        logFile.Dispose();
-                    }
-                    catch (Exception e)
-                    {
-                        $"While closing log {e}".LogDebug();
-                    }
+                .Switch();
+        }
 
-                    var logsZip = ZipAndTruncate(logDir, $"{logId}_{DateTime.Now:dd-MM-yy-hhmmssfff}");
-                    var sendingLogs = File.OpenRead(logsZip);
-                    return _appStatus.PublishLog(sendingLogs).Do(logUrl =>
-                    {
-                        _rxnManager.Publish(new UnitTestAssetResult()
-                        {
-                            LogUrl = logUrl,
-                            TestId = work.Id,
-                            Worker = Name
-                        }).Until();
+        /// <summary>
+        /// Sends a set of logs to the test arena, returning a url to access the test via
+        /// </summary>
+        /// <param name="logDir"></param>
+        /// <param name="logId"></param>
+        /// <param name="testId"></param>
+        /// <returns></returns>
+        public IObservable<string> ShipLogForTest(string logDir, string logId, string testId)
+        {
+            var logsZip = ZipAndTruncate(logDir, $"{logId}_{DateTime.Now:dd-MM-yy-hhmmssfff}");
+            var sendingLogs = File.OpenRead(logsZip);
+            return _appStatus.PublishLog(sendingLogs).Do(logUrl =>
+            {
+                _rxnManager.Publish(new UnitTestAssetResult()
+                {
+                    LogUrl = logUrl,
+                    TestId = testId,
+                    Worker = Name
+                }).Until();
 
-                        sendingLogs.Dispose();
-                        File.Delete(logsZip);
-                    });
-                })
-                .Select(_ =>
-                {
-                    return (UnitTestResult) new UnitTestResult()
-                    {
-                        WasSuccessful = true
-                    }.AsResultOf(work);
-                })
-                .FinallyR(() =>
-                {
-                    _isBusy.OnNext(false);
-                });
+                sendingLogs.Dispose();
+                File.Delete(logsZip);
+            });
         }
 
         private string ZipAndTruncate(string dir, string logId)
@@ -182,7 +218,7 @@ namespace theBFG
         public IDisposable DiscoverAndDoWork(string apiName = null, string testHostUrl = null)
         {
             $"Attempting to discover work {apiName ?? "any"}@{testHostUrl ?? "any"}".LogDebug();
-            
+
             var allDiscoveredApiRequests = bfgTestApi.DiscoverWork(_services).Do(apiFound =>
 
             {

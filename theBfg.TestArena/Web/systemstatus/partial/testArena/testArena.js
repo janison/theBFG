@@ -153,8 +153,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
 
             if(existinTest) {
-                existinTest[0].logMessage = msg.logMessage;  
-                existinLog[0].dll = existinTest[0].dll;               
+                existinTest[0].logMessage = msg.logMessage;             
             }
         };
 
@@ -177,6 +176,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         
         if(msg.result && msg.testName) {
             $scope.testsQueued--;
+
+            var test = $scope.testRuns.filter(w => w.unitTestId === msg.unitTestId);
+            msg.dll = test[0].dll;
 
             if($scope.testSummary.length > maxLogs) {
                 $scope.testSummary.shift();
@@ -235,6 +237,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
             else {
                 var dll =  {
+                    testId: msg.Id,
                     dll: msg.dll,
                     info: "Not Run",
                     results: [],
@@ -248,7 +251,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 
             }
 
-            $scope.testsQueued += msg.discoveredTests.length -1;
+            $scope.testsQueued += msg.discoveredTests.length;
         }
 
         else if(msg.dll && !msg.hasOwnProperty("passed")) {
