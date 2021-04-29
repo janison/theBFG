@@ -204,9 +204,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.testsQueued--;
 
             var test = $scope.testRuns.filter(w => {
-                return w.testIds.filter(ww => ww == msg.testId ) !== null;
+                return w.testIds && w.testIds.filter(ww => ww == msg.testId ) !== null;
             });
-            msg.dll = test[0].dll;
+
+            if(test[0]) {
+                msg.dll = test[0].dll;
+            }
 
             if($scope.testSummary.length > maxLogs) {
                 $scope.testSummary.shift();

@@ -2,55 +2,56 @@
     <form name="remote">        
         <div class="grouped">
             <div>
-                <span ng-if="!showTestRunDetailed"  ng-repeat="entry in testRuns">
+                <span ng-if="!showTestRunDetailed" ng-repeat="entry in testRuns">
                     <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>
                 </span>
-                <table ng-if="showTestRunDetailed" class="table table-hover table-striped table-condensed h6">                    
-                     <tbody><!--  ng-if="currentTopic.length != 0 -->                    
+                <table ng-if="showTestRunDetailed" class="table table-hover table-striped table-condensed h6">
+                    <tbody>
+                        <!--  ng-if="currentTopic.length != 0 -->
                         <tr ng-repeat="entry in testRuns" ng-init="showLogs = false">
-                            <td width=5% ng-class="{none: !entry.completedAt && entry.total, error: entry.results.length > 0 && entry.results[0].failed !== 0, infor: entry.results.length > 0 && entry.results[0].failed === 0}" >
+                            <td width=5% ng-class="{none: !entry.completedAt && entry.total, error: entry.results.length > 0 && entry.results[0].failed !== 0, infor: entry.results.length > 0 && entry.results[0].failed === 0}">
                                 <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="In Progress..."></span>
                                 <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="Not run yet..."></span>
                                 <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-thumbs-o-down error" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                                 <span ng-if="entry.completedAt && entry.results[0].failed === 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-trophy infor" ng-attr-title="{{entry.results.length}} test outcomes"></span>
                             </td>
-                            <td width=5% > 
+                            <td width=5%>
                                 <span title="Reload" ng-click="publish('', 'StartUnitTest '+ entry.dll)" class="cmd fa fa-rocket"></span>
-                                <span class="popuptrigger" ng-click="showLogs = !showLogs" >
+                                <span class="popuptrigger" ng-click="showLogs = !showLogs">
                                     {{entry.dll}}
-                                <div class="popup">
-                                    <span class="popuptext" ng-class="{show: showLogs}">
-                                        <span ng-repeat="a in entry.assets">
-                                            <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
+                                    <div class="popup">
+                                        <span class="popuptext" ng-class="{show: showLogs}">
+                                            <span ng-repeat="a in entry.assets">
+                                                <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
+                                            </span>
                                         </span>
-                                    </span>
-                                </div>
+                                    </div>
                             </td>
-                            </span>                                                    
+                            </span>
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed !== 0">{{entry.results[0].failed}} / {{(entry.results[0].failed + entry.results[0].passed)}}</td>
                             <td width=5% ng-if="!entry.completedAt && entry.total !== 0">{{entry.total}}</td>
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed === 0">{{(entry.results[0].passed)}}</td>
                             <td width=5% ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
                             <td width=80%>
                                 <bar-chart class="cmd" height="30" data="entry.results"></bar-chart>
-                            </td>                       
+                            </td>
                         </tr>
                     </tbody>
                 </table>
-    
+
             </div>
-                <div class="pieChart gfirst">
-                    <pie-chart class="cmd" ng-click="cmdShowTopic('slow')"  data="testOutcomes"></bar-chart>
-                </div>
-            
-                <div class="barchart gsecond">
-                    <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')"  data="testSummary"></bar-chart>
-                </div>            
+            <div class="pieChart gfirst">
+                <pie-chart class="cmd" ng-click="cmdShowTopic('slow')" data="testOutcomes"></pie-chart>
+                <img src="img/thebfg.png" ng-style="{'visibility': testOutcomes.length > 0 ? 'hidden' : 'visible'}" style="mix-blend-mode: multiply; position: absolute; top: 147px; left:13px" />
+            </div>
+            <div class="barchart gsecond">
+                <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')" data="testSummary"></bar-chart>
+            </div>
         </div>
-        
+            
         <div>
             <worker-status data="workerInfo"></worker-status>
         </div>
@@ -62,9 +63,9 @@
                             {{testGlance.errors}}
                         </i>
                     </span>
-                    / <span class="cmd" ng-click="cmdShowTopic('all')">{{testGlance.total}}</span>
-                </span>
-                <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
+            / <span class="cmd" ng-click="cmdShowTopic('all')">{{testGlance.total}}</span>
+
+                    <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
                 <span><span ng-click="cmdShowTopic('flakey')" class="cmd fa fa-rmb fa-2x" title="Flakey"></span> {{testGlance.flakey}}</span>            
                 <span><span ng-click="cmdShowTopic('log')" class="cmd fa fa-clock-o fa-2x"></span> {{msSince(testGlance.startedAt)}}</span>
                 <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>                
