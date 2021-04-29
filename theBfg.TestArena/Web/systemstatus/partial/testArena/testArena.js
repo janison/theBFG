@@ -1,4 +1,4 @@
-angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, rx, moment) {
+angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, $document, moment) {
     
     function pad(number) {
         if (number < 10) {
@@ -21,9 +21,30 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     };
 
     
-    
     $scope.cmdReload = function() {
         testArenaApi.sendCommand("", "Reload");
+    }
+    
+    $scope.cmdLightsOutToggle = function() {        
+        if(!$scope.lightsOut) {
+            $scope.lightsOut = false;
+        }
+        
+        $scope.lightsOut = !$scope.lightsOut;
+
+        if($scope.lightsOut) {
+            angular.element($document[0].querySelector("html")).css("background-color", "black");
+            angular.element($document[0].querySelector("html")).css("-webkit-filter", "invert(100%)");
+            angular.element($document[0].querySelector("html")).css("-moz-filter", "invert(100%)");
+            angular.element($document[0].querySelector("html")).css("-o-filter", "invert(100%)");
+            angular.element($document[0].querySelector("html")).css("-ms-filter", "invert(100%)");            
+        }
+        else {            
+            angular.element($document[0].querySelector("html")).css("-webkit-filter", "invert(0%)");
+            angular.element($document[0].querySelector("html")).css("-moz-filter", "invert(0%)");
+            angular.element($document[0].querySelector("html")).css("-o-filter", "invert(0%)");
+            angular.element($document[0].querySelector("html")).css("-ms-filter", "invert(0%)");
+        }
     }
 
     $scope.cmdShowTopic = function(result) {
