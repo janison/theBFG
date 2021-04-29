@@ -134,7 +134,7 @@
                         <td><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
-                                    <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'!entry.testName')" class="cmd fa fa-rocket"></span>
+                                    <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'$'+entry.testName+'')" class="cmd fa fa-rocket"></span>
                                     <span ng-repeat="a in entry.assets">
                                         <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                     </span>

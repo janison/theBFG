@@ -39,7 +39,10 @@ using theBFG.TestDomainAPI;
 ///
 /// 
 /// todo:
-///      
+///
+///         -allow specific tests to be triggered via UI
+///             - half way done, working first go but not 2nd attempt. need to track different test runs i think correctly?
+    ///         - need to fix packing, dont think correct app is being deployed
 ///         - show discovered or new tests when tests topic selected
 ///                - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///         - allow way to use servicecmd to launch a worker in a new processes

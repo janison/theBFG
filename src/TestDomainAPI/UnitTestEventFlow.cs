@@ -63,16 +63,18 @@ namespace theBFG.TestDomainAPI
 
         public StartUnitTest(string dll)
         {
-            Dll = dll;
+            var tokens = dll.Split('$');
+            Dll = tokens.FirstOrDefault();
+            RunThisTest = tokens.Skip(1).FirstOrDefault();
         }
 
         public override string ToString()
         {
             if(!Dll.IsNullOrWhitespace() && UseAppVersion.IsNullOrWhitespace())
-                return $"{GetType().Name} {Dll}";
+                return $"{GetType().Name} {Dll}{(RunThisTest.IsNullOrWhitespace() ? "" : $"${RunThisTest}")}";
             else
             {
-                return "{0} {1}".FormatWith(GetType().Name, GetType().GetProperties().Where(p => p.Name != "Id" || p.Name != "At").Select(p => this.GetProperty(p.Name)).ToStringEach(" "));
+                return $"{0} {1}".FormatWith(GetType().Name, GetType().GetProperties().Where(p => p.Name != "Id" && p.Name != "At").Select(p => this.GetProperty(p.Name)).ToStringEach(" "));
             }
 
         }

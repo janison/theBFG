@@ -71,6 +71,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         resetResults();
     }
 
+    // resets the test arena modal, ready for few data
     resetResults = function() {
         $scope.log = [];
         $scope.tests = [];
@@ -144,19 +145,22 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
        
         //there is a bug here, logs will not be attached to tests and therefor 
         //not be saved in cases where log is disabled from view
+
+        // handler: updates test with correct log message when TestAssetEvent
         if(msg.logMessage) {                        
             var existinLog = $scope.log.filter(w => w.unitTestId === msg.unitTestId);
             var existinTest = $scope.tests.filter(w => w.unitTestId === msg.unitTestId);
 
-            if(existinLog) {
+            if(existinLog.length > 0) {
                 existinLog[0].logMessage = msg.logMessage;            
             }
 
-            if(existinTest) {
+            if(existinTest.length > 0) {
                 existinTest[0].logMessage = msg.logMessage;             
             }
         };
 
+        // handler: adds the log file to the test results topic
         if(msg.logUrl) {
 
             var existingRun = !msg.unitTestId ? $scope.testRuns.filter(w => w.results.filter(a => a.testId === msg.testId))
@@ -174,10 +178,13 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         //     $scope.log[msg.testId].status = "In progress";
         // } 
         
+        //handler: testsuite completed with a overall result
         if(msg.result && msg.testName) {
             $scope.testsQueued--;
 
-            var test = $scope.testRuns.filter(w => w.unitTestId === msg.unitTestId);
+            var test = $scope.testRuns.filter(w => {
+                return w.testIds.filter(ww => ww == msg.testId ) !== null;
+            });
             msg.dll = test[0].dll;
 
             if($scope.testSummary.length > maxLogs) {
@@ -210,6 +217,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.addToTopicIfFilterActive(msg);            
         }
 
+        if(msg.RunThisTest) {
+            
+            var test = $scope.testRuns.filter(t => t.dll == msg.RunThisTest)[0];   
+            
+            test.testIds.push(msg.Id);
+        }
 
         if(msg.memUsage) {
 
@@ -227,17 +240,18 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             return;
         }
 
+        //handler: displays the todo tests TestDiscoveredEvent
         if(msg.dll && msg.hasOwnProperty("discoveredTests"))
         {
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];                        
 
             if(test) {//hack to make new tests come under same umbrella                                
-                
+                test.testIds.push(msg.testId);
                 test.total = msg.discoveredTests.length
             }
             else {
                 var dll =  {
-                    testId: msg.Id,
+                    testIds: [msg.Id],
                     dll: msg.dll,
                     info: "Not Run",
                     results: [],
@@ -254,6 +268,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.testsQueued += msg.discoveredTests.length;
         }
 
+        // handler: indicates a test is about to startunittest, adds test to results section
         else if(msg.dll && !msg.hasOwnProperty("passed")) {
 
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];            
@@ -272,6 +287,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
         }
 
+        //handler: result of a unit test has been foound
         if(msg.inResponseTo && msg.hasOwnProperty("passed")) {
             
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];
@@ -302,6 +318,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     };
 
 
+    //handler: a message is received from the testarena, apply it to our basic one-way flow data model built up off event hanlders    
     var sub = testArenaApi.updates.subscribe(function (testEvent) {
 
         $scope.$apply(function () {
