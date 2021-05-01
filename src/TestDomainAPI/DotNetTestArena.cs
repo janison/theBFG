@@ -76,8 +76,9 @@ namespace theBFG.TestDomainAPI
                     else if (cmd[0].StartsWith('F'))
                         _failed++;
 
+                    if(cmd.Length > 0)
+                        yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], cmd.Length > 2 ? ToDuration(cmd[2]) : "0", worker) { UnitTestId = _unitTestId };
 
-                    yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], cmd.Length > 2 ? ToDuration(cmd[2]) : "0", worker) { UnitTestId = _unitTestId };
                     yield break;
                 }
 

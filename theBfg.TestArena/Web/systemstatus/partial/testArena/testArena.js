@@ -105,20 +105,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.sendCmdDisabled = true;
         $scope.testArenaInfo = {
             isConnected: false
-        };
-
-        
-        $scope.workerInfo = [{
-
-            category: 'blue',
-            values: []
-        },
-
-        {
-            category: 'grey',
-            values: []
-        }
-        ];
+        };        
+        $scope.workerInfo = {};
 
         $scope.testGlance = {
             total: 0,
@@ -250,16 +238,35 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         if(msg.memUsage) {
 
-            if($scope.workerInfo[0].values.length > maxLogs) {
-                $scope.workerInfo[0].values.shift();            
+            var host = msg.name;
+
+            if(!$scope.workerInfo[host]) {
+
+                console.log('Found worker: '+ msg.host + ' : '+ msg.name);
+                $scope.workerInfo[host] = {
+                    name: msg.name,
+                    host: msg.name,
+                    resources: [{
+                        category: 'blue',
+                        values: []
+                    },
+                    {
+                        category: 'grey',
+                        values: []
+                    }]
+                };
             }
 
-            if($scope.workerInfo[1].values.length > maxLogs) {
-                $scope.workerInfo[1].values.shift();            
+            if($scope.workerInfo[host].resources[0].values.length > maxLogs) {
+                $scope.workerInfo[host].resources[0].values.shift();            
             }
 
-            $scope.workerInfo[0].values.push(msg.cpuUsage);                     
-            $scope.workerInfo[1].values.push((parseInt(msg.memUsage) / (16 * 1000)) * 100);                     
+            if($scope.workerInfo[host].resources[0].values.length > maxLogs) {
+                $scope.workerInfo[host].resources[0].values.shift();            
+            }
+
+            $scope.workerInfo[host].resources[0].values.push(msg.cpuUsage);                     
+            $scope.workerInfo[host].resources[1].values.push((parseInt(msg.memUsage) / (16 * 1000)) * 100);                     
 
             return;
         }

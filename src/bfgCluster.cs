@@ -22,7 +22,7 @@ namespace theBFG
         {
             TimeSpan.FromSeconds(5).Then().Do(_ =>
             {
-                _publish(new AppStatusInfoProviderEvent()
+                _publish?.Invoke(new AppStatusInfoProviderEvent()
 
                 {
                     ReporterName = "TestArena",

@@ -110,7 +110,7 @@ namespace theBFG
                 //var appStore = new CurrentDirectoryAppUpdateStore();
                 //var clusterHost = OutOfProcessFactory.CreateClusterHost(args, appStore, cfg);
 
-                return theBFGDef.TestWorker(apiName, testHostUrl, RxnApp.SpareReator(testHostUrl)).ToRxns()
+                return theBfgDef.TestWorker(apiName, testHostUrl, RxnApp.SpareReator(testHostUrl)).ToRxns()
                     .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, true))
                     .OnHost(new ConsoleHostedApp(), cfg)
                     .SelectMany(h => h.Run())
@@ -144,31 +144,33 @@ namespace theBFG
         
         public static IObservable<StartUnitTest> GetTargets(string testSyntax, string[] args, Func<ITestArena[]> forCompete, IServiceCommandFactory parseTestSyntax, IObservable<UnitTestResult> forParallelExection)
         {
-            return testSyntax.IsNullOrWhitespace() ? Rxn.Empty<StartUnitTest>() :
-            Rxn.DfrCreate<StartUnitTest>(() =>
-            {
-                if (!(testSyntax.Contains(".dll", StringComparison.InvariantCultureIgnoreCase) ||
-                      testSyntax.Contains(".csproj", StringComparison.InvariantCultureIgnoreCase) ||
-                      testSyntax.Contains(".bfc", StringComparison.InvariantCultureIgnoreCase)))
+            return testSyntax.IsNullOrWhitespace() ? 
+                Rxn.Empty<StartUnitTest>() :
+                Rxn.DfrCreate<StartUnitTest>(() =>
                 {
-                    "Target must be either .dll or .csproj or .bfc".LogDebug();
-                    return Rxn.Empty<StartUnitTest>();
-                }
-                
-                if (testSyntax.Contains(".bfc"))
-                {
-                    return GetTargetsFromBfc(testSyntax, parseTestSyntax, forParallelExection);
-                }
+                    if (!(testSyntax.Contains(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                          testSyntax.Contains(".csproj", StringComparison.InvariantCultureIgnoreCase) ||
+                          testSyntax.Contains(".bfc", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        "Target must be either .dll or .csproj or .bfc".LogDebug();
+                        return Rxn.Empty<StartUnitTest>();
+                    }
+                    
+                    if (testSyntax.Contains(".bfc"))
+                    {
+                        return GetTargetsFromBfc(testSyntax, parseTestSyntax, forParallelExection);
+                    }
 
-                if (!testSyntax.Contains("*"))
-                {
-                    return GetTargetsFromDll(args, testSyntax, forCompete);
-                }
-                else
-                {
-                    return GetTargetsFromPath(args, testSyntax, forCompete);
-                }
-            });
+                    if (!testSyntax.Contains("*"))
+                    {
+                        return GetTargetsFromDll(args, testSyntax, forCompete);
+                    }
+                    else
+                    {
+                        return GetTargetsFromPath(args, testSyntax, forCompete);
+                    }
+                })
+                .Where(NotAFrameworkFile);
         }
 
         private static IObservable<StartUnitTest> GetTargetsFromPath(string[] args, string testSyntax, Func<ITestArena[]> arena)
@@ -635,7 +637,7 @@ namespace theBFG
 
             var testCluster = resolver.Resolve<bfgCluster>();
             var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
-
+            
             //$"Streaming logs".LogDebug();
             //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
 
@@ -652,6 +654,12 @@ namespace theBFG
 
             testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker })
                 .SelectMany(e => rxnManager.Publish(e)).Until();
+
+            if (cfg == null)
+            {
+                testWorker.DiscoverAndDoWork();
+                return testWorker.ToObservable();
+            }
 
             return cfg.Take(1).Select(tests =>
             {
@@ -726,7 +734,6 @@ namespace theBFG
             return Rxn.Create<UnitTestDiscovered>(o =>
             {
                 return GetTargets(testDllSelector, args, null, null, null)
-                    .Where(d => NotAFrameworkFile(d))
                     .Do(t =>
                     {
                         ListTests(testDllSelector, arenas)

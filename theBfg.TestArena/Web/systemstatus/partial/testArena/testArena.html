@@ -52,8 +52,8 @@
             </div>
         </div>
             
-        <div>
-            <worker-status data="workerInfo"></worker-status>
+        <div ng-repeat="worker in workerInfo">
+            <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>
         </div>
         <div>            
                 <span width="40">

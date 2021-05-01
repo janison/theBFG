@@ -22,7 +22,7 @@ namespace theBFG
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @$"{new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena"
+            Html5Root = @$"{new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena" //@"C:\svn\bfg\theBfg.TestArena\Web\dist"//
         };
 
         public static IAspnetCoreCfg AspnetCfg = new AspnetCoreCfg()
@@ -53,7 +53,7 @@ namespace theBFG
             
             WebApiCfg = Cfg;
             AppInfo = new ClusteredAppInfo("bfgTestArena", "1.0.0", args, false);
-            App = e => theBFGDef.TestArena(args);
+            App = e => theBfgDef.TestArena(args);
         }
 
         public override Func<string, Action<IRxnLifecycle>> App { get; }

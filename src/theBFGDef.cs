@@ -25,7 +25,7 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    public static class theBFGDef
+    public static class theBfgDef
     {
         public static IObservable<StartUnitTest[]> Cfg;
 
@@ -110,8 +110,8 @@ namespace theBFG
                         TimeSpan.FromSeconds(1).Then().Do(_ =>
                         {
 
-                            if (theBFGDef.Cfg == null)
-                                theBFGDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
+                            if (theBfgDef.Cfg == null)
+                                theBfgDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
                             
                             var theBfg = resolver.Resolve<theBfg>();
                             var stopArena = theBfg.StartTestArena(resolver);
@@ -153,11 +153,12 @@ namespace theBFG
                     }))
                     .CreatesOncePerApp<InMemoryTapeRepo>()
                     ;
+                
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    dd.CreatesOncePerApp<MacOSSystemInformationService>();
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
                     dd.CreatesOncePerApp<WindowsSystemInformationService>();
-                }
             };
         };
 
@@ -179,6 +180,7 @@ namespace theBFG
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
+                    .CreatesOncePerRequest<bfgHostResourceMonitor>()
                     .Emits<UnitTestResult>()
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestAssetResult>()
@@ -199,8 +201,15 @@ namespace theBFG
                         var theBfg = resolver.Resolve<theBfg>();
                         var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver).Until();
                     }));
-                
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    dd.CreatesOncePerApp<MacOSSystemInformationService>();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    dd.CreatesOncePerApp<WindowsSystemInformationService>();
+
                 //forward all test events to the test arena
+                DistributedBackingChannel.For(typeof(AppResourceInfo))(dd);
                 DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
             };
         };

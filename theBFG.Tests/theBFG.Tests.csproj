@@ -25,10 +25,13 @@
 
     <ItemGroup>
       <Reference Include="Rxns">
-        <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.dll</HintPath>
+        <HintPath>..\rxns\Rxns.dll</HintPath>
+      </Reference>
+      <Reference Include="Rxns.Autofac">
+        <HintPath>..\rxns\Rxns.Autofac.dll</HintPath>
       </Reference>
       <Reference Include="Rxns.WebApiNET5">
-        <HintPath>..\..\..\jan\Rxns\Rxns.WebApiNET5\bin\Debug\netcoreapp3.1\Rxns.WebApiNET5.dll</HintPath>
+        <HintPath>..\rxns\Rxns.WebApiNET5.dll</HintPath>
       </Reference>
     </ItemGroup>
 
