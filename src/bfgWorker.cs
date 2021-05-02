@@ -131,18 +131,12 @@ namespace theBFG
                     throw new ArgumentException($"Cannot find target @{work.Dll}");
                 }
 
-                var workDll = new FileInfo(work.Dll).Name;
-                workDll = $"{work.UseAppUpdate}/{workDll}"; //{work.UseAppVersion}/
-                work.Dll = workDll;
-
-                //todo: update need
-                keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,
-                    work.UseAppUpdate ?? "Test", new RxnAppCfg()
-                    {
-                        AppStatusUrl = "http://localhost:888", // work.AppStatusUrl,
-                        SystemName = work.UseAppUpdate,
-                        KeepUpdated = true
-                    }, true);
+                keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,  ".", new RxnAppCfg()
+                {
+                    AppStatusUrl = work.AppStatusUrl.IsNullOrWhiteSpace("http://localhost:888"),
+                    SystemName = work.UseAppUpdate,
+                    KeepUpdated = true
+                }, true);
             }
             else
             {
@@ -165,6 +159,7 @@ namespace theBFG
                 })
                 .Switch();
         }
+        
 
         /// <summary>
         /// Sends a set of logs to the test arena, returning a url to access the test via

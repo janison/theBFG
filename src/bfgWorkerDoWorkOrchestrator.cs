@@ -36,7 +36,7 @@ namespace theBFG
             if(app.SystemName.BasicallyContains("worker"))
                 return _workerPool.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
                 {
-                    Worker = new bfgWorkerRxnManagerBridge<StartUnitTest, UnitTestResult>(_appCmds, _rxnManager)
+                    Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager)
                     {
                         Route = app.GetRoute(),
                         Name = app.SystemName,

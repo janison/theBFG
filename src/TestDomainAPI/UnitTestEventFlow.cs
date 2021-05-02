@@ -74,7 +74,7 @@ namespace theBFG.TestDomainAPI
                 return $"{GetType().Name} {Dll}{(RunThisTest.IsNullOrWhitespace() ? "" : $"${RunThisTest}")}";
             else
             {
-                return $"{0} {1}".FormatWith(GetType().Name, GetType().GetProperties().Where(p => p.Name != "Id" && p.Name != "At").Select(p => this.GetProperty(p.Name)).ToStringEach(" "));
+                return $"{GetType().Name} {GetType().GetProperties().Where(p => p.Name != "Id" && p.Name != "At").Select(p => this.GetProperty(p.Name)).ToStringEach(" ")}";
             }
 
         }

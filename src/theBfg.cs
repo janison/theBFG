@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -40,6 +41,11 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///
+
+///         -fix not launching if **.test.dll is used. need to use gettargets istead
+///         - fix issue with remote worker tests not run due to not being uploaded to appstatus correctly when using wildcards *.tests.dll
+///                 - need to fix download to remote worker and downloading to correct dir also
+/// 
 ///         - need to fix packing, dont think correct app is being deployed - sorry everyone! u can get dist from the main repo
 ///         - allow settings to be configured via UI and saved between restarts
 ///             - html5 storage? or .cfg file?
@@ -53,13 +59,17 @@ using theBFG.TestDomainAPI;
 ///   
 ///         -   allow workers to be associated with tags
 /// -           -   allow targeting of tests at specific tag'd workers with startunittest
-/// -           -   show workers resource ussage as graphs which are  ----------- this big each and they scroll after laying
-///                 out and overflowing the container. Like the taskmgr  layout. only need to show stats per machine, not worker so we dont repeat whats on t
-///                 the same machine
 /// 
-///         - need to fix saving / persistance of data.
-///         - play sounds on pass or fail of test suite so you dont need to switch windows
-///             -  short and low annouance
+///         - add worker meta info to graph
+///             - ip, os, threads, status, hostname
+///             - indicate worker count per host
+///             - indicate active work on each worker?
+///                 - visually show the gun firing with a glow outline, then trigger a sound also
+///                  - play sounds on pass or fail of test suite so you dont need to switch windows
+/// 
+///             - need to fix saving / persistance historical data.
+///                 - add a "history" flag to the playback allow the UI to skip/know these are historical so it doesnt double count                 
+///                 - use "save" keyword to indicate filesystem mode instead of inmemory?
 ///
 ///
 /// </summary>
@@ -99,7 +109,7 @@ namespace theBFG
             return Rxn.Create<Unit>(o =>
             {
                 var apiName = args.Skip(1).FirstOrDefault();
-                var testHostUrl = ParseTestArenaAddressOrDefault(args);
+                var testHostUrl = GetTestarenaUrlFromArgs(args);
                 theBfg.Args = args;
 
 
@@ -129,9 +139,8 @@ namespace theBFG
         /// <returns></returns>
         public static IObservable<StartUnitTest[]> DetectAndWatchTargets(string[] args, Func<ITestArena[]> forCompete, IServiceCommandFactory integrationTestParsing, IObservable<UnitTestResult> integrationTestResults)
         {
-            var testCfg = theBigCfg.Detect();
 
-            var dllOrTestSynax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0];//heck to remove the unwated tokens
+            var dllOrTestSynax = GetDllFromArgs(args);//heck to remove the unwated tokens
 
             return GetTargets(dllOrTestSynax, args, forCompete, integrationTestParsing, integrationTestResults)
                     .Buffer(TimeSpan.FromSeconds(1))
@@ -193,19 +202,32 @@ namespace theBFG
             });
         }
 
-        
-        private static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
+
+        public static string GetAppVersionFromDllSyntax(string[] args, string dll)
+        {
+            var testCfg = theBigCfg.Detect();
+
+            var appUpdateDllSource = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
+            
+            return appUpdateDllSource.IsNullOrWhiteSpace(DateTime.Now.ToString("s").Replace(":", ""));
+        }
+
+        public static string GetAppNameFromDllSyntax(string dll)
         {
             var testCfg = theBigCfg.Detect();
 
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
-            var testName = dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
-            var appUpdateVersion = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
-            //todo fix this, should embed version inside dll expression
-
             var dlld = new FileInfo(dll);
 
-            var watchDllUpdatesOverTime = GetOrCreateWatcher(dlld, args, arena);
+            return appUpdateDllSource.IsNullOrWhiteSpace(dlld.Name.Split(dlld.Extension).FirstOrDefault().TrimEnd('.'));
+        }
+
+        public static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
+        {
+            var appUpdateDllSource = GetAppNameFromDllSyntax(dll);
+            var testName = GetTestNameFromDllSyntax(dll);
+            var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
+            var watchDllUpdatesOverTime = GetOrCreateWatcher(dll);
 
             return watchDllUpdatesOverTime
                 .StartWith(dll)
@@ -242,9 +264,17 @@ namespace theBFG
             });
         }
 
-        private static readonly IDictionary<string, IObservable<string>> _watchers = new ConcurrentDictionary<string, IObservable<string>>();
-        private static IObservable<string> GetOrCreateWatcher(FileInfo dlld, string[] args, Func<ITestArena[]> arena)
+        private static string GetTestNameFromDllSyntax(string dll)
         {
+            var testCfg = theBigCfg.Detect();
+
+            return dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
+        }
+
+        private static readonly IDictionary<string, IObservable<string>> _watchers = new ConcurrentDictionary<string, IObservable<string>>();
+        private static IObservable<string> GetOrCreateWatcher(string testDll)
+        {
+            var dlld = new FileInfo(testDll);
             if (_watchers.ContainsKey(dlld.FullName))
                 return Rxn.Empty<string>(); //already subscribed to updates
 
@@ -379,19 +409,26 @@ namespace theBFG
 
         private static IDisposable LaunchToTestArenaIf(string[] args, string url)
         {
-            var testArenaSyntax = args.FirstOrDefault(w => w.StartsWith("@"));
+            var dll = GetDllFromArgs(args);
+            var name = GetAppNameFromDllSyntax(dll);
+            var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
+            url = GetTestarenaUrlFromArgs(args) ?? url;
 
-            if (testArenaSyntax.IsNullOrWhitespace()) return null;
-            
-            var appsyntax = args.Skip(1).FirstOrDefault()?.Split('@');
-            var name = appsyntax.FirstOrDefault();
-            var dll = appsyntax.Skip(1).FirstOrDefault().Split(':').FirstOrDefault();
-            var appUpdateVersion = appsyntax.Skip(1).FirstOrDefault().Split(':').Skip(1).FirstOrDefault();
-            url = ParseTestArenaAddressOrDefault(args) ?? url;
-            
-            return LaunchAppToTestArena(name, appUpdateVersion.IsNullOrWhiteSpace("beta-"), dll, url, new AppStatusCfg()).FinallyR(() => theBfg.IsCompleted.OnCompleted()).Until();
+            return LaunchAppToTestArena(name, appUpdateVersion, dll, url, new AppStatusCfg()).FinallyR(() => theBfg.IsCompleted.OnCompleted()).Until();
         }
 
+        /// <summary>
+        ///  updatename@dll:version 
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private static string GetDllFromArgs(string[] args)
+        {
+            var testCfg = theBigCfg.Detect();
+            var appsyntax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0];
+
+            return appsyntax;
+        }
 
         public static IDisposable Fire(IObservable<StartUnitTest[]> unitTests = null)
         {
@@ -435,13 +472,11 @@ namespace theBFG
 
         public IDisposable WatchForCompletion(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action onComplete)
         {
-            //stopAdvertising?.Dispose();
             return unitTestToRun.Select(tests =>
             {
                 var stopDOingWork = rxnManage.CreateSubscription<CommandResult>()
                     .Where(_ => unitTestToRun != null)
-                    .Where(c => c.InResponseTo.Equals(tests[0]
-                        .Id)) //this code is wrong, need to fix, could be a response to any msg
+                    .Where(c => c.InResponseTo.BasicallyEquals(tests[0].Id))
                     .Do(_ =>
                     {
                         $"Duration: {startedAt.Elapsed}".LogDebug();
@@ -505,7 +540,7 @@ namespace theBFG
 
         public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
-            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, ParseTestArenaAddressOrDefault(args), resolver.Resolve<IAppStatusCfg>());
+            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, GetTestarenaUrlFromArgs(args), resolver.Resolve<IAppStatusCfg>());
             var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
@@ -515,7 +550,7 @@ namespace theBFG
             return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, stopFiring, broadCaste);
         }
 
-        private static string ParseTestArenaAddressOrDefault(string[] args)
+        public static string GetTestarenaUrlFromArgs(string[] args)
         {
             var url = args.FirstOrDefault(w => w.StartsWith('@')).IsNullOrWhiteSpace("http://localhost:888").TrimStart('@');
 
@@ -540,6 +575,13 @@ namespace theBFG
         }
 
 
+        /// <summary>
+        /// todo: fix this method, it should use a delay, thats a hack!
+        /// </summary>
+        /// <param name="unitTestToRun"></param>
+        /// <param name="testArenaAddress"></param>
+        /// <param name="cfg"></param>
+        /// <returns></returns>
         public static IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, string testArenaAddress, IAppStatusCfg cfg)
         {
             return unitTestToRun.Delay(TimeSpan.FromSeconds(2))
@@ -550,9 +592,9 @@ namespace theBFG
                 .Until();
         }
 
-        public static IObservable<Unit> LaunchAppToTestArena(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
-
+        public static IObservable<string> LaunchAppToTestArena(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
         {
+
             return RxnApps.CreateAppUpdate(
                     appName,
                     Scrub(appVersion),
@@ -567,7 +609,8 @@ namespace theBFG
                     {
                         ReportStatus.Log.OnError("Could not download test. Cant join cluster :(", e);
                         throw e;
-                });
+                })
+                .Select(_ => appVersion);
         }
 
         /// <summary>
@@ -841,6 +884,11 @@ _/  |_|  |__   ____\______   \_/ ____\____
             })
             .FirstAsync()
             .Until();
+        }
+
+        public static string GetTestSuiteDir(StartUnitTest work)
+        {
+            return Path.Combine(work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}");
         }
     }
 }
