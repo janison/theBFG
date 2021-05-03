@@ -26,7 +26,7 @@ namespace theBFG
 
                 {
                     ReporterName = "TestArena",
-                    Info = () => new AppStatusInfo[]
+                    Info = () => new[]
                     {
                         new AppStatusInfo("Workers", $"{Workflow.Workers.Count}{Workflow.Workers.Values.Count(v => v.IsBusy.Value())}"),
                     }

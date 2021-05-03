@@ -16,12 +16,14 @@ namespace theBFG
     {
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IAppStatusStore _appCmds;
+        private readonly IUpdateStorageClient _appUpdates;
         private readonly IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> _workerPool;
 
-        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> workerPool)
+        public bfgWorkerDoWorkOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, IUpdateStorageClient appUpdates, IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> workerPool)
         {
             _rxnManager = rxnManager;
             _appCmds = appCmds;
+            _appUpdates = appUpdates;
             _workerPool = workerPool;
         }
 
@@ -36,7 +38,7 @@ namespace theBFG
             if(app.SystemName.BasicallyContains("worker"))
                 return _workerPool.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
                 {
-                    Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager)
+                    Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager, _appUpdates)
                     {
                         Route = app.GetRoute(),
                         Name = app.SystemName,

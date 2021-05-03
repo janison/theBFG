@@ -41,7 +41,7 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///
-
+///         - add visal effect to test table that quickly flashes the test as it launches after watching
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
 ///         - fix issue with remote worker tests not run due to not being uploaded to appstatus correctly when using wildcards *.tests.dll
 ///                 - need to fix download to remote worker and downloading to correct dir also
@@ -179,7 +179,11 @@ namespace theBFG
                         return GetTargetsFromPath(args, testSyntax, forCompete);
                     }
                 })
-                .Where(NotAFrameworkFile);
+                .Select(e =>
+                {
+                    e.Dll = e.Dll.AsCrossPlatformPath();
+                    return e;
+                });
         }
 
         private static IObservable<StartUnitTest> GetTargetsFromPath(string[] args, string testSyntax, Func<ITestArena[]> arena)
@@ -193,7 +197,7 @@ namespace theBFG
 
             return Rxn.Create<StartUnitTest>(o =>
             {
-                foreach (var dll in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories))
+                foreach (var dll in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories).Select(d => d.AsCrossPlatformPath()).Where(NotAFrameworkFile))
                 {
                     GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until();
                 }
@@ -308,7 +312,8 @@ namespace theBFG
                 }
 
                 return watchers;
-            });
+            })
+            ;
         }
 
         public static IObservable<Unit> ReloadAnd(string url = "http://localhost:888/", params string[] args)
@@ -425,7 +430,7 @@ namespace theBFG
         private static string GetDllFromArgs(string[] args)
         {
             var testCfg = theBigCfg.Detect();
-            var appsyntax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0];
+            var appsyntax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0].AsCrossPlatformPath();
 
             return appsyntax;
         }
@@ -540,7 +545,7 @@ namespace theBFG
 
         public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
-            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, GetTestarenaUrlFromArgs(args), resolver.Resolve<IAppStatusCfg>());
+            var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, GetTestarenaUrlFromArgs(args), resolver.Resolve<IAppStatusCfg>()).Until();
             var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
@@ -582,14 +587,12 @@ namespace theBFG
         /// <param name="testArenaAddress"></param>
         /// <param name="cfg"></param>
         /// <returns></returns>
-        public static IDisposable LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, string testArenaAddress, IAppStatusCfg cfg)
+        public static IObservable<string> LaunchUnitTestsToTestArenaDelayed(IObservable<StartUnitTest[]> unitTestToRun, string testArenaAddress, IAppStatusCfg cfg)
         {
-            return unitTestToRun.Delay(TimeSpan.FromSeconds(2))
-                .Do(runTheseUnitTests =>
-                {
-                    LaunchAppToTestArena(runTheseUnitTests[0].UseAppUpdate, runTheseUnitTests[0].UseAppVersion, runTheseUnitTests[0].Dll, testArenaAddress, cfg).Until();
-                })
-                .Until();
+            return unitTestToRun.Delay(TimeSpan.FromSeconds(1.5))
+                .SelectMany(t => t)
+                .SelectMany(runTheseUnitTest => LaunchAppToTestArena(runTheseUnitTest.UseAppUpdate, runTheseUnitTest.UseAppVersion, runTheseUnitTest.Dll, testArenaAddress, cfg))
+                ;
         }
 
         public static IObservable<string> LaunchAppToTestArena(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
@@ -607,7 +610,7 @@ namespace theBFG
                 .Catch<Unit, Exception>(
                     e =>
                     {
-                        ReportStatus.Log.OnError("Could not download test. Cant join cluster :(", e);
+                        ReportStatus.Log.OnError("Could not upload test. Cant join cluster :(", e);
                         throw e;
                 })
                 .Select(_ => appVersion);
@@ -733,7 +736,7 @@ namespace theBFG
                 return new[]
                 {
                     unitTestToRun == null
-                        ? new AppStatusInfo("Test", $"Running {(unitTestToRun.RunAllTest ? "All" : unitTestToRun.RunThisTest)}")
+                        ? new AppStatusInfo("Test", $"Running {unitTestToRun.Dll}")
                         : new AppStatusInfo("Test", $"Waiting for work"),
                     new AppStatusInfo("Duration", (DateTime.Now - (_started ?? DateTime.Now)).TotalMilliseconds),
                     new AppStatusInfo("Workers", testCluster.Workflow.Workers.Count)
@@ -769,7 +772,7 @@ namespace theBFG
 
         public static IObservable<IEnumerable<string>> ListTests(string testDll, Func<ITestArena[]> arenas)
         {
-            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems());
+            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems()).Select(d => d.Where(NotAFrameworkFile));
         }
 
         public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string testDllSelector, string[] args, Func<ITestArena[]> arenas)
@@ -794,15 +797,14 @@ namespace theBFG
                     })
                     .Subscribe();//todo fix hanging
             })
-                .Publish().RefCount();
+            .Publish()
+            .RefCount();
         }
 
-        private static bool NotAFrameworkFile(StartUnitTest d)
+        private static string[] frameworkFileExclusions = new[] { "packages/", "obj/", "packages\\", "obj\\", ".TestPlatform.", ".nunit.", "testhost.dll", "\\publish\\", "/publish/", theBfg.DataDir, "%%" };
+        private static bool NotAFrameworkFile(string file)
         {
-            return !d.Dll.BasicallyContains("packages/") && !d.Dll.BasicallyContains("packages\\") &&
-                   !d.Dll.BasicallyContains("obj/") && !d.Dll.BasicallyContains("obj\\") &&
-                   !d.Dll.BasicallyContains(".TestPlatform.") && !d.Dll.BasicallyContains(".xunit.") &&
-                   !d.Dll.BasicallyContains(".nunit.");
+            return !frameworkFileExclusions.Any(e => file.BasicallyContains(e));
         }
 
         public IDisposable ExitAfter(StartUnitTest[] testsToWatch, IObservable<UnitTestResult> testResults)
@@ -888,7 +890,11 @@ _/  |_|  |__   ____\______   \_/ ____\____
 
         public static string GetTestSuiteDir(StartUnitTest work)
         {
-            return Path.Combine(work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}");
+            return Path.Combine(work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}").AsCrossPlatformPath();
         }
+    }
+
+    public static class XplatExtensions
+    {
     }
 }

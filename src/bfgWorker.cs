@@ -54,8 +54,10 @@ namespace theBFG
 
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
+            work.Dll = work.Dll.EnsureRooted();
+
             var logId = $"{Name.Replace("#", "")}_{++_runId}_{DateTime.Now:dd-MM-yy-hhmmssfff}";
-            var logDir = Path.Combine(_cfg.AppRoot, "logs", logId);
+            var logDir = Path.Combine(_cfg.AppRoot, "logs", logId).AsCrossPlatformPath();
             StreamWriter testLog = null;
             FileStream logFile = null;
 
@@ -114,7 +116,7 @@ namespace theBFG
 
         public IObservable<Unit> RunTestSuiteInTestArena(StartUnitTest work, StreamWriter testLog, string logDir)
         {
-            $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
+            $"Preparing to run {(work.RunAllTest ? "All" : work.RunThisTest)} in {work.Dll}".LogDebug();
 
             if (!Directory.Exists(logDir))
             {
@@ -128,7 +130,8 @@ namespace theBFG
             {
                 if (work.UseAppUpdate.IsNullOrWhitespace())
                 {
-                    throw new ArgumentException($"Cannot find target @{work.Dll}");
+                    _rxnManager.Publish(new UnitTestResult() { WasSuccessful = false, Message = $"Cannot find target @{work.Dll}".LogDebug() }.AsResultOf(work));
+                    return Rxn.Empty<Unit>();
                 }
 
                 keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,  ".", new RxnAppCfg()
@@ -142,11 +145,11 @@ namespace theBFG
             {
                 work.Dll = FindIfNotExists(work.Dll);
             }
-
+            
             return keepTestUpdatedIfRequested //run the test
                 .Select(testPath =>
                 {
-                    $"Running {(work.RunAllTest ? "All" : work.RunThisTest)}".LogDebug();
+                    $"Running {work.Dll}".LogDebug();
 
                     foreach (var arena in _arena())
                     {
@@ -155,6 +158,8 @@ namespace theBFG
                             return arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
                     }
 
+                    "Argh, couldnt find a test arena to run this test".LogDebug();
+                    _rxnManager.Publish(new UnitTestResult(){ WasSuccessful = false, Message = $"No test arena on host is compatible with {work.Dll}"}.AsResultOf(work));
                     return Rxn.Empty<Unit>();
                 })
                 .Switch();
