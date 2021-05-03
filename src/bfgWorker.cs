@@ -153,9 +153,16 @@ namespace theBFG
 
                     foreach (var arena in _arena())
                     {
-                        var tests = arena.ListTests(work.Dll).WaitR();
-                        if (tests.AnyItems())
-                            return arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
+                        try
+                        {
+                            var tests = arena.ListTests(work.Dll).WaitR();
+                            if (tests.AnyItems())
+                                return arena.Start(Name, work, testLog, logDir).SelectMany(_ => _rxnManager.Publish(_));
+                        }
+                        catch (Exception)
+                        {
+                            continue;
+                        }
                     }
 
                     "Argh, couldnt find a test arena to run this test".LogDebug();

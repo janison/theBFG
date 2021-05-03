@@ -209,8 +209,7 @@ namespace theBFG
                     dd.CreatesOncePerApp<WindowsSystemInformationService>();
 
                 //forward all test events to the test arena
-                DistributedBackingChannel.For(typeof(AppResourceInfo))(dd);
-                DistributedBackingChannel.For(typeof(ITestDomainEvent))(dd);
+                DistributedBackingChannel.For(typeof(AppResourceInfo), typeof(ITestDomainEvent))(dd);
             };
         };
     }
