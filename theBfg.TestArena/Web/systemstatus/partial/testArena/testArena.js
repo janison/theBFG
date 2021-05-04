@@ -1,4 +1,4 @@
-angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, $document, moment) {
+angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope, $scope, testArenaApi, $document, $interval) {
     
     function pad(number) {
         if (number < 10) {
@@ -94,6 +94,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     // resets the test arena modal, ready for few data
     resetResults = function() {
+        $scope.stop = 0;
+        $scope.firedTimes = 0
         $scope.log = [];
         $scope.tests = [];
         $scope.currentTopic = [];
@@ -115,6 +117,32 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             slow: 0,
             startedAt: new Date()
         }
+
+        //animations
+        $scope.fire = function() {            
+            $scope.firedTimes++;
+
+            if($scope.firedTimes > 1)
+            {
+                return;
+            }
+
+            $scope.stop = $interval(() => {
+                $scope.shouldFire = !$scope.shouldFire
+            }, 800);
+        }
+
+        $scope.stopFiring = function() {
+            $scope.firedTimes--;
+
+            if($scope.firedTimes > 0)
+            {
+                return;
+            }
+            $interval.cancel($scope.stop);
+            $scope.shouldFire = false;
+        }
+        $scope.shouldFire = false;
     }
 
     testArenaApi.isConnected.subscribe(function(isonline) {
@@ -191,6 +219,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if(msg.result && msg.testName) {
             $scope.testsQueued--;
 
+            
+
             var test = $scope.testRuns.filter(w => {
                 return w.testIds && w.testIds.filter(ww => ww == msg.testId ) !== null;
             });
@@ -210,7 +240,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                     $scope.testSummary.shift();
                 }    
                 
-                $scope.testOutcomes.push(msg); 
+                $scope.testOutcomes.push(msg);                 
             }
 
             
@@ -220,13 +250,14 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             msg.info = `${msg.result} in ${msg.duration}`;
 
-
             $scope.testGlance.slow = $scope.testOutcomes.length;              
             $scope.testGlance.total++;
 
             $scope.testSummary.push(msg);
             $scope.tests.push(msg);          
-            $scope.addToTopicIfFilterActive(msg);            
+            $scope.addToTopicIfFilterActive(msg);   
+
+            $scope.stopFiring();
         }
 
         if(msg.RunThisTest) {
@@ -316,6 +347,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 msg.assets = [];
                 $scope.testRuns.push(msg);
             }
+
+            $scope.fire();
+
         }
 
         //handler: result of a unit test has been foound

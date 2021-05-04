@@ -1,8 +1,9 @@
+
 <div class="col-md-12" ng-controller="testArenaCtrl">
     <form name="remote">        
         <div class="grouped">
             <div>
-                <span ng-if="!showTestRunDetailed" ng-repeat="entry in testRuns">
+                <span ng-if="!showTestRunDetailed" ng-repeat="entry in testRuns" style="position: fixed;">
                     <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>
@@ -45,9 +46,21 @@
             </div>
             <div class="pieChart gfirst">
                 <pie-chart class="cmd" ng-click="cmdShowTopic('slow')" data="testOutcomes"></pie-chart>
-                <img src="img/thebfg.png" ng-style="{'visibility': testOutcomes.length > 0 ? 'hidden' : 'visible'}" style="mix-blend-mode: multiply; position: absolute; top: 147px; left:13px" />
+                <img src="img/thebfg.png" ng-style="{'visibility': testOutcomes.length > 0 ? 'hidden' : 'visible'}" style="mix-blend-mode: multiply; position: absolute; top: 112px; left:-1px" />
+                <div class="fire" style="
+                border-radius: 80%;
+                border-style: dashed;
+                border-color: whitesmoke;
+                position: absolute;
+                top: 93px;
+                left: 650px;
+                width: 10px;
+                border-width: 76px;
+                height: 10px;              
+                opacity: 0%;
+                transition: opacity 0.5s;" ng-style="{'opacity': shouldFire ? '20%' : '0%'}"></div>
             </div>
-            <div class="barchart gsecond">
+            <div class="barchart gsecond" style="border-radius:2%;border-style: inset;border-color: whitesmoke; border-width: 3px;">
                 <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')" data="testSummary"></bar-chart>
             </div>
         </div>
@@ -120,20 +133,20 @@
                 <table style="display: block; border: 0px;padding:2px;" ng-style="{'visibility': testsQueued > 0 ? 'visible': 'hidden', 'color': 'black', 'background-color': '#566d91','width': testsQueued * 10.5,'height':0}"></table>
             </div>
             
-            <table ng-if="!logDisabled" ng-click="cmdLightsOutToggle()" class="table table-hover table-striped table-condensed h6">
+            <table ng-if="!logDisabled" class="table table-hover table-striped table-condensed h6">
                 <thead>
-                <th>Outcome</th>
-                <th>Test</th>
-                <th>Worker</th>
-                <th>Duration</th>
-                <th>Log</th>
+                <th>Test Arena</th>
                 </thead>
                  <tbody><!--  ng-if="currentTopic.length != 0 -->
-                    
                     <!--<span class="fa fa-cog fa-spin" ng-show="$parent.logLoading" />-->
-                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-repeat="entry in log | filter:searchTerm">
-                        <td>{{entry.result}}</td>
-                        <td><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
+                    <tr  ng-repeat="entry in log | filter:searchTerm">                        
+                        <td>
+                            <span ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}">{{entry.result}}</span>
+                            <span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
+                            <span style="font-style: italic;"> on '{{entry.worker}}'</span>
+                            <span>in '{{entry.duration}}'s</span>
+                            <br/>
+                            <pre class="stacktrace">{{entry.logMessage}}</pre>
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
                                     <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'$'+entry.testName+'')" class="cmd fa fa-rocket"></span>
@@ -141,11 +154,8 @@
                                         <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                     </span>
                                 </span>
-                            </div></td>
-                        <td>{{entry.worker}}</td>
-                        <td>{{entry.duration}}</td>
-                        <td style="white-space: pre;" ng-if="entry.logMessage || entry.logMessage.length > 1"><pre class="stacktrace">{{entry.logMessage}}</pre></td>
-                        <td ng-if="!entry.logMessage || entry.logMessage < 2"></td>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
