@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Rxns;
+using Rxns.Hosting;
 
 namespace theBFG.TestDomainAPI
 {
@@ -64,6 +65,9 @@ namespace theBFG.TestDomainAPI
             return work.RunThisTest.IsNullOrWhitespace() ? "" : $" /Tests:{work.RunThisTest}";
         }
 
+        public VsTestArena(IRxnAppInfo appInfo) : base(appInfo)
+        {
+        }
     }
 
     public class UnitTestsStarted : ITestDomainEvent
@@ -73,6 +77,9 @@ namespace theBFG.TestDomainAPI
         public string TestId { get; set; }
 
         public string[] Tests { get; set; }
+
+        public string Worker { get; set; }
+        public string WorkerId { get; set; }
 
         public UnitTestsStarted()
         {

@@ -24,7 +24,8 @@
                                 <span class="popuptrigger" ng-click="showLogs = !showLogs">
                                     {{entry.dll}}
                                     <div class="popup">
-                                        <span class="popuptext" ng-class="{show: showLogs}">
+                                        <span class="popuptext" ng-class="{show: showLogs}">                                    
+                                        <span class="cmd fa fa-exclamation-circle" ng-click="publish('TestArena\\'+entry.worker+'', 'StopUnitTest')" title="STOP running tests"></span>
                                             <span ng-repeat="a in entry.assets">
                                                 <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                             </span>

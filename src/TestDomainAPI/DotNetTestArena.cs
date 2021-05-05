@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using Rxns;
+using Rxns.Hosting;
 using Rxns.Interfaces;
 using Rxns.Logging;
 
@@ -19,6 +20,7 @@ namespace theBFG.TestDomainAPI
     /// </summary>
     public class DotNetTestArena : ProcessBasedTestArena
     {
+        private readonly IRxnAppInfo _appInfo;
         protected bool isreadingOutputMessage = true;
         protected bool lastLine = false;
         protected  StringBuilder outputBuffer = new StringBuilder();
@@ -34,6 +36,11 @@ namespace theBFG.TestDomainAPI
         protected bool startParsing;
         protected bool baddll;
 
+        public DotNetTestArena(IRxnAppInfo appInfo)
+        {
+            _appInfo = appInfo;
+        }
+
         public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
         {
             var cmd = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -47,7 +54,9 @@ namespace theBFG.TestDomainAPI
                     {
                         TestId = work.Id,
                         At = DateTime.Now,
-                        Tests = work.RunThisTest.IsNullOrWhiteSpace("").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        Tests = work.RunThisTest.IsNullOrWhiteSpace("").Split(',', StringSplitOptions.RemoveEmptyEntries),
+                        Worker = _appInfo.Name,
+                        WorkerId = worker
                     };
 
                     _freshTest = false;

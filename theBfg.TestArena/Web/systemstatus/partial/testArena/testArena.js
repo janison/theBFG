@@ -172,13 +172,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.log.pop();            
         }
 
-        // if(msg.tests) {
-        //     if(!$scope.log[msg.testId]) {
-        //         $scope.log[msg.testId] = { };
-        //     }
-
-        //     $scope.log[msg.testId].status = "Waiting";
-        // }
+        if(msg.tests) {
+            var existingRun = $scope.testRuns.filter(w => w.results.filter(a => a.testId === msg.testId))
+                        
+            existingRun[0].workerId = msg.workerId;
+            existingRun[0].worker = msg.worker;
+        }
        
         //there is a bug here, logs will not be attached to tests and therefor 
         //not be saved in cases where log is disabled from view
@@ -226,7 +225,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             });
 
             if(test[0]) {
-                msg.dll = test[0].dll;
+                msg.dll = test[0].dll;                
             }
 
             if($scope.testSummary.length > maxLogs) {

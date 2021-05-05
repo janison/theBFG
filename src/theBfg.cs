@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,9 +9,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading;
 using Autofac;
 using Rxns;
 using Rxns.Cloud;
@@ -21,7 +16,6 @@ using Rxns.Cloud.Intelligence;
 using Rxns.Collections;
 using Rxns.Commanding;
 using Rxns.DDD.Commanding;
-using Rxns.DDD.CQRS;
 using Rxns.Health;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
@@ -42,8 +36,6 @@ using theBFG.TestDomainAPI;
 /// todo:
 ///
 ///         - support focus mode, where a single test can be given focus and only CI happens on that 1 test, even though the whole dll is built
-///         - support stopping tests in progress, by presenting a icon in the test-summary UI with a X
-///             - fixes scenario of hanging test, need to kill on the machine otherwise
 ///         - add visal effect to test table that quickly flashes the test as it launches after watching
 ///                 - make gun glow with a flash to simulate firing
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
