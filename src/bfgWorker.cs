@@ -9,6 +9,7 @@ using System.Reactive.Subjects;
 using Rxns;
 using Rxns.Cloud.Intelligence;
 using Rxns.Collections;
+using Rxns.DDD.Commanding;
 using Rxns.Health;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
@@ -37,6 +38,7 @@ namespace theBFG
         public IObservable<bool> IsBusy => _isBusy;
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
         private readonly IZipService _zipService;
+        private IObservable<UnitTestResult> _current;
 
         public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, IAppStatusCfg cfg, Func<ITestArena[]> arena)
         {
@@ -51,7 +53,7 @@ namespace theBFG
             Name = name;
             Route = route;
         }
-
+        
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
             work.Dll = work.Dll.EnsureRooted();

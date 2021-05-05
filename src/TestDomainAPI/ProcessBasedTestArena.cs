@@ -29,8 +29,6 @@ namespace theBFG.TestDomainAPI
 
             bool isreadingOutputMessage = false;
             var lastLine = false;
-            var outputBuffer = new StringBuilder();
-            //todo: make testrunner injectable/swapable
 
             OnStart(work);
             return Rxn.Create

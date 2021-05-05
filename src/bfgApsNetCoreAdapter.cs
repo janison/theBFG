@@ -22,14 +22,14 @@ namespace theBFG
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @$"{new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena" //@"C:\svn\bfg\theBfg.TestArena\Web\dist"//
+            Html5Root = @"C:\svn\bfg\theBfg.TestArena\Web\dist"// @$"{ new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena" //@"C:\svn\bfg\theBfg.TestArena\Web\dist"//
         };
 
         public static IAspnetCoreCfg AspnetCfg = new AspnetCoreCfg()
         {
             Cfg = server =>
             {
-                var logDir = Path.Combine(AppStatuscfg.AppRoot, "TenantLogs");
+                var logDir = Path.Combine(AppStatuscfg.AppRoot, "TenantLogs").AsCrossPlatformPath();
                 if (!Directory.Exists(logDir))
                     Directory.CreateDirectory(logDir);
 

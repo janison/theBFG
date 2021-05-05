@@ -125,6 +125,18 @@ or
   ```
   @ StartUnitTest test.dll
   ```  
+* Stop a in-flight unit test on a specific worker
+
+  ```
+  Route: TestArena\bfgWorker
+  @ StopUnitTest
+  ```  
+
+* Re-run the last test suite whatever it was
+
+  ```
+  @ Reload
+  ```
 
 * Run Test Arena as a dedicated host that you can later send commands too either locally or remotely
   

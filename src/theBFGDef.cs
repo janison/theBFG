@@ -68,6 +68,7 @@ namespace theBFG
                     .CreatesOncePerRequest<VsTestArena>()
                     .RespondsToSvcCmds<Reload>()
                     .RespondsToSvcCmds<StartUnitTest>()
+                    .RespondsToSvcCmds<StopUnitTest>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
@@ -115,10 +116,8 @@ namespace theBFG
 
                             if (theBfgDef.Cfg == null)
                                 theBfgDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
-                            
+
                             var theBfg = resolver.Resolve<theBfg>();
-                            var stopArena = theBfg.StartTestArena(resolver);
-                            var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
 
 
                             if (args.LastOrDefault().BasicallyEquals("exit") || args.LastOrDefault().BasicallyEquals("quit"))
@@ -132,6 +131,10 @@ namespace theBFG
                                     theBfg.ExitAfter(testInSession, resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
                                 });
                             }
+
+
+                            var stopArena = theBfg.StartTestArena(resolver);
+                            var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
 
                             var searchPattern = args.Skip(1).FirstOrDefault();
 
@@ -177,6 +180,7 @@ namespace theBFG
                     .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
                     .CreatesOncePerApp<bfgCluster>()
                     .RespondsToSvcCmds<StartUnitTest>()
+                    .RespondsToSvcCmds<StopUnitTest>()
                     .RespondsToSvcCmds<Target>()
                     .RespondsToSvcCmds<StartIntegrationTest>()
                     .CreatesOncePerApp<AppStatusClientModule>()

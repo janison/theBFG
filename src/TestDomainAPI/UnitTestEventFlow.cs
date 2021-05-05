@@ -41,6 +41,24 @@ namespace theBFG.TestDomainAPI
     }
 
     /// <summary>
+    /// Stops all running tests on a worker
+    /// </summary>
+    public class StopUnitTest : ServiceCommand
+    {
+        public string UnitTestId { get; set; }
+
+        public StopUnitTest()
+        {
+
+        }
+
+        public StopUnitTest(string unitTestId)
+        {
+            UnitTestId = unitTestId;
+        }
+    }
+
+    /// <summary>
     /// Starts a new unit test session.
     /// </summary>
     public class StartUnitTest : ServiceCommand, ITestDomainEvent
