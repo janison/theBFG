@@ -263,6 +263,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             
             var test = $scope.testRuns.filter(t => t.dll == msg.RunThisTest)[0];   
             
+            if(!test.testIds) {
+                test.testIds = [];
+            }
+
             test.testIds.push(msg.Id);
         }
 
@@ -307,6 +311,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];                        
 
             if(test) {//hack to make new tests come under same umbrella                                
+                if(!test.testIds) {
+                    test.testIds = [];
+                }
+                                
                 test.testIds.push(msg.testId);
                 test.total = msg.discoveredTests.length
             }

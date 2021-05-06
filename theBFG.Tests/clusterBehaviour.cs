@@ -15,6 +15,7 @@ using Rxns;
 using Rxns.Cloud;
 using Rxns.DDD;
 using Rxns.DDD.Commanding;
+using Rxns.Hosting;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
 using theBFG.TestDomainAPI;
@@ -96,7 +97,7 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_support_dotnet_test_arena()
         {
-            var ta = new DotNetTestArena();
+            var ta = new DotNetTestArena(new AppVersionInfo("test", "t", true));
 
             var allTest = ta.ListTests(theGimp).WaitR().ToArray();
 

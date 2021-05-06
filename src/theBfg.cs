@@ -36,8 +36,6 @@ using theBFG.TestDomainAPI;
 /// todo:
 ///
 ///         - support focus mode, where a single test can be given focus and only CI happens on that 1 test, even though the whole dll is built
-///         - add visal effect to test table that quickly flashes the test as it launches after watching
-///                 - make gun glow with a flash to simulate firing
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
 ///         - fix issue with remote worker tests not run due to not being uploaded to appstatus correctly when using wildcards *.tests.dll
 ///                 - need to fix download to remote worker and downloading to correct dir also
@@ -59,18 +57,36 @@ using theBFG.TestDomainAPI;
 ///         - add worker meta info to graph
 ///             - ip, os, threads, status, hostname
 ///             - indicate worker count per host
-///             - indicate active work on each worker?
-///                 - visually show the gun firing with a glow outline, then trigger a sound also
-///                  - play sounds on pass or fail of test suite so you dont need to switch windows
-/// 
-///             - need to fix saving / persistance historical data.
-///                 - add a "history" flag to the playback allow the UI to skip/know these are historical so it doesnt double count                 
-///                 - use "save" keyword to indicate filesystem mode instead of inmemory?
+///             - indicate active work on each worker? 
+///         - need to fix saving / persistance historical data.
+///             - add a "history" flag to the playback allow the UI to skip/know these are historical so it doesnt double count                 
+///            - use "save" keyword to indicate filesystem mode instead of inmemory?
 ///
 ///
 /// </summary>
 namespace theBFG
 {
+
+    public class FocusOn : ServiceCommand
+    {
+        public string TestName { get; set; }
+
+        public FocusOn(string testName)
+        {
+            TestName = testName;
+        }
+
+        public FocusOn()
+        {
+
+        }
+    }
+
+    public class StopFocusing : ServiceCommand
+    {
+
+    }
+
     /// <summary>
     /// Unlike the Gatling Gun, the Bfg was always the top weapon in the games I played. It was accurate, responsive, rewarding to master and had your back in every situation.
     ///
@@ -87,7 +103,7 @@ namespace theBFG
     /// 
     /// This API gives you the keys to the castle. Use with caution. Eye protection recommended when using rapid fire mode for extended periods.
     /// </summary>
-    public class theBfg : IDisposable, IServiceCommandHandler<Reload>
+    public class theBfg : IDisposable, IServiceCommandHandler<Reload>, IServiceCommandHandler<FocusOn>, IServiceCommandHandler<StopFocusing>
     {
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);
         public static IDisposable TestRunner { get; set; }
@@ -178,9 +194,20 @@ namespace theBFG
                 .Select(e =>
                 {
                     e.Dll = e.Dll.AsCrossPlatformPath();
+
+                    if(!FocusedTest.IsNullOrWhitespace())
+                        e.RunThisTest = FocusedTest;
+
                     return e;
                 });
         }
+
+        /// <summary>
+        /// When set, all Targets will be filtered to include this as
+        /// the test to run only. Good for situations where you are working on large
+        /// slow test unit test suites, or for integration testing
+        /// </summary>
+        public static string FocusedTest { get; set; } //Hmm this kind of state is bad. i should ditch static on everything?
 
         private static IObservable<StartUnitTest> GetTargetsFromPath(string[] args, string testSyntax, Func<ITestArena[]> arena)
         {
@@ -443,6 +470,11 @@ namespace theBFG
 
                     foreach (var test in tests)
                     {
+                        if (!theBfg.FocusedTest.IsNullOrWhitespace())
+                        {
+                            test.RunThisTest = FocusedTest;
+                        }
+
                         _testCluster.Publish(test);
                     }
                 }).Until();
@@ -890,6 +922,21 @@ _/  |_|  |__   ____\______   \_/ ____\____
         public static string GetTestSuiteDir(StartUnitTest work)
         {
             return Path.Combine(work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}").AsCrossPlatformPath();
+        }
+
+        public IObservable<CommandResult> Handle(FocusOn command)
+        {
+            theBfg.FocusedTest = command.TestName;
+
+            return CommandResult.Success().AsResultOf(command).ToObservable();
+
+        }
+
+        public IObservable<CommandResult> Handle(StopFocusing command)
+        {
+            theBfg.FocusedTest = null;
+
+            return CommandResult.Success().AsResultOf(command).ToObservable();
         }
     }
 
