@@ -425,3 +425,4 @@ DerivedData/
 !thebfg.png
 /src/.bfg
 /theTestGimp/.bfg
+/src/Properties/launchSettings.json

@@ -2,8 +2,8 @@
 <div class="col-md-12" ng-controller="testArenaCtrl">
     <form name="remote">        
         <div class="grouped">
-            <div>
-                <span ng-if="!showTestRunDetailed" ng-repeat="entry in testRuns" style="position: fixed;">
+            <div style="position: fixed;">
+                <span ng-if="!showTestRunDetailed" ng-repeat="entry in testRuns" >
                     <span ng-if="!entry.completedAt && entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-space-shuttle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="!entry.completedAt && !entry.startedAt" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa fa-question-circle" ng-attr-title="{{entry.dll}}"></span>
                     <span ng-if="entry.completedAt && entry.results[0].failed !== 0" ng-click="cmdShowTopic('testRunsDetails')" class="cmd fa  fa-thumbs-o-down error" ng-attr-title="{{entry.results[0].failed}} / {{(entry.results[0].passed + entry.results[0].failed)}} in {{entry.results[0].duration}}"></span>

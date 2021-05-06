@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.Extensions.FileProviders;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.DDD;
@@ -90,6 +91,19 @@ namespace theBFG
                                         HttpTransportType.LongPolling;
                                 });
                             });
+
+                            var testArenaPortalContent = new ManifestEmbeddedFileProvider(typeof(theBfg).Assembly, "TestArena");
+                            var testArenaPortal = new FileServerOptions
+                            {
+                                EnableDefaultFiles = true,
+                                EnableDirectoryBrowsing = false,
+                                FileProvider = testArenaPortalContent,
+                                StaticFileOptions = { FileProvider = testArenaPortalContent, ServeUnknownFileTypes = true },
+                                DefaultFilesOptions = { DefaultFileNames = new[] { "index.html", } }
+                            };
+
+                            aspnet
+                                .UseFileServer(testArenaPortal);
                         }
                     })
                     .CreatesOncePerApp(_ => new AppStatusCfg()
