@@ -32,7 +32,7 @@ namespace theTestGimp
         }
 
         [TestMethod]
-        public void the_0_test()
+        public void the2_2_test()
         {
             Console.WriteLine("runnning 0");
             Console.WriteLine(">>SCREENSHOT<<");
@@ -44,13 +44,13 @@ namespace theTestGimp
         public void the_1_test()
         {
             Console.WriteLine("runnning 1");
-            Thread.Sleep(1 * 1000);
+            //Thread.Sleep(1 * 1000 * 180);
             Assert.IsTrue(true);
         }
 
 
         [TestMethod]
-        public void the_2_test()
+        public void the_22_test()
         {
             Console.WriteLine("runnning 2");
             Thread.Sleep(1 * 1000);
@@ -59,7 +59,7 @@ namespace theTestGimp
 
 
         [TestMethod]
-        public void the_3_test()
+        public void the_5_test()
         {
             Console.WriteLine("runnning 3");
             Thread.Sleep(1 * 1000);

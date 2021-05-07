@@ -69,7 +69,7 @@
         <div ng-repeat="worker in workerInfo">
             <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>
         </div>
-        <div>            
+        <div>                        
                 <span width="40">
                     <span title="Reload" ng-click="cmdReload()" ng-class="{error: !testArenaInfo.isConnected, infor: testArenaInfo.isConnected}" class="cmd fa fa-rocket fa-2x">
                     </span>
@@ -98,8 +98,11 @@
                 <button class="cmd btn btn-default" type="button" ng-click="publish(destination, cmd)">Send</button>
             </span>
         </div>
-    </div>
         
+    <span ng-if="focusedOn !== undefined">
+        <span class="cmd fa fa-scissors" title="Stop focusing on this test" ng-click="publish('testArena', 'StopFocusing')"></span><span title="Only firing at this test" class="cmd fa fa-crosshairs fa-2x" style="color:#b3b376"></span><spa class="cmd">{{focusedOn}}</spa>
+    </span>
+    </div>
     <div>
             <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
             <table ng-if="currentTopic != ''" ng-class="{dark: isLightsOut : light: !isLightsOut}" class="table table-hover table-striped table-condensed h6">
@@ -116,6 +119,8 @@
                         <td><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
+                                    <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'$'+entry.testName+'')" class="cmd fa fa-rocket"></span>
+                                    <span class="cmd fa fa-crosshairs" ng-click="publish('', 'FocusOn '+entry.testName+'')" title="Focus On this test"></span>
                                     <span ng-repeat="a in entry.assets">
                                         <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                     </span>
@@ -146,16 +151,18 @@
                             <span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <span style="font-style: italic;"> on '{{entry.worker}}'</span>
                             <span>in '{{entry.duration}}'s</span>
-                            <br/>
-                            <pre class="stacktrace">{{entry.logMessage}}</pre>
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
                                     <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'$'+entry.testName+'')" class="cmd fa fa-rocket"></span>
+                                    <span class="cmd fa fa-crosshairs" ng-click="publish('', 'FocusOn '+entry.testName+'')" title="Focus On this test"></span>
                                     <span ng-repeat="a in entry.assets">
                                         <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                     </span>
                                 </span>
                             </div>
+                            <br/>
+                            <pre class="stacktrace">{{entry.logMessage}}</pre>
+                            
                         </td>
                     </tr>
                 </tbody>

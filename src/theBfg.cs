@@ -35,19 +35,15 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///
-///         - support focus mode, where a single test can be given focus and only CI happens on that 1 test, even though the whole dll is built
+///         - show discovered or new tests when tests topic selected
+///                - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
+///     -add REPL to console for direct commanding
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
-///         - fix issue with remote worker tests not run due to not being uploaded to appstatus correctly when using wildcards *.tests.dll
-///                 - need to fix download to remote worker and downloading to correct dir also
-/// 
-///         - need to fix packing, dont think correct app is being deployed - sorry everyone! u can get dist from the main repo
 ///         - allow settings to be configured via UI and saved between restarts
 ///             - html5 storage? or .cfg file?
 ///             - lights out
 ///             - threadholds for slow for flakey tests
 ///             - cmd history?
-///         - show discovered or new tests when tests topic selected
-///                - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///         - allow way to use servicecmd to launch a worker in a new processes
 ///         - thebfg target all // monitors dirs and auto-executes 
 ///   
@@ -88,7 +84,7 @@ namespace theBFG
     }
 
     /// <summary>
-    /// Unlike the Gatling Gun, the Bfg was always the top weapon in the games I played. It was accurate, responsive, rewarding to master and had your back in every situation.
+    /// The Gatling Gun evolved into the Bfg in the games I played. Accurate, responsive, rewarding to master, having your back in every situation with deadly response.
     ///
     /// I wanted to create a C# testing tool that brought the C# ecosystem out of the gatling stone ages. Somethign that just worked with the tooling and test frameorks we already used. Something that would compliment the dev-test flow
     /// and compensate for the lack of creativety that my IDE vendor delivered. Something that let me leverage my existing toolbox to orchestrate advanced distributed test scenarios.
