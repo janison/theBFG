@@ -7,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Rxns;
+using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.Collections;
 using Rxns.DDD.Commanding;
@@ -23,7 +24,7 @@ namespace theBFG
     /// <summary>
     /// 
     /// </summary>
-    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>
+    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>, IServiceCommandHandler<TagWorker>, IServiceCommandHandler<UntagWorker>
     {
         private readonly IAppServiceDiscovery _services;
         private readonly IAppStatusServiceClient _appStatus;
@@ -35,12 +36,13 @@ namespace theBFG
         private int _runId;
         public string Name { get; }
         public string Route { get; }
+        public IDictionary<string, string> Info { get; } = new Dictionary<string, string>();
         public IObservable<bool> IsBusy => _isBusy;
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
         private readonly IZipService _zipService;
-        private IObservable<UnitTestResult> _current;
+        private readonly List<string> _tags; 
 
-        public bfgWorker(string name, string route, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, IAppStatusCfg cfg, Func<ITestArena[]> arena)
+        public bfgWorker(string name, string route, string[] tags, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, IAppStatusCfg cfg, Func<ITestArena[]> arena)
         {
             _registry = registry;
             _services = services;
@@ -52,8 +54,42 @@ namespace theBFG
             _arena = arena;
             Name = name;
             Route = route;
+            _tags = new List<string>(tags);
+
+            _rxnManager.Publish(new AppStatusInfoProviderEvent()
+            {
+                ReporterName = nameof(bfgWorker),
+                Component = "Worker",
+                Info = () =>
+                {
+                    return new[]
+                    {
+                        new AppStatusInfo(bfgTagWorkflow.WorkerTag, _tags.ToStringEach(" "))
+                    };
+                }
+            }).Until();
         }
-        
+
+        public IObservable<CommandResult> Handle(TagWorker command)
+        {
+            return Rxn.Create(() =>
+            {
+                command.Tags.ForEach(t => _tags.AddOrReplace(t));
+
+                return CommandResult.Success().AsResultOf(command).ToObservable();
+            });
+        }
+
+        public IObservable<CommandResult> Handle(UntagWorker command)
+        {
+            return Rxn.Create(() =>
+            {
+                command.Tags.ForEach(t => _tags.RemoveIfExists(t));
+
+                return CommandResult.Success().AsResultOf(command).ToObservable();
+            });
+        }
+
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {
             work.Dll = work.Dll.EnsureRooted();
@@ -228,7 +264,7 @@ namespace theBFG
         {
             $"Attempting to discover work {apiName ?? "any"}@{testHostUrl ?? "any"}".LogDebug();
 
-            var allDiscoveredApiRequests = bfgTestApi.DiscoverWork(_services).Do(apiFound =>
+            var allDiscoveredApiRequests = bfgTestArenaApi.DiscoverWork(_services).Do(apiFound =>
 
             {
                 $"Discovered Api Hosting: {apiFound.Name}@{apiFound.Url}".LogDebug();

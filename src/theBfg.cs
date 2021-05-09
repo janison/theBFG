@@ -35,6 +35,12 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///
+/// -worker add + and -remove via UI to allow dynamic sizing. use cmds via console also
+/// -allow scripts to be written for commands and exetcuted via UI
+/// - allow a cmd to create a script dyanmically
+/// - auto-scaling of workers on node to allow dynamic sizing based on CPU/MEM usage of test scenario
+/// - put a thin border around the worker panel to group them
+/// 
 ///         - show discovered or new tests when tests topic selected
 ///                - need to work out how to deal with multiple test-disvcovered.. should alert on a diff? 
 ///     -add REPL to console for direct commanding
@@ -44,11 +50,15 @@ using theBFG.TestDomainAPI;
 ///             - lights out
 ///             - threadholds for slow for flakey tests
 ///             - cmd history?
+///             - zoom level
 ///         - allow way to use servicecmd to launch a worker in a new processes
 ///         - thebfg target all // monitors dirs and auto-executes 
 ///   
 ///         -   allow workers to be associated with tags
 /// -           -   allow targeting of tests at specific tag'd workers with startunittest
+///
+///             - allow graph to zoom or adjust for overall unit tests so it zooms at the right level
+///                 - or could just use a setting and a level adjuster thingy to allow easy zooming?, mouse wheel?
 /// 
 ///         - add worker meta info to graph
 ///             - ip, os, threads, status, hostname
@@ -81,6 +91,127 @@ namespace theBFG
     public class StopFocusing : ServiceCommand
     {
 
+    }
+
+
+    public class SpawnWorker : ServiceCommand
+    {
+        
+        public SpawnWorker(string tags)
+        {
+            Tags = tags;
+        }
+
+        public SpawnWorker()
+        {
+
+        }
+
+        public string Tags { get; set; }
+        public string Route { get; set; }
+    }
+
+
+    public class bfgWorkerManager : IServiceCommandHandler<SpawnWorker>
+    {
+        private readonly bfgCluster _workerCluster;
+        private readonly IObservable<StartUnitTest[]> _cfg;
+        private readonly IResolveTypes _resolver;
+        private readonly IRxnManager<IRxn> _eventManager;
+        private readonly IAppStatusCfg _appStatusCfg;
+        private readonly IAppServiceRegistry _appServiceRegistry;
+        private readonly IZipService _zipService;
+        private readonly IAppStatusStore _appCmds;
+        private readonly IAppStatusServiceClient _appStatus;
+        private readonly IAppServiceDiscovery _serviceDiscovery;
+        private readonly IUpdateServiceClient _appUpdates;
+
+        public bfgWorkerManager(bfgCluster workerCluster, IObservable<StartUnitTest[]> cfg, SystemStatusPublisher systemStatus, IResolveTypes resolver, IRxnManager<IRxn> eventManager, IAppStatusCfg appStatusCfg, IAppServiceRegistry appServiceRegistry, IZipService zipService, IAppStatusStore appCmds, IAppStatusServiceClient appStatus, IAppServiceDiscovery serviceDiscovery, IUpdateServiceClient appUpdates)
+        {
+            _workerCluster = workerCluster;
+            _cfg = cfg;
+            _resolver = resolver;
+            _eventManager = eventManager;
+            _appStatusCfg = appStatusCfg;
+            _appServiceRegistry = appServiceRegistry;
+            _zipService = zipService;
+            _appCmds = appCmds;
+            _appStatus = appStatus;
+            _serviceDiscovery = serviceDiscovery;
+            _appUpdates = appUpdates;
+
+            systemStatus.Process(new AppStatusInfoProviderEvent()
+            {
+                ReporterName = nameof(bfgWorkerManager),
+                Component = "Status",
+                Info = WorkerManagerStatus
+            }).Until();
+        }
+
+        private AppStatusInfo[] WorkerManagerStatus()
+        {
+            return new[]
+            {
+                new AppStatusInfo("Workers", _workerCluster.Workflow.Workers),
+                new AppStatusInfo("ComputerName", Environment.MachineName),
+                new AppStatusInfo("Username", Environment.UserName),
+            };
+        }
+        
+        public IObservable<bfgWorker> SpawnTestWorker( string[] tags = null)
+        {
+            var instanceId = _workerCluster.Workflow.Workers.Count + 1;
+            "Spawning worker".LogDebug(instanceId);
+            
+            //$"Streaming logs".LogDebug();
+            //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
+
+            $"Starting worker".LogDebug();
+
+            var testWorker = new bfgWorker(
+                $"TestWorker#{instanceId}",
+                "local",
+                tags ?? theBfg.Args.Where(w => w.StartsWith("#")).ToArray(),
+                _appServiceRegistry, _serviceDiscovery,
+                _zipService, _appStatus,
+                _eventManager, _appUpdates,
+                _appStatusCfg,
+                _resolver.Resolve<Func<ITestArena[]>>()
+            );
+
+            _workerCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker })
+                .SelectMany(e => _eventManager.Publish(e)).Until();
+            
+            return _cfg.Take(1).Select(tests =>
+            {
+                if (!tests.AnyItems() || tests[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(tests[0].UseAppVersion))
+                    testWorker.DiscoverAndDoWork();
+
+                return testWorker;
+            });
+        }
+
+        public IObservable<CommandResult> Handle(SpawnWorker command)
+        {
+            if (command.Route.IsNullOrWhitespace())
+            {
+                return SpawnTestWorker(bfgTagWorkflow.TagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
+            }
+
+            return SpawnTestWorkerOnRoute(command);
+        }
+
+        private IObservable<CommandResult> SpawnTestWorkerOnRoute(SpawnWorker command)
+        {
+            return Rxn.Create(() =>
+            {
+                _appCmds.Add(command.AsQuestion());
+
+                "Queued command for worker".LogDebug();
+
+                return CommandResult.Success();
+            });
+        }
     }
 
     /// <summary>
@@ -476,7 +607,7 @@ namespace theBFG
                 }).Until();
         }
 
-        public IDisposable DoWorkContiniously(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action fireStyle)
+        public static IDisposable DoWorkContiniously(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action fireStyle)
         {
             return unitTestToRun.Select(tests =>
             {
@@ -503,13 +634,13 @@ namespace theBFG
             .Until();
         }
 
-        public IDisposable WatchForCompletion(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action onComplete)
+        public static IDisposable WatchForCompletion(IRxnManager<IRxn> rxnManage, IObservable<StartUnitTest[]> unitTestToRun, Action onComplete)
         {
             return unitTestToRun.Select(tests =>
             {
                 var stopDOingWork = rxnManage.CreateSubscription<CommandResult>()
                     .Where(_ => unitTestToRun != null)
-                    .Where(c => c.InResponseTo.BasicallyEquals(tests[0].Id))
+                    .Where(c => c.InResponseTo.BasicallyEquals(tests[0].Id)) //todo this this, should look at all unit tests
                     .Do(_ =>
                     {
                         $"Duration: {startedAt.Elapsed}".LogDebug();
@@ -524,14 +655,19 @@ namespace theBFG
             .Until();
         }
 
-        public static void FireCompeteRapidly(IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
+        public static void FireCompeteRapidly(IObservable<StartUnitTest[]> unitTestToRun)
         {
             Enumerable.Range(0, Environment.ProcessorCount).ForEach(_ =>
             {
-                SpawnTestWorker(resolver, unitTestToRun).Until();
+                SpawnWorker();
             });
 
             Fire(unitTestToRun);
+        }
+
+        public static IObservable<bfgWorker> SpawnWorker()
+        {
+            return TestArenaWorkerManager.SpawnTestWorker(bfgTagWorkflow.TagsFromString(theBfg.Args.ToStringEach(" ")).ToArray());
         }
 
 
@@ -540,9 +676,9 @@ namespace theBFG
             Enumerable.Range(0, Environment.ProcessorCount).ToObservable().ObserveOn(NewThreadScheduler.Default).Do(_ => { Fire(tests); }).Until();
         }
 
-        public static IObservable<bfgWorker> StartRapidWorkers(IResolveTypes resolver, IObservable<StartUnitTest[]> unitTestToRun)
+        public static IObservable<bfgWorker> StartRapidWorkers(IObservable<StartUnitTest[]> unitTestToRun)
         {
-            return unitTestToRun.SelectMany(tests => Enumerable.Range(0, Environment.ProcessorCount).ToObservable().SelectMany(_ => SpawnTestWorker(resolver, unitTestToRun)));
+            return unitTestToRun.SelectMany(tests => Enumerable.Range(0, Environment.ProcessorCount).ToObservable().SelectMany(_ => TestArenaWorkerManager.SpawnTestWorker()));
         }
 
         public static void WatchForTestUpdates(IRxnManager<IRxn> rxnManage)
@@ -557,7 +693,7 @@ namespace theBFG
         private static Stopwatch startedAt = new Stopwatch();
 
 
-        public static IDisposable StartTestArena(IResolveTypes resolver)
+        public static IDisposable StartTestArena(string[] args, IObservable<StartUnitTest[]> testCfg, bfgCluster cluster, bfgWorkerManager workerManager, IRxnManager<IRxn> toFireOn, IAppServiceDiscovery discovery)
         {
             "Starting up TestArena".LogDebug();
 
@@ -566,21 +702,23 @@ namespace theBFG
                 _started = DateTime.Now;
             }
 
-            var stopAdvertising = bfgTestApi.AdvertiseForWorkers(resolver.Resolve<SsdpDiscoveryService>(), "all", $"http://{RxnApp.GetIpAddress()}:888");
+            var stopAdvertising = bfgTestArenaApi.AdvertiseForWorkers(discovery, "all", $"http://{RxnApp.GetIpAddress()}:888");
+            var stopWorkers = theBfg.StartTestArenaWorkers(args, testCfg, cluster, workerManager).Until();
+            var stopFiring = StartFiringWorkflow(args, testCfg, toFireOn);
+            
 
-            return new CompositeDisposable(stopAdvertising);
+            return new CompositeDisposable(stopAdvertising, stopWorkers, stopFiring);
         }
 
         public IDisposable LaunchUnitTests(string[] args, IObservable<StartUnitTest[]> allUnitTests, IResolveTypes resolver)
         {
             var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, GetTestarenaUrlFromArgs(args), resolver.Resolve<IAppStatusCfg>()).Until();
-            var stopFiring = StartFiringWorkflow(args, allUnitTests, resolver.Resolve<IRxnManager<IRxn>>(), resolver);
 
             var broadCaste = allUnitTests.FirstAsync()
                 .Do(unitTests => BroadcasteStatsToTestArena(_testCluster, unitTests[0], resolver.Resolve<SystemStatusPublisher>(), resolver.Resolve<IManageReactors>()))
                 .Until();
 
-            return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, stopFiring, broadCaste);
+            return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, broadCaste);
         }
 
         public static string GetTestarenaUrlFromArgs(string[] args)
@@ -590,21 +728,22 @@ namespace theBFG
             return url;
         }
 
-        public static IObservable<bfgWorker> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IResolveTypes resolver)
+        public static IObservable<Unit> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, bfgCluster cluster, bfgWorkerManager workerManager)
         {
-            _testCluster = resolver.Resolve<bfgCluster>();
+            _testCluster = cluster;
+            TestArenaWorkerManager = workerManager; // new bfgWorkerManager(_testCluster);
 
             if (args.Contains("rapidly"))
             {
-                return StartRapidWorkers(resolver, unitTestToRun);
+                return StartRapidWorkers(unitTestToRun).Select(_ => new Unit());
             }
 
             if (args.Contains("fire") || args.Contains("launch"))
             {
-                return SpawnTestWorker(resolver, unitTestToRun);
+                return SpawnWorker().Select(_ => new Unit());
             }
 
-            return Rxn.Empty<bfgWorker>();
+            return new Unit().ToObservable();
         }
 
 
@@ -651,7 +790,7 @@ namespace theBFG
         /// <param name="rxnManager"></param>
         /// <param name="resolver"></param>
         /// <returns></returns>
-        public IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IRxnManager<IRxn> rxnManager, IResolveTypes resolver)
+        public static IDisposable StartFiringWorkflow(string[] args, IObservable<StartUnitTest[]> unitTestToRun, IRxnManager<IRxn> rxnManager)
         {
             //todo: should be implemented with a rxnmediator, can seperate firestyle into injected logic classes
             if (args.Contains("continuously"))
@@ -673,7 +812,7 @@ namespace theBFG
                 {
                     if (args.Contains("compete"))
                     {
-                        FireCompeteRapidly(unitTestToRun, resolver);
+                        FireCompeteRapidly(unitTestToRun);
                     }
                     else
                     {
@@ -701,47 +840,7 @@ namespace theBFG
                 : null;
         }
 
-        private static int _workerCount;
-        private static StartUnitTest[] _lastFired = new StartUnitTest[0];
-
-        public static IObservable<bfgWorker> SpawnTestWorker(IResolveTypes resolver, IObservable<StartUnitTest[]> cfg)
-        {
-            "Spawning worker".LogDebug(++_workerCount);
-
-            var testCluster = resolver.Resolve<bfgCluster>();
-            var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
-            
-            //$"Streaming logs".LogDebug();
-            //rxnManager.Publish(new StreamLogs(TimeSpan.FromMinutes(60))).Until();
-
-            $"Starting worker".LogDebug();
-
-            var testWorker = new bfgWorker(
-                $"TestWorker#{_workerCount}", "local",
-                resolver.Resolve<IAppServiceRegistry>(), resolver.Resolve<IAppServiceDiscovery>(),
-                resolver.Resolve<IZipService>(), resolver.Resolve<IAppStatusServiceClient>(),
-                resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<IUpdateServiceClient>(),
-                resolver.Resolve<IAppStatusCfg>(),
-                resolver.Resolve<Func<ITestArena[]>>()
-            );
-
-            testCluster.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() { Worker = testWorker })
-                .SelectMany(e => rxnManager.Publish(e)).Until();
-
-            if (cfg == null)
-            {
-                testWorker.DiscoverAndDoWork();
-                return testWorker.ToObservable();
-            }
-
-            return cfg.Take(1).Select(tests =>
-            {
-                if (!tests.AnyItems() || tests[0].AppStatusUrl.IsNullOrWhitespace() && !Directory.Exists(tests[0].UseAppVersion))
-                    testWorker.DiscoverAndDoWork();
-
-                return testWorker;
-            });
-        }
+      
 
         /// <summary>
         /// todo: fix issue with not broadcasting all test stats to appstatus, only first time
@@ -766,8 +865,8 @@ namespace theBFG
                         ? new AppStatusInfo("Test", $"Running {unitTestToRun.Dll}")
                         : new AppStatusInfo("Test", $"Waiting for work"),
                     new AppStatusInfo("Duration", (DateTime.Now - (_started ?? DateTime.Now)).TotalMilliseconds),
-                    new AppStatusInfo("Workers", testCluster.Workflow.Workers.Count)
-
+                    new AppStatusInfo("Free Workers",$"{testCluster.Workflow.Workers.Count - testCluster.Workflow.Workers.Count(w => w.Value.Worker.IsBusy.Value())} / {testCluster.Workflow.Workers.Count}")
+                    
                 };
             };
 
@@ -829,6 +928,9 @@ namespace theBFG
         }
 
         private static string[] frameworkFileExclusions = new[] { "packages/", "obj/", "packages\\", "obj\\", ".TestPlatform.", ".nunit.", "testhost.dll", "\\publish\\", "/publish/", theBfg.DataDir, "%%" };
+        public static bfgWorkerManager TestArenaWorkerManager;
+        private static StartUnitTest[] _lastFired;
+
         private static bool NotAFrameworkFile(string file)
         {
             return !frameworkFileExclusions.Any(e => file.BasicallyContains(e));

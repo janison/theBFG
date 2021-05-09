@@ -280,6 +280,20 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             test.testIds.push(msg.Id);
         }
 
+        if(msg.ipAddress) {
+            //workerstatusinfo
+
+            if(!$scope.workerInfo[msg.name]) {
+                $scope.workerInfo[msg.name] = {}
+            }
+
+            $scope.workerInfo[msg.name].ipAddress = msg.ipAddress;
+            $scope.workerInfo[msg.name].name = msg.name;
+            $scope.workerInfo[msg.name].computerName = msg.computerName;
+            $scope.workerInfo[msg.name].userName     = msg.userName;
+            $scope.workerInfo[msg.name].workers = msg.workers;
+        }
+
         if(msg.memUsage) {
 
             var host = msg.name;

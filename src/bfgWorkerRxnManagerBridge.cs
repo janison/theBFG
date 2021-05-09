@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -20,15 +21,19 @@ namespace theBFG.RxnsAdapter
         private readonly IAppStatusStore _appCmds;
         private Func<IRxn, IObservable<Unit>> _publish;
 
-        public bfgWorkerRxnManagerBridge(IAppStatusStore appCmds, IRxnManager<IRxn> repsonseChannel, IUpdateStorageClient updates)
+        public bfgWorkerRxnManagerBridge(IAppStatusStore appCmds, IRxnManager<IRxn> repsonseChannel, IUpdateStorageClient updates, IDictionary<string, string> info = null)
         {
             _repsonseChannel = repsonseChannel;
             _updates = updates;
             _appCmds = appCmds;
+
+            if (info != null)
+                Info = info;
         }
 
         public string Name { get; set; } = "RxnManagerBfgWorker";
         public string Route { get; set; }
+        public IDictionary<string, string> Info { get; set;  } = new Dictionary<string, string>();
         public IObservable<bool> IsBusy => _isBusy;
         public string Ip { get; set; }
 

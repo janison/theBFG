@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -6,38 +7,87 @@ using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
+using Rxns.Health;
 using Rxns.Interfaces;
 using Rxns.Logging;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
+    public class bfgTagWorkflow
+    {
+        public static string WorkerTag = "tag";
+
+        public static IEnumerable<string> GetTagsFromWorker(WorkerConnection<StartUnitTest, UnitTestResult> worker)
+        {
+            return worker.Worker.Info.ContainsKey(WorkerTag) ? worker.Worker.Info[WorkerTag].Split(' ').Select(t => t.Trim('#')) : new string[0];
+        }
+
+        public static bool FanoutIfNotBusyAndHasMatchingTag(WorkerConnection<StartUnitTest, UnitTestResult> worker, StartUnitTest work)
+        {
+            return !worker.Worker.IsBusy.Value() && 
+                   HasMatchingTag(GetTagsFromWorker(worker), work);
+        }
+
+        public static bool HasMatchingTag(IEnumerable<string> tags, StartUnitTest work)
+        {
+            if (work.Tags.IsNullOrWhitespace() ||work.Tags.Length < 1)
+                return false; //no tags requested on work
+            
+            var workTags = TagsFromString(work.Tags);
+            return tags.Any(tag => workTags.Any(w => w.BasicallyEquals(tag)));
+        }
+
+        public static IEnumerable<string> TagsFromString(string tagSyntax)
+        {
+
+            return tagSyntax.IsNullOrWhitespace() ? new string[0] : tagSyntax.Split(' ').Where(t => t.Contains("#")).Select(t => t.Trim('#'));
+        }
+    }
+
+
+    /// <summary>
+    /// Adds a tag to a worker in order to slice the worker pool up into
+    /// discrete units
+    /// </summary>
+    public class TagWorker : ServiceCommand
+    {
+        public string[] Tags { get; set; }
+
+        public TagWorker()
+        {
+
+        }
+        public TagWorker(string tagSyntax)
+        {
+            Tags = bfgTagWorkflow.TagsFromString(tagSyntax).ToArray();
+        }
+    }
+
+    public class UntagWorker : TagWorker
+    {
+    }
+
     public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>, IServiceCommandHandler<StopUnitTest>
     {
-        private static CompeteFanout<StartUnitTest, UnitTestResult> FanoutStratergy = new CompeteFanout<StartUnitTest, UnitTestResult>();
+        private static CompeteFanout<StartUnitTest, UnitTestResult> FanoutStratergy = new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag);
 
         public void Publish(IRxn rxn)
         {
             _publish(rxn);
         }
 
-        public bfgCluster() : base(FanoutStratergy)
+        public bfgCluster(SystemStatusPublisher appStatus) : base(FanoutStratergy)
         {
-            TimeSpan.FromSeconds(5).Then().Do(_ =>
+            appStatus.Process(new AppStatusInfoProviderEvent()
+
             {
-                _publish?.Invoke(new AppStatusInfoProviderEvent()
-
+                ReporterName = "TestArena",
+                Info = () => new[]
                 {
-                    ReporterName = "TestArena",
-                    Info = () => new[]
-                    {
-                        new AppStatusInfo("Workers", $"{Workflow.Workers.Count}{Workflow.Workers.Values.Count(v => v.Worker.IsBusy.Value())}"),
-                    }
-                });
-
+                    new AppStatusInfo("Workers", $"{Workflow.Workers.Count}{Workflow.Workers.Values.Count(v => v.Worker.IsBusy.Value())}"),
+                }
             }).Until();
-
-            
         }
 
         public IObservable<CommandResult> Handle(StartUnitTest command)

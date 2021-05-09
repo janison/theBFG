@@ -62,7 +62,8 @@ namespace theBFG
                     .Includes<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
                     .Includes<AspNetCoreWebApiAdapterModule>()
-                    .CreatesOncePerApp<bfgWorkerDoWorkOrchestrator>()
+                    .CreatesOncePerApp<bfgWorkerRemoteOrchestrator>()
+                    .CreatesOncePerApp<bfgWorkerManager>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .CreatesOncePerApp<bfgTestArenaProgressHub>()
                     .CreatesOncePerRequest<DotNetTestArena>()
@@ -79,6 +80,8 @@ namespace theBFG
                     .Emits<UnitTestPartialResult>()
                     .Emits<UnitTestAssetResult>()
                     .Emits<UnitTestPartialLogResult>()
+                    .Emits<TestArenaWorkerHeadbeat>()
+                    .CreatesOncePerApp(_ => Cfg)
                     .CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
                     .CreatesOncePerApp(_ => new AspnetCoreCfg()
                     {
@@ -149,8 +152,7 @@ namespace theBFG
                             }
 
 
-                            var stopArena = theBfg.StartTestArena(resolver);
-                            var stopWorkers = theBfg.StartTestArenaWorkers(args, Cfg, resolver).Until();
+                            var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
 
                             var searchPattern = args.Skip(1).FirstOrDefault();
 
@@ -226,8 +228,7 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        var theBfg = resolver.Resolve<theBfg>();
-                        var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver).Until();
+                        var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>()).Until();
                     }));
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

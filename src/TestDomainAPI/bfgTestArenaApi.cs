@@ -2,15 +2,14 @@
 using System.Linq;
 using System.Reactive.Linq;
 using Rxns;
-using Rxns.Cloud;
 using Rxns.Hosting;
 using Rxns.Logging;
 
 namespace theBFG
 {
-    public class bfgTestApi
+    public class bfgTestArenaApi
     {
-        public static IDisposable AdvertiseForWorkers(SsdpDiscoveryService discovery, string apiName = null, string hostUrl = "http://localhost:888/")
+        public static IDisposable AdvertiseForWorkers(IAppServiceDiscovery discovery, string apiName = null, string hostUrl = "http://localhost:888/")
         {
             return discovery.Advertise("bfg-worker-queue", apiName, hostUrl).Until();
         }

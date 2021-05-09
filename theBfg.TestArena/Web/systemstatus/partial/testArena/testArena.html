@@ -65,28 +65,40 @@
                 <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')" data="testSummary"></bar-chart>
             </div>
         </div>
-            
-        <div ng-repeat="worker in workerInfo">
-            <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>
-        </div>
-        <div>                        
-                <span width="40">
-                    <span title="Reload" ng-click="cmdReload()" ng-class="{error: !testArenaInfo.isConnected, infor: testArenaInfo.isConnected}" class="cmd fa fa-rocket fa-2x">
-                    </span>
-                        <i title="Errors" ng-click="cmdShowTopic('Failed')" class="cmd" style="font-size:larger; padding-right:5px; padding-left: 5px;" ng-class="{error : testGlance.errors != '0', infor : testGlance.errors == '0'}">                    
-                            {{testGlance.errors}}
-                        </i>
-                    </span>
-            / <span class="cmd" ng-click="cmdShowTopic('all')">{{testGlance.total}}</span>
 
-                    <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
-                <span><span ng-click="cmdShowTopic('flakey')" class="cmd fa fa-rmb fa-2x" title="Flakey"></span> {{testGlance.flakey}}</span>            
-                <span><span ng-click="cmdShowTopic('log')" class="cmd fa fa-clock-o fa-2x"></span> {{msSince(testGlance.startedAt)}}</span>
-                <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>                
-                <span><span class="cmd fa fa-search-plus fa-2x"></span><input type="text" ng-model="searchTerm" width="50"/></span>
-                <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>         
-                <span><span ng-click="cmdLightsOutToggle()" class="cmd fa fa-sun-o fa-2x"></span></span>
-                <a href="/tenantLogs" target="_tenantlogs"><span class="cmd fa fa-stack-overflow fa-2x"></span></a>
+        <div style="margin-top: 15px;">                        
+            <span width="40">
+                <span title="Reload" ng-click="cmdReload()" ng-class="{error: !testArenaInfo.isConnected, infor: testArenaInfo.isConnected}" class="cmd fa fa-rocket fa-2x">
+                </span>
+                    <i title="Errors" ng-click="cmdShowTopic('Failed')" class="cmd" style="font-size:larger; padding-right:5px; padding-left: 5px;" ng-class="{error : testGlance.errors != '0', infor : testGlance.errors == '0'}">                    
+                        {{testGlance.errors}}
+                    </i>
+                </span>
+        / <span class="cmd" ng-click="cmdShowTopic('all')">{{testGlance.total}}</span>
+
+                <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
+            <span><span ng-click="cmdShowTopic('flakey')" class="cmd fa fa-rmb fa-2x" title="Flakey"></span> {{testGlance.flakey}}</span>            
+            <span><span ng-click="cmdShowTopic('log')" class="cmd fa fa-clock-o fa-2x"></span> {{msSince(testGlance.startedAt)}}</span>
+            <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>                
+            <span><span class="cmd fa fa-search-plus fa-2x"></span><input type="text" ng-model="searchTerm" width="50"/></span>
+            <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>         
+            <span><span ng-click="cmdLightsOutToggle()" class="cmd fa fa-sun-o fa-2x"></span></span>
+            <a href="/tenantLogs" target="_tenantlogs"><span class="cmd fa fa-stack-overflow fa-2x"></span></a>
+    </div>
+
+            
+        <div ng-repeat="worker in workerInfo">            
+            <div style="border-width: 0px;border-color: #373737; border-style: dashed;margin-top: 15px;">
+                <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>            
+            </div>                      
+            <div style="background-color: #ececec;border-color: #373737 ; border-width: 0px;border-style: dashed; margin-top: -4px;">
+                <span class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
+                <span class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
+                <span class="fa fa-users cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
+                <span class="fa fa-minus-circle fa-x2 cmd" ng-click="publish('', 'KillWorker')" style="float:right;margin-top:2px"></span>
+                <span class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
+                <span class="fa fa-plus-circle fa-x2 cmd" ng-click="publish('', 'SpawnWorker')" style="float:right;margin-top:2px"></span>                
+            </div>            
         </div>
 
         <div>

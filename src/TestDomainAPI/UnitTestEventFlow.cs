@@ -73,6 +73,7 @@ namespace theBFG.TestDomainAPI
         public string UseAppUpdate { get; set; }
         public string UseAppVersion { get; set; }
         public string AppStatusUrl { get; set; }
+        public string Tags { get; set; } = string.Empty;
 
         public StartUnitTest()
         {
