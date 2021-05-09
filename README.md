@@ -228,6 +228,18 @@ target test.dll!a_specific_test;100
   > thebfg fire rapidly 50
   ```
 
+* Increase the amount of work a host will process in parallel
+
+  ```
+  @SpawnWorker
+  ```
+
+  or you can stop workers with
+
+  ```
+  @KillWorker
+  ```
+  
 ### Reliability Testing
 
 * Run test suite over and over again repeadily, logging any failures

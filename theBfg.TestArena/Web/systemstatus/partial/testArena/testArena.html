@@ -92,15 +92,15 @@
                 <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>            
             </div>                      
             <div style="background-color: #ececec;border-color: #373737 ; border-width: 0px;border-style: dashed; margin-top: -4px;">
-                <span class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
-                <span class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
-                <span class="fa fa-users cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
-                <span class="fa fa-minus-circle fa-x2 cmd" ng-click="publish('', 'KillWorker')" style="float:right;margin-top:2px"></span>
-                <span class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
-                <span class="fa fa-plus-circle fa-x2 cmd" ng-click="publish('', 'SpawnWorker')" style="float:right;margin-top:2px"></span>                
+                <span title="Name of the Node" class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
+                <span title="Network Details" class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
+                <span title="Username workers run under" class="fa fa-users cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
+                <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish('', 'KillWorker')" style="float:right;margin-top:2px"></span>
+                <span title="Free workers / Total workers" class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
+                <span title="Add another worker to the node" class="fa fa-plus-circle fa-x2 cmd" ng-click="publish('', 'SpawnWorker')" style="float:right;margin-top:2px"></span>  
+                <span title="#Tags" class="fa fa-envelope fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
             </div>            
         </div>
-
         <div>
             <span ng-if="!sendCmdDisabled" style="color:cadetblue" class="fa fa-share-square-o fa-2x"></span>
             <div ng-if="!sendCmdDisabled" class="input-group"  style="padding-left:20px;padding-right:20px;padding-top: 5px;;padding-bottom: 5px;">
