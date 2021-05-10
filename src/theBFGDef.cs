@@ -73,6 +73,7 @@ namespace theBFG
                     .RespondsToSvcCmds<StopUnitTest>()
                     .RespondsToSvcCmds<FocusOn>()
                     .RespondsToSvcCmds<StopFocusing>()
+                    .RespondsToSvcCmds<DiscoverUnitTests>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()

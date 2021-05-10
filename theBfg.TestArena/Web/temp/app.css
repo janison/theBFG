@@ -7443,6 +7443,17 @@ code {
   position: sticky;
   top: 0px;
 }
+.expand {
+  overflow: visible !important;
+  width: inherit !important;
+}
+.summary {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 600px;
+  text-overflow: ellipsis;
+}
 .popup {
   position: relative;
   display: inline-block;

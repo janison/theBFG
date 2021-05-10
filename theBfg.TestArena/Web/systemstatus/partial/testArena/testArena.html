@@ -24,7 +24,8 @@
                                 <span class="popuptrigger" ng-click="showLogs = !showLogs">
                                     {{entry.dll}}
                                     <div class="popup">
-                                        <span class="popuptext" ng-class="{show: showLogs}">                                    
+                                        <span class="popuptext" ng-class="{show: showLogs}">     
+                                        <span title="Discover all unit tests in the dll again" ng-click="publish('', 'DiscoverUnitTests '+ entry.dll)" class="cmd fa fa-table"></span>
                                         <span class="cmd fa fa-exclamation-circle" ng-click="publish('TestArena\\'+entry.worker+'', 'StopUnitTest')" title="STOP running tests"></span>
                                             <span ng-repeat="a in entry.assets">
                                                 <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
@@ -94,11 +95,11 @@
             <div style="background-color: #ececec;border-color: #373737 ; border-width: 0px;border-style: dashed; margin-top: -4px;">
                 <span title="Name of the Node" class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
                 <span title="Network Details" class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
-                <span title="Username workers run under" class="fa fa-users cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
+                <span title="Username workers run under" class="fa fa-child cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
                 <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish('', 'KillWorker')" style="float:right;margin-top:2px"></span>
                 <span title="Free workers / Total workers" class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
                 <span title="Add another worker to the node" class="fa fa-plus-circle fa-x2 cmd" ng-click="publish('', 'SpawnWorker')" style="float:right;margin-top:2px"></span>  
-                <span title="#Tags" class="fa fa-envelope fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
+                <span title="#Tags" class="fa fa-hashtag fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
             </div>            
         </div>
         <div>
@@ -117,7 +118,7 @@
     </div>
     <div>
             <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
-            <table ng-if="currentTopic != ''" ng-class="{dark: isLightsOut : light: !isLightsOut}" class="table table-hover table-striped table-condensed h6">
+            <table ng-if="currentTopic != ''" ng-class="{dark: isLightsOut, light: !isLightsOut}" class="table table-hover table-striped table-condensed h6">
                 <thead>
                 <th>Outcome</th>
                 <th>Test</th>
@@ -126,8 +127,8 @@
                 <th>Log</th>
                 </thead>
                  <tbody><!--  ng-if="currentTopic.length != 0 -->                    
-                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false" ng-repeat="entry in currentTopic">
-                        <td>{{entry.result}}</td>
+                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false;expandLog = false" ng-repeat="entry in currentTopic track by $index">
+                        <td>{{entry.result}}<span ng-if="entry.isNew" class="fa fa-question-circle"></span></td>
                         <td><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
@@ -141,8 +142,8 @@
                         </td>
                         <td>{{entry.worker}}</td>
                         <td>{{entry.duration}}</td>
-                        <td style="white-space: pre;" ng-if="entry.logMessage"><pre class="stacktrace">{{entry.logMessage}}</pre></td>
-                        <td  ng-if="!entry.logMessage"><i></i></td>
+                        <td style="white-space: pre;" ng-if="entry.logMessage"><span ng-click="expandLog = !expandLog" class="summary" ng-class="{expand: expandLog}"></span><pre class="stacktrace">{{entry.logMessage}}</pre></span></td>
+                        <td ng-if="!entry.logMessage"></td>
                     </tr>
                 </tbody>
             </table>

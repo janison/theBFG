@@ -263,8 +263,23 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.testGlance.total++;
 
             $scope.testSummary.push(msg);
-            $scope.tests.push(msg);          
-            $scope.addToTopicIfFilterActive(msg);   
+
+            
+            var existinTest = $scope.tests.filter(w => w.testName === msg.testName)[0]; //dll is not in test
+            
+            if(!existinTest) {
+                $scope.tests.push(msg);                                          
+                $scope.addToTopicIfFilterActive(msg); 
+            }
+            else {
+                
+                Object.keys(msg).forEach(k => {
+                    if(!existinTest[k]) {
+                        existinTest[k] = msg[k];
+                    }
+                })
+            }
+  
 
             $scope.stopFiring();
         }
@@ -329,6 +344,14 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             return;
         }
 
+        function pushIfNotExist(list, msg, test) {
+            var existinTest = list.filter(w => w.testName === test && w.dll == msg.dll);
+
+            if(!existinTest[0]) {
+                list.push({ testName: test, dll: msg.dll, isNew: true });
+            }
+        }
+
         //handler: displays the todo tests TestDiscoveredEvent
         if(msg.dll && msg.hasOwnProperty("discoveredTests"))
         {
@@ -341,6 +364,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                                 
                 test.testIds.push(msg.testId);
                 test.total = msg.discoveredTests.length
+                
             }
             else {
                 var dll =  {
@@ -354,11 +378,14 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                     total: msg.discoveredTests.length
                 };
 
-                $scope.testRuns.push(dll);
-                
+                $scope.testRuns.push(dll);       
             }
 
-            $scope.testsQueued += msg.discoveredTests.length;
+            //show new tests as discovered
+            msg.discoveredTests.forEach(t => pushIfNotExist($scope.tests, msg, t));
+
+            
+            $scope.testsQueued = $scope.tests.filter(w => w.isNew).length;
         }
 
         // handler: indicates a test is about to startunittest, adds test to results section
@@ -394,7 +421,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 $scope.testRuns.push(msg);
                 test = msg;
             }
-                        
+            
             test.completedAt = new Date();
             test.startedAt = test.startedAt ?? new Date();
 

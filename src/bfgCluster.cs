@@ -32,7 +32,7 @@ namespace theBFG
         public static bool HasMatchingTag(IEnumerable<string> tags, StartUnitTest work)
         {
             if (work.Tags.IsNullOrWhitespace() ||work.Tags.Length < 1)
-                return false; //no tags requested on work
+                return true; //no tags requested on work
             
             var workTags = TagsFromString(work.Tags);
             return tags.Any(tag => workTags.Any(w => w.BasicallyEquals(tag)));
@@ -40,7 +40,6 @@ namespace theBFG
 
         public static IEnumerable<string> TagsFromString(string tagSyntax)
         {
-
             return tagSyntax.IsNullOrWhitespace() ? new string[0] : tagSyntax.Split(' ').Where(t => t.Contains("#")).Select(t => t.Trim('#'));
         }
     }
