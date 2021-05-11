@@ -116,6 +116,8 @@ or
 
 + `<PackageReference include="thebfg">` thebfg *dotnet* API & `theBfg.reloadWith(">cmd")`
 
+* You can concat `commands and any params;together with;semi-colons` and they will run sequentially
+
 ### Unit or Integration Testing
 * Run test arena and worker in same process
   

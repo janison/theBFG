@@ -12,8 +12,6 @@ using System.Reactive.Subjects;
 using Autofac;
 using Rxns;
 using Rxns.Cloud;
-using Rxns.Cloud.Intelligence;
-using Rxns.Collections;
 using Rxns.Commanding;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
@@ -33,12 +31,11 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///
-/// - allow scripts to be written for commands and exetcuted via UI
-/// - allow a cmd to create a script dyanmically
-///
-/// - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with
-/// 
+///         - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with 
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
+///         -fix save cmd UI element not active at startup when save arg used
+///         - test remote worker, possibly not routing spawnworker messages correctly or similiar
+/// 
 /// 
 ///         - allow settings to be configured via UI and saved between restarts
 ///             - html5 storage? or .cfg file?
@@ -50,7 +47,6 @@ using theBFG.TestDomainAPI;
 ///         - allow way to use servicecmd to launch a worker in a new processes
 ///         - thebfg target all // monitors dirs and auto-executes 
 ///   
-///             - test remote worker, possibly not routing spawnworker messages correctly or similiar
 ///
 ///             - allow graph to zoom or adjust for overall unit tests so it zooms at the right level
 ///                 - or could just use a setting and a level adjuster thingy to allow easy zooming?, mouse wheel?
