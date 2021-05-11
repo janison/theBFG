@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <div style="margin-top: 15px;">                        
+        <div style="margin-top: 15px;" ng-init="isRecording = false" >                        
             <span width="40">
                 <span title="Reload" ng-click="cmdReload()" ng-class="{error: !testArenaInfo.isConnected, infor: testArenaInfo.isConnected}" class="cmd fa fa-rocket fa-2x">
                 </span>
@@ -84,6 +84,7 @@
             <span><span class="cmd fa fa-search-plus fa-2x"></span><input type="text" ng-model="searchTerm" width="50"/></span>
             <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>         
             <span><span ng-click="cmdLightsOutToggle()" class="cmd fa fa-sun-o fa-2x"></span></span>
+            <span><span ng-click="publish('', !isRecording ? 'StartRecording' : 'StopRecording'); isRecording = !isRecording;" ng-class="{active: isRecording, inactive: !isRecording}" class="cmd fa fa-floppy-o fa-2x"></span></span>
             <a href="/tenantLogs" target="_tenantlogs"><span class="cmd fa fa-stack-overflow fa-2x"></span></a>
     </div>
 

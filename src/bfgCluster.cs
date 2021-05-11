@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
+using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
+using Rxns.Playback;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
@@ -69,15 +73,17 @@ namespace theBFG
 
     public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>, IServiceCommandHandler<StopUnitTest>
     {
+        private readonly IRxnManager<IRxn> _rxnManager;
         private static CompeteFanout<StartUnitTest, UnitTestResult> FanoutStratergy = new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag);
 
         public void Publish(IRxn rxn)
         {
-            _publish(rxn);
+            _rxnManager.Publish(rxn).Until();
         }
 
-        public bfgCluster(SystemStatusPublisher appStatus) : base(FanoutStratergy)
+        public bfgCluster(SystemStatusPublisher appStatus, IRxnManager<IRxn> rxnManager) : base(FanoutStratergy)
         {
+            _rxnManager = rxnManager;
             appStatus.Process(new AppStatusInfoProviderEvent()
 
             {
@@ -117,6 +123,4 @@ namespace theBFG
             });
         }
     }
-
-    
 }

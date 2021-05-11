@@ -30,18 +30,13 @@ using theBFG.TestDomainAPI;
 /// <summary>
 ///
 /// Backlog
-///
-///
 /// 
 /// todo:
 ///
-/// -allow scripts to be written for commands and exetcuted via UI
+/// - allow scripts to be written for commands and exetcuted via UI
 /// - allow a cmd to create a script dyanmically
 ///
 /// - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with
-///     
-///
-/// -add REPL to console for direct commanding
 /// 
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
 /// 
@@ -55,7 +50,6 @@ using theBFG.TestDomainAPI;
 ///         - allow way to use servicecmd to launch a worker in a new processes
 ///         - thebfg target all // monitors dirs and auto-executes 
 ///   
-/// -           -   allow targeting of tests at specific tag'd workers with startunittest
 ///             - test remote worker, possibly not routing spawnworker messages correctly or similiar
 ///
 ///             - allow graph to zoom or adjust for overall unit tests so it zooms at the right level
@@ -64,11 +58,6 @@ using theBFG.TestDomainAPI;
 /// - auto-scaling of workers on node to allow dynamic sizing based on CPU/MEM usage of test scenario
 ///             - indicate active work on each worker?
 /// 
-///         - need to fix saving / persistance historical data.
-///             - add a "history" flag to the playback allow the UI to skip/know these are historical so it doesnt double count                 
-///            - use "save" keyword to indicate filesystem mode instead of inmemory?
-///
-///
 /// </summary>
 namespace theBFG
 {
@@ -106,6 +95,16 @@ namespace theBFG
         {
 
         }
+    }
+
+    public class StartRecording : ServiceCommand, IReactiveEvent
+    {
+
+    }
+
+    public class StopRecording : ServiceCommand, IReactiveEvent
+    {
+
     }
 
     /// <summary>
@@ -157,11 +156,19 @@ namespace theBFG
                 return theBfgDef.TestWorker(apiName, testHostUrl, RxnApp.SpareReator(testHostUrl)).ToRxns()
                     .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, true))
                     .OnHost(new ConsoleHostedApp(), cfg)
-                    .SelectMany(h => h.Run())
-                    .Select(app => new Unit())
+                    .SelectMany(h => h.Run().Do(app =>
+                    {
+                        theBfg.IsReady.OnNext(app);
+                    }))
+                    .Select(app =>
+                    {
+                        return new Unit();
+                    })
                     .Subscribe(o);
             });
         }
+
+        public static ISubject<IRxnAppContext> IsReady = new ReplaySubject<IRxnAppContext>(1);
 
         /// <summary>
         /// Tnis function will parse an arg list for a set of firing targets.
@@ -832,7 +839,7 @@ namespace theBFG
             return !frameworkFileExclusions.Any(e => file.BasicallyContains(e));
         }
 
-        public IDisposable ExitAfter(StartUnitTest[] testsToWatch, IObservable<UnitTestResult> testResults)
+        public static IDisposable ExitAfter(StartUnitTest[] testsToWatch, IObservable<UnitTestResult> testResults)
         {
             var allFinished = testsToWatch.Length;
             var passed = 0;

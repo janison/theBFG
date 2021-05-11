@@ -74,6 +74,8 @@ namespace theBFG
                     .RespondsToSvcCmds<FocusOn>()
                     .RespondsToSvcCmds<StopFocusing>()
                     .RespondsToSvcCmds<DiscoverUnitTests>()
+                    .RespondsToSvcCmds<StartRecording>()
+                    .RespondsToSvcCmds<StopRecording>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
@@ -131,52 +133,55 @@ namespace theBFG
                     .CreatesOncePerApp<UseDeserialiseCodec>()
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        TimeSpan.FromSeconds(1).Then().Do(_ =>
+                        var rxnManager = resolver.Resolve<IRxnManager<IRxn>>();
+                        if (theBfg.Args.Any(a => a.BasicallyEquals("save")))
                         {
+                            rxnManager.Publish(new StartRecording()).Until();
+                        }
 
-                            if (theBfgDef.Cfg == null)
-                                theBfgDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
+                        theBfg.IsReady.OnNext(new InProcessRxnAppContext(resolver.Resolve<IRxnApp>(), resolver));
+                        
+                        if (theBfgDef.Cfg == null)
+                            theBfgDef.Cfg = theBFG.theBfg.DetectAndWatchTargets(args, resolver.Resolve<Func<ITestArena[]>>(), resolver.Resolve<IServiceCommandFactory>(), rxnManager.CreateSubscription<UnitTestResult>());
 
-                            var theBfg = resolver.Resolve<theBfg>();
-
-
-                            if (args.LastOrDefault().BasicallyEquals("exit") || args.LastOrDefault().BasicallyEquals("quit"))
+                        var _theBfg = resolver.Resolve<theBfg>();
+                        
+                        if (args.LastOrDefault().BasicallyEquals("exit") || args.LastOrDefault().BasicallyEquals("quit"))
+                        {
+                            var calledOnce = false;
+                            Cfg = Cfg.Do(testInSession =>
                             {
-                                var calledOnce = false;
-                                Cfg = Cfg.Do(testInSession =>
-                                {
-                                    if(calledOnce) return;
+                                if(calledOnce) return;
 
-                                    calledOnce = true;
-                                    theBfg.ExitAfter(testInSession, resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
-                                });
-                            }
+                                calledOnce = true;
+                                theBfg.ExitAfter(testInSession, resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
+                            });
+                        }
 
 
-                            var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
+                        var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
 
-                            var searchPattern = args.Skip(1).FirstOrDefault();
+                        var searchPattern = args.Skip(1).FirstOrDefault();
 
-                            if (args.FirstOrDefault().BasicallyEquals("launch"))
-                            {
-                                searchPattern = searchPattern ??  $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
-                            }
-                            else
-                            {
-                                var launchUnitTests = theBfg.LaunchUnitTests(args, Cfg, resolver);
-                            }
+                        if (args.FirstOrDefault().BasicallyEquals("launch"))
+                        {
+                            searchPattern = searchPattern ??  $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
+                        }
+                        else
+                        {
+                            var launchUnitTests = _theBfg.LaunchUnitTests(args, Cfg, resolver);
+                        }
 
-                            if (searchPattern != null)
-                            {
-                                $"Discovering unit tests with: {searchPattern}".LogDebug();
-                                theBfg.DiscoverUnitTests(searchPattern, args, resolver.Resolve<Func<ITestArena[]>>())
-                                    .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
-                                    .Until();
-                            }
-                        }).Until();
+                        if (searchPattern != null)
+                        {
+                            $"Discovering unit tests with: {searchPattern}".LogDebug();
+                            theBfg.DiscoverUnitTests(searchPattern, args, resolver.Resolve<Func<ITestArena[]>>())
+                                .SelectMany(t => resolver.Resolve<IRxnManager<IRxn>>().Publish(t))
+                                .Until();
+                        }
 
                     }))
-                    .CreatesOncePerApp<InMemoryTapeRepo>()
+                    .CreatesOncePerApp<bfgFileSystemTapeRepository>()
                     ;
                 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

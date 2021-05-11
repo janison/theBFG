@@ -7443,6 +7443,9 @@ code {
   position: sticky;
   top: 0px;
 }
+.active {
+  color: #0051b3 !important;
+}
 .expand {
   overflow: visible !important;
   width: inherit !important;

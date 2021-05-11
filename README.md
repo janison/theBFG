@@ -239,7 +239,7 @@ target test.dll!a_specific_test;100
   ```
   @KillWorker
   ```
-  
+
 ### Reliability Testing
 
 * Run test suite over and over again repeadily, logging any failures
@@ -247,7 +247,26 @@ target test.dll!a_specific_test;100
 > thebfg launch test.dll and fire continiously
 ```
 
-### Data Import / Export / Reset
+
+### Data Save / Import / Export / Reset
+
+* To save all data in a session
+
+  ```
+  > theBfg <anything> save
+  ```
+
+* To toggle saving data at any time
+  
+  ```
+  @StartRecording
+  ```
+
+  or to stop it
+
+  ```
+  @StopRecording
+  ```
 
 * All data lives inside of the `.bfg` dir
 

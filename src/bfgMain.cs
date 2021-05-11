@@ -1,5 +1,7 @@
 using System.Reactive;
+using System.Reactive.Linq;
 using Rxns;
+using Rxns.Hosting;
 
 namespace theBFG
 {
@@ -8,7 +10,7 @@ namespace theBFG
         static void Main(string[] args)
         {
             theBfg.ReloadAnd(args: args).Until();
-            theBfg.IsCompleted.WaitR();
+            ConsoleHostedApp.StartREPL(theBfg.IsReady.FirstAsync().WaitR().AppCmdService);
         }
     }
 }
