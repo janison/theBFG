@@ -10,6 +10,7 @@ using Rxns.Cloud.Intelligence;
 using Rxns.Collections;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
+using Rxns.Health.AppStatus;
 using Rxns.Hosting;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
@@ -49,6 +50,7 @@ namespace theBFG
         private readonly IAppStatusServiceClient _appStatus;
         private readonly IAppServiceDiscovery _serviceDiscovery;
         private readonly IUpdateServiceClient _appUpdates;
+        public static string ClientId = Guid.NewGuid().ToString(); //get from cfg file if exists
 
         public bfgWorkerManager(bfgCluster workerCluster, IObservable<StartUnitTest[]> cfg, SystemStatusPublisher systemStatus, IResolveTypes resolver, IRxnManager<IRxn> eventManager, IAppStatusCfg appStatusCfg, IAppServiceRegistry appServiceRegistry, IZipService zipService, IAppStatusStore appCmds, IAppStatusServiceClient appStatus, IAppServiceDiscovery serviceDiscovery, IUpdateServiceClient appUpdates)
         {
@@ -79,6 +81,7 @@ namespace theBFG
                 new AppStatusInfo("Workers", _workerCluster.Workflow.Workers),
                 new AppStatusInfo("ComputerName", Environment.MachineName),
                 new AppStatusInfo("Username", Environment.UserName),
+                new AppStatusInfo("Id", ClientId),
             };
         }
 
@@ -93,7 +96,7 @@ namespace theBFG
             $"Starting worker".LogDebug();
 
             var testWorker = new bfgWorker(
-                $"TestWorker#{instanceId}",
+                $"{ClientId}/TestWorker#{instanceId}",
                 "local",
                 tags ?? theBfg.Args.Where(w => w.StartsWith("#")).ToArray(),
                 _appServiceRegistry, _serviceDiscovery,
@@ -142,5 +145,65 @@ namespace theBFG
                 return CommandResult.Success();
             });
         }
+    }
+
+    public class NoAppCmdsOnWorker : IAppStatusStore
+    {
+        public IDictionary<string, Dictionary<SystemStatusEvent, object[]>> GetSystemStatus()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearSystemStatus(string route)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<object> GetLog()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<string> SaveLog(string tenant, Stream log, string file)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<AppLogInfo[]> ListLogs(string tenantId, int top = 3)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<Stream> GetLogs(string tenantId, string file)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<IRxnQuestion> FlushCommands(string route)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Add(IRxnQuestion cmds)
+        {
+            throw new Exception("Cant queue work to other workers sorry. Must be done via the Test Arena".LogDebug());
+        }
+
+        public void Add(LogMessage<string> message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Add(LogMessage<Exception> message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDictionary<object, object> Cache { get; }
     }
 }

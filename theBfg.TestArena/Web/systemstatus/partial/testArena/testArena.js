@@ -172,7 +172,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         // if(msg.at > startedTestArenaAt) {
 
         // }
-        console.log("1AppInfo: " +JSON.stringify(msg));
+        console.log("AppInfo: " +JSON.stringify(msg));
         
         if(msg.testName) {
             $scope.log.unshift(msg);
@@ -297,28 +297,30 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         if(msg.ipAddress) {
             //workerstatusinfo
+            var host = msg.host;
 
-            if(!$scope.workerInfo[msg.name]) {
-                $scope.workerInfo[msg.name] = {}
+
+            if(!$scope.workerInfo[host]) {
+                $scope.workerInfo[host] = {}
             }
 
-            $scope.workerInfo[msg.name].ipAddress = msg.ipAddress;
-            $scope.workerInfo[msg.name].name = msg.name;
-            $scope.workerInfo[msg.name].computerName = msg.computerName;
-            $scope.workerInfo[msg.name].userName     = msg.userName;
-            $scope.workerInfo[msg.name].workers = msg.workers;
+            $scope.workerInfo[host].ipAddress = msg.ipAddress;
+            $scope.workerInfo[host].name = msg.name;
+            $scope.workerInfo[host].computerName = msg.computerName;
+            $scope.workerInfo[host].userName     = msg.userName;
+            $scope.workerInfo[host].workers = msg.workers;
         }
 
         if(msg.memUsage) {
 
-            var host = msg.name;
+            var host = msg.host;
 
             if(!$scope.workerInfo[host]) {
 
                 console.log('Found worker: '+ msg.host + ' : '+ msg.name);
                 $scope.workerInfo[host] = {
                     name: msg.name,
-                    host: msg.name,
+                    host: host,
                     resources: [{
                         category: 'blue',
                         values: []

@@ -20,7 +20,7 @@ namespace theBFG.TestDomainAPI
 
         public void ConfigiurePublishFunc(Action<IRxn> publish)
         {
-            _sr.AppUsage.Sample(TimeSpan.FromSeconds(5)).Select(a => a.ForHost(_appInfo.Id, _appInfo.Name)).OfType<IRxn>().Do(publish).Until(); //todo: dispose
+            _sr.AppUsage.Sample(TimeSpan.FromSeconds(5)).Select(a => a.ForHost(bfgWorkerManager.ClientId, _appInfo.Name)).OfType<IRxn>().Do(publish).Until(); //todo: dispose
         }
     }
 }

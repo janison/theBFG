@@ -85,12 +85,10 @@ namespace theBFG
         {
             _rxnManager = rxnManager;
             appStatus.Process(new AppStatusInfoProviderEvent()
-
             {
-                ReporterName = "TestArena",
                 Info = () => new[]
                 {
-                    new AppStatusInfo("Workers", $"{Workflow.Workers.Count}{Workflow.Workers.Values.Count(v => v.Worker.IsBusy.Value())}"),
+                    new AppStatusInfo("Free Workers", $"{Workflow.Workers.Count - Workflow.Workers.Count(w => w.Value.Worker.IsBusy.Value())} / {Workflow.Workers.Count}")
                 }
             }).Until();
         }
@@ -123,4 +121,5 @@ namespace theBFG
             });
         }
     }
+
 }

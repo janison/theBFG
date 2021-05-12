@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Builder;
@@ -66,6 +67,7 @@ namespace theBFG
                     .CreatesOncePerApp<bfgWorkerManager>()
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .CreatesOncePerApp<bfgTestArenaProgressHub>()
+                    .CreatesOncePerRequest<bfgHostResourceMonitor>()
                     .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
                     .RespondsToSvcCmds<Reload>()
@@ -200,6 +202,7 @@ namespace theBFG
 
                 dd
                     .CreatesOncePerApp<theBfg>()
+                    .CreatesOncePerApp<bfgWorkerManager>()
                     .CreatesOncePerApp<SsdpDiscoveryService>()
                     .CreatesOncePerApp<TaggedServiceRxnManagerRegistry>()
                     .CreatesOncePerApp<bfgCluster>()
@@ -223,6 +226,8 @@ namespace theBFG
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
+                    .CreatesOncePerApp<NoAppCmdsOnWorker>(true)
+                    .CreatesOncePerApp(_ => Observable.Return(new [] { new StartUnitTest()}), true)
                     .CreatesOncePerApp(_ => new AppStatusCfg()
                     {
                         AppRoot = theBfg.DataDir

@@ -26,6 +26,7 @@ namespace theBFG
         public string IpAddress { get; set; }
         public string ComputerName { get; set; }
         public string UserName { get; set; }
+        public string Host { get; set; }
     }
 
     public class bfgWorkerRemoteOrchestrator : IAppHeartBeatHandler
@@ -65,7 +66,7 @@ namespace theBFG
                     }
                 });
 
-            return Rxn.Empty();
+            return OnAppHeartBeat(updates, app, meta);
         }
 
         public IObservable<IRxn> OnAppHeartBeat(IAppStatusManager updates, SystemStatusEvent app, object[] meta)
@@ -75,6 +76,7 @@ namespace theBFG
                 Route = RouteExtensions.GetRoute(app),
                 Name = app.SystemName,
                 IpAddress = app.IpAddress,
+                Host = ParseFromMeta("Id", meta),
                 Workers = ParseFromMeta("Free Workers", meta),
                 ComputerName = ParseFromMeta("ComputerName", meta),
                 UserName = ParseFromMeta("UserName", meta)

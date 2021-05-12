@@ -9,8 +9,6 @@ using Rxns.Playback;
 
 namespace theBFG.TestDomainAPI
 {
-
-
     public class bfgTestArenaProgressView : AggregatedView<IRxn>, IReactTo<IRxn>
     {
         private readonly ISystemResourceService _sr;
@@ -25,8 +23,7 @@ namespace theBFG.TestDomainAPI
 
         public override IObservable<IRxn> GetOrCreateStream()
         {
-            return this.OnReactionTo<ITestDomainEvent>()
-                .Merge(_sr.AppUsage.Sample(TimeSpan.FromSeconds(5)).Select(a => a.ForHost(_appInfo.Id, _appInfo.Name)).OfType<IRxn>())
+            return this.OnReactionTo<ITestDomainEvent>().OfType<IRxn>()
                 .Merge(this.OnReactionTo<AppResourceInfo>()); //broadcast from workers
         }
     }

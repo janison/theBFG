@@ -103,6 +103,20 @@ namespace theBFG
 
     }
 
+    public class bfgAppInfo : IRxnAppInfo
+    {
+        public string Name { get; set; }
+        public string Version { get; set; } = typeof(bfgAppInfo).Assembly.GetName().Version?.ToString();
+        public string Url { get; } = RxnApp.GetIpAddress();
+        public string Id { get; } = bfgWorkerManager.ClientId;
+        public bool KeepUpdated { get; set;  } = true;
+
+        public bfgAppInfo(string name)
+        {
+            Name = name;
+        }
+    }
+
     /// <summary>
     /// The Gatling Gun evolved into the Bfg in the games I played. Accurate, responsive, rewarding to master, having your back in every situation with deadly response.
     ///
@@ -150,8 +164,8 @@ namespace theBFG
                 //var clusterHost = OutOfProcessFactory.CreateClusterHost(args, appStore, cfg);
 
                 return theBfgDef.TestWorker(apiName, testHostUrl, RxnApp.SpareReator(testHostUrl)).ToRxns()
-                    .Named(new ClusteredAppInfo("bfgWorker", "1.0.0", args, true))
-                    .OnHost(new ConsoleHostedApp(), cfg)
+                    .Named(new bfgAppInfo("bfgWorker"))
+                .OnHost(new ConsoleHostedApp(), cfg)
                     .SelectMany(h => h.Run().Do(app =>
                     {
                         theBfg.IsReady.OnNext(app);
@@ -463,6 +477,13 @@ namespace theBFG
         private static IDisposable LaunchToTestArenaIf(string[] args, string url)
         {
             var dll = GetDllFromArgs(args);
+
+            if (dll.Contains("*"))
+            {
+                //not launching a specific .dll, abort
+                return null;
+            }
+
             var name = GetAppNameFromDllSyntax(dll);
             var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
             url = GetTestarenaUrlFromArgs(args) ?? url;
@@ -626,10 +647,33 @@ namespace theBFG
             return url;
         }
 
-        public static IObservable<Unit> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, bfgCluster cluster, bfgWorkerManager workerManager)
+        public static IObservable<Unit> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, bfgCluster testCluster, bfgWorkerManager workerManager)
         {
-            _testCluster = cluster;
+            _testCluster = testCluster;
             TestArenaWorkerManager = workerManager; // new bfgWorkerManager(_testCluster);
+
+            Action<string> setInfo = (testsInQueue) =>
+            {
+                _info = () =>
+                {
+                    return new[]
+                    {
+                        unitTestToRun == null
+                            ? new AppStatusInfo("Test", $"Running {testsInQueue} tests")
+                            : new AppStatusInfo("Test", $"Waiting for work"),
+                        new AppStatusInfo("Duration", (DateTime.Now - (_started ?? DateTime.Now)).TotalMilliseconds),
+
+                    };
+                };
+            };
+
+            setInfo(0.ToString());
+
+            //todo: need to fix ordering of services, this needs to start before the appstatusservicce otherwise it will miss the infoprovdiderevent
+            _testCluster.Publish(new AppStatusInfoProviderEvent()
+            {
+                Info = _info
+            });
 
             if (args.Contains("rapidly"))
             {
@@ -755,24 +799,6 @@ namespace theBFG
             //IMonitorActionFactory<IRxn> health =MonitorHealth
             RxnCreator.MonitorHealth<IRxn>(bfgReactor, "theBFG", out var _before, () => Rxn.Empty()).SelectMany(bfgReactor.Output).Until();
 
-            _info = () =>
-            {
-                return new[]
-                {
-                    unitTestToRun == null
-                        ? new AppStatusInfo("Test", $"Running {unitTestToRun.Dll}")
-                        : new AppStatusInfo("Test", $"Waiting for work"),
-                    new AppStatusInfo("Duration", (DateTime.Now - (_started ?? DateTime.Now)).TotalMilliseconds),
-                    new AppStatusInfo("Free Workers",$"{testCluster.Workflow.Workers.Count - testCluster.Workflow.Workers.Count(w => w.Value.Worker.IsBusy.Value())} / {testCluster.Workflow.Workers.Count}")
-                    
-                };
-            };
-
-            //todo: need to fix ordering of services, this needs to start before the appstatusservicce otherwise it will miss the infoprovdiderevent
-            publusher.Process(new AppStatusInfoProviderEvent()
-            {
-                Info = _info
-            }).Until();
 
             $"Heartbeating".LogDebug();
             bfgReactor.Output.Publish(new PerformAPing()).Until();
