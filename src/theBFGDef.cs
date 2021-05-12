@@ -87,7 +87,8 @@ namespace theBFG
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<TestArenaWorkerHeadbeat>()
                     .CreatesOncePerApp(_ => Cfg)
-                    .CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
+                    //.CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
+                    .CreatesOncePerApp<AppCommandService>()
                     .CreatesOncePerApp(_ => new AspnetCoreCfg()
                     {
                         Cfg = aspnet =>

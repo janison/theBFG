@@ -2,7 +2,7 @@
   "profiles": {
     "theBFG": {
       "commandName": "Project",
-      "commandLineArgs": "fire"
+      "commandLineArgs": "launch"
     }
   }
 }

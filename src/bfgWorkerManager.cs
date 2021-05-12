@@ -33,7 +33,6 @@ namespace theBFG
         }
 
         public string Tags { get; set; }
-        public string Route { get; set; }
     }
 
 
@@ -126,24 +125,7 @@ namespace theBFG
 
         public IObservable<CommandResult> Handle(SpawnWorker command)
         {
-            if (command.Route.IsNullOrWhitespace())
-            {
-                return SpawnTestWorker(bfgTagWorkflow.TagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
-            }
-
-            return SpawnTestWorkerOnRoute(command);
-        }
-
-        private IObservable<CommandResult> SpawnTestWorkerOnRoute(SpawnWorker command)
-        {
-            return Rxn.Create(() =>
-            {
-                _appCmds.Add(command.AsQuestion());
-
-                "Queued command for worker".LogDebug();
-
-                return CommandResult.Success();
-            });
+            return SpawnTestWorker(bfgTagWorkflow.TagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
         }
     }
 

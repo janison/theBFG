@@ -309,6 +309,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.workerInfo[host].computerName = msg.computerName;
             $scope.workerInfo[host].userName     = msg.userName;
             $scope.workerInfo[host].workers = msg.workers;
+            $scope.workerInfo[host].route = msg.route;
         }
 
         if(msg.memUsage) {

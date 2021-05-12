@@ -478,7 +478,7 @@ namespace theBFG
         {
             var dll = GetDllFromArgs(args);
 
-            if (dll.Contains("*"))
+            if (dll.IsNullOrWhitespace() || dll.Contains("*"))
             {
                 //not launching a specific .dll, abort
                 return null;
@@ -507,6 +507,7 @@ namespace theBFG
         public static IDisposable Fire(IObservable<StartUnitTest[]> unitTests = null)
         {
             return (unitTests ?? _lastFired.ToObservable())
+                .Where(t => t != null)//hmm sometimes this happens for various reasons
                 .Do(tests =>
                 {
                     startedAt = Stopwatch.StartNew();
