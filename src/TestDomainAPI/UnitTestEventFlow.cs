@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Rxns;
 using Rxns.DDD.Commanding;
@@ -85,6 +86,7 @@ namespace theBFG.TestDomainAPI
             var tokens = dll.Split('$');
             Dll = tokens.FirstOrDefault();
             RunThisTest = tokens.Skip(1).FirstOrDefault();
+            UseAppUpdate = $"{new FileInfo(dll).Name}";
         }
 
         public override string ToString()

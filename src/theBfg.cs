@@ -30,12 +30,12 @@ using theBFG.TestDomainAPI;
 /// Backlog
 /// 
 /// todo:
-///
+///         - fix firing round robin not fanning out to remote workers
+///         - reliable mode where each worker with a matching tag name will do the work in parrallel for each compile. ie #os: will send to #os:win #os:macos #os:linux
+///         - fix startunittest via ta nulls out
 ///         - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with 
 ///         -fix not launching if **.test.dll is used. need to use gettargets istead
 ///         -fix save cmd UI element not active at startup when save arg used
-///         - test remote worker, possibly not routing spawnworker messages correctly or similiar
-/// 
 /// 
 ///         - allow settings to be configured via UI and saved between restarts
 ///             - html5 storage? or .cfg file?
@@ -945,7 +945,7 @@ _/  |_|  |__   ____\______   \_/ ____\____
 
         public static string GetTestSuiteDir(StartUnitTest work)
         {
-            return Path.Combine(work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}").AsCrossPlatformPath();
+            return Path.Combine(theBfg.DataDir, "TestSuites",  work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}").AsCrossPlatformPath();
         }
 
         public IObservable<CommandResult> Handle(FocusOn command)
