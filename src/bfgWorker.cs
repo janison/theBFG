@@ -172,7 +172,7 @@ namespace theBFG
                     return Rxn.Empty<Unit>();
                 }
 
-                keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,  ".", new RxnAppCfg()
+                keepTestUpdatedIfRequested = _updateService.KeepUpdated(work.UseAppUpdate, work.UseAppVersion,  theBfg.GetTestSuiteDir(work.UseAppUpdate, work.UseAppVersion), new RxnAppCfg()
                 {
                     AppStatusUrl = work.AppStatusUrl.IsNullOrWhiteSpace("http://localhost:888"),
                     SystemName = work.UseAppUpdate,

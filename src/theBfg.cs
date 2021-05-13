@@ -948,6 +948,11 @@ _/  |_|  |__   ____\______   \_/ ____\____
             return Path.Combine(theBfg.DataDir, "TestSuites",  work.UseAppUpdate, $"{work.UseAppUpdate}%%{work.UseAppVersion}").AsCrossPlatformPath();
         }
 
+        public static string GetTestSuiteDir(string systemName, string version)
+        {
+            return Path.Combine(theBfg.DataDir, "TestSuites", systemName, $"{systemName}%%{version}").AsCrossPlatformPath();
+        }
+
         public IObservable<CommandResult> Handle(FocusOn command)
         {
             theBfg.FocusedTest = command.TestName;

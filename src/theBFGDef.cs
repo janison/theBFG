@@ -218,6 +218,7 @@ namespace theBFG
                     .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
                     .CreatesOncePerRequest<bfgHostResourceMonitor>()
+                    .CreatesOncePerRequest<bfgDataDirAppStore>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
@@ -253,5 +254,13 @@ namespace theBFG
                 DistributedBackingChannel.For(typeof(AppResourceInfo), typeof(ITestDomainEvent))(dd);
             };
         };
+    }
+
+    public class bfgDataDirAppStore : CurrentDirectoryAppUpdateStore
+    {
+        public override IObservable<string> Run(GetAppDirectoryForAppUpdate command)
+        {
+            return theBfg.GetTestSuiteDir(command.SystemName, command.Version).ToObservable();
+        }
     }
 }
