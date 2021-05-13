@@ -86,7 +86,9 @@ namespace theBFG.TestDomainAPI
             var tokens = dll.Split('$');
             Dll = tokens.FirstOrDefault();
             RunThisTest = tokens.Skip(1).FirstOrDefault();
-            UseAppUpdate = $"{new FileInfo(dll).Name}";
+
+            var fn = new FileInfo(dll);
+            UseAppUpdate = $"{fn.Name}".Replace(fn.Extension, "");
         }
 
         public override string ToString()

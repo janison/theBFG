@@ -160,8 +160,7 @@ namespace theBFG
                                 theBfg.ExitAfter(testInSession, resolver.Resolve<IRxnManager<IRxn>>().CreateSubscription<UnitTestResult>());
                             });
                         }
-
-
+                        
                         var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
 
                         var searchPattern = args.Skip(1).FirstOrDefault();
@@ -241,7 +240,8 @@ namespace theBFG
                     })
                     .CreatesOncePerApp(_ => new DynamicStartupTask((log, resolver) =>
                     {
-                        var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>()).Until();
+                        theBfg.Use(resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>());
+                        var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg).Until();
                     }));
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

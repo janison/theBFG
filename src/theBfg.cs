@@ -31,6 +31,7 @@ using theBFG.TestDomainAPI;
 /// 
 /// todo:
 ///         - fix firing round robin not fanning out to remote workers
+///             - need to register and track the remote workers so the cluster can fan out appropriotely. currently it will only fan out max 1 to each worker
 ///         - reliable mode where each worker with a matching tag name will do the work in parrallel for each compile. ie #os: will send to #os:win #os:macos #os:linux
 ///         - fix startunittest via ta nulls out
 ///         - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with 
@@ -623,7 +624,15 @@ namespace theBFG
             }
 
             var stopAdvertising = bfgTestArenaApi.AdvertiseForWorkers(discovery, "all", $"http://{RxnApp.GetIpAddress()}:888");
-            var stopWorkers = theBfg.StartTestArenaWorkers(args, testCfg, cluster, workerManager).Until();
+
+            theBfg.Use(cluster,workerManager);
+
+            var stopWorkers = Disposable.Empty;
+            if (args.Any(a => a.BasicallyEquals("fire")))
+            {
+                stopWorkers = theBfg.StartTestArenaWorkers(args, testCfg).Until();
+            }
+
             var stopFiring = StartFiringWorkflow(args, testCfg, toFireOn);
             
 
@@ -635,7 +644,7 @@ namespace theBFG
             var stopAutoLaunchingTestsIntoArena = LaunchUnitTestsToTestArenaDelayed(allUnitTests, GetTestarenaUrlFromArgs(args), resolver.Resolve<IAppStatusCfg>()).Until();
 
             var broadCaste = allUnitTests.FirstAsync()
-                .Do(unitTests => BroadcasteStatsToTestArena(_testCluster, unitTests[0], resolver.Resolve<SystemStatusPublisher>(), resolver.Resolve<IManageReactors>()))
+                .Do(unitTests => BroadcasteStatsToTestArena(resolver.Resolve<IManageReactors>()))
                 .Until();
 
             return new CompositeDisposable(stopAutoLaunchingTestsIntoArena, broadCaste);
@@ -648,10 +657,17 @@ namespace theBFG
             return url;
         }
 
-        public static IObservable<Unit> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun, bfgCluster testCluster, bfgWorkerManager workerManager)
+        public static void Use(bfgCluster testCluster, bfgWorkerManager workerManager)
         {
-            _testCluster = testCluster;
-            TestArenaWorkerManager = workerManager; // new bfgWorkerManager(_testCluster);
+            if (testCluster != null)
+                _testCluster = testCluster;
+
+            if (workerManager != null)
+                TestArenaWorkerManager = workerManager; // new bfgWorkerManager(_testCluster);
+        }
+
+        public static IObservable<Unit> StartTestArenaWorkers(string[] args, IObservable<StartUnitTest[]> unitTestToRun)
+        {
 
             Action<string> setInfo = (testsInQueue) =>
             {
@@ -792,7 +808,7 @@ namespace theBFG
         /// <param name="unitTestToRun"></param>
         /// <param name="publusher"></param>
         /// <param name="reactorMgr"></param>
-        private void BroadcasteStatsToTestArena(bfgCluster testCluster, StartUnitTest unitTestToRun, SystemStatusPublisher publusher, IManageReactors reactorMgr)
+        private void BroadcasteStatsToTestArena(IManageReactors reactorMgr)
         {
             var bfgReactor = reactorMgr.GetOrCreate("bfg").Reactor;
             //need to fix health which will allow this to be viewed on the appstatus portal. should monitor health of fanout stratergy

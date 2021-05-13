@@ -243,7 +243,16 @@ namespace theBFG
                 throw new Exception($"Cant achieve {dir}");
             }
 
-            var logFile = Path.Combine(_cfg.AppRoot, $"logs_{logId}.zip");
+            
+            var logFile = Path.Combine(_cfg.AppRoot, "logs", $"{logId}.zip");
+
+            if (!Directory.Exists(dir))
+            {
+                return logFile;
+            }
+
+
+
             using (var file = File.Create(logFile))
                 _zipService.Zip(dir).CopyTo(file);
 
