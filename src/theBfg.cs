@@ -240,7 +240,7 @@ namespace theBFG
 
         public static string GetAppVersionFromDllSyntax(string[] args, string dll)
         {
-            var testCfg = theBigCfg.Detect();
+            var testCfg = bfgCfg.Detect();
 
             var appUpdateDllSource = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
             
@@ -249,7 +249,7 @@ namespace theBFG
 
         public static string GetAppNameFromDllSyntax(string dll)
         {
-            var testCfg = theBigCfg.Detect();
+            var testCfg = bfgCfg.Detect();
 
             var appUpdateDllSource = dll == null ? null : dll.Contains("@") ? dll.Split('@').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
             var dlld = new FileInfo(dll);
@@ -301,7 +301,7 @@ namespace theBFG
 
         private static string GetTestNameFromArgs(string[] dll)
         {
-            var testCfg = theBigCfg.Detect();
+            var testCfg = bfgCfg.Detect();
 
             return dll.FirstOrDefault(a => a.Contains("$"))?.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest);
         }
@@ -467,7 +467,7 @@ namespace theBFG
         /// <returns></returns>
         private static string GetDllFromArgs(string[] args)
         {
-            var testCfg = theBigCfg.Detect();
+            var testCfg = bfgCfg.Detect();
             var appsyntax = args.Skip(1).FirstOrDefault().IsNullOrWhiteSpace(testCfg.Dll)?.Split('$')[0].AsCrossPlatformPath();
 
             return appsyntax;
