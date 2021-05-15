@@ -5,14 +5,14 @@
 I have used `Readme Driven Design` (`RDD`) to build this project.
 
 > ReadMe
-- need to register and track the remote workers so the cluster can fan out appropriotely. currently it will only fan out max 1 to each worker
-- remote worker not logs not being received??!
 
-- reliable mode where each worker with a matching tag name will do the work in parrallel for each compile. `ie #os: will send to #os:win #os:macos #os:linux`
+- remote worker not logs from macos not being received on windows test arena??!
+
+- `reliable mode` where each worker with a matching tag name will do the work in parrallel for each compile. `ie #os: will send to #os:win #os:macos #os:linux`
   - fix startunittest via ta nulls out
   - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with
-  - fix not launching if **.test.dll is used. need to use gettargets istead
-    - fix save cmd UI element not active at startup when save arg used
+  
+  - fix save cmd UI element not active at startup when save arg used
 
 - allow settings to be configured via UI and saved between restarts
   - html5 storage? or .cfg file?

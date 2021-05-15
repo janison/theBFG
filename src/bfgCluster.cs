@@ -74,16 +74,17 @@ namespace theBFG
     public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>, IServiceCommandHandler<StopUnitTest>
     {
         private readonly IRxnManager<IRxn> _rxnManager;
-        private static CompeteFanout<StartUnitTest, UnitTestResult> FanoutStratergy = new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag);
+        private readonly IClusterFanout<StartUnitTest, UnitTestResult> _fanoutStrategy;
 
         public void Publish(IRxn rxn)
         {
             _rxnManager.Publish(rxn).Until();
         }
 
-        public bfgCluster(SystemStatusPublisher appStatus, IRxnManager<IRxn> rxnManager) : base(FanoutStratergy)
+        public bfgCluster(SystemStatusPublisher appStatus, IRxnManager<IRxn> rxnManager, IClusterFanout<StartUnitTest, UnitTestResult> fanoutStrategy) : base(fanoutStrategy)
         {
             _rxnManager = rxnManager;
+            _fanoutStrategy = fanoutStrategy;
             appStatus.Process(new AppStatusInfoProviderEvent()
             {
                 Info = () => new[]
@@ -105,7 +106,7 @@ namespace theBFG
             return Rxn.Create(() =>
             {
                 "Stopping all unit tests".LogDebug();
-                foreach (var worker in FanoutStratergy.Workers.Values)
+                foreach (var worker in _fanoutStrategy.Workers.Values)
                 {
                     try
                     {

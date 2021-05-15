@@ -97,7 +97,7 @@
                 <span title="Name of the Node" class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
                 <span title="Network Details" class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
                 <span title="Username workers run under" class="fa fa-child cmd"><span style="color: #595958;">{{worker.userName}}</span></span>
-                <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish('', 'KillWorker')" style="float:right;margin-top:2px"></span>
+                <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'KillWorker')" style="float:right;margin-top:2px"></span>
                 <span title="Free workers / Total workers" class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
                 <span title="Add another worker to the node" class="fa fa-plus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'SpawnWorker')" style="float:right;margin-top:2px"></span>  
                 <span title="#Tags" class="fa fa-hashtag fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>

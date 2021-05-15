@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.FileProviders;
 using Rxns;
 using Rxns.Cloud;
+using Rxns.Cloud.Intelligence;
 using Rxns.DDD;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
@@ -68,8 +69,8 @@ namespace theBFG
                     .CreatesOncePerApp<bfgTestArenaProgressView>()
                     .CreatesOncePerApp<bfgTestArenaProgressHub>()
                     .CreatesOncePerRequest<bfgHostResourceMonitor>()
-                    .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
+                    .CreatesOncePerRequest<DotNetTestArena>()
                     .RespondsToSvcCmds<Reload>()
                     .RespondsToSvcCmds<StartUnitTest>()
                     .RespondsToSvcCmds<StopUnitTest>()
@@ -89,6 +90,7 @@ namespace theBFG
                     .CreatesOncePerApp(_ => Cfg)
                     //.CreatesOncePerApp<RxnManagerCommandService>() //fixes svccmds
                     .CreatesOncePerApp<AppCommandService>()
+                    .CreatesOncePerApp(_ => new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag))
                     .CreatesOncePerApp(_ => new AspnetCoreCfg()
                     {
                         Cfg = aspnet =>
@@ -162,16 +164,12 @@ namespace theBFG
                         }
                         
                         var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
+                        var launchUnitTests = _theBfg.LaunchUnitTests(args, Cfg, resolver);
 
                         var searchPattern = theBfg.GetSearchPatternFromArgs(args);
-
                         if (args.FirstOrDefault().BasicallyEquals("launch"))
                         {
-                            searchPattern = searchPattern ??  $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
-                        }
-                        else
-                        {
-                            var launchUnitTests = _theBfg.LaunchUnitTests(args, Cfg, resolver);
+                            searchPattern = searchPattern ?? $"{Directory.GetCurrentDirectory()}\\*.test*.dll";
                         }
 
                         if (searchPattern != null)
@@ -214,8 +212,8 @@ namespace theBFG
                     .RespondsToSvcCmds<StopFocusing>()
                     .CreatesOncePerApp<AppStatusClientModule>()
                     .CreatesOncePerApp<NestedInAppDirAppUpdateStore>()
-                    .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<VsTestArena>()
+                    .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<bfgHostResourceMonitor>()
                     .CreatesOncePerRequest<bfgDataDirAppStore>()
                     .Emits<UnitTestsStarted>()
@@ -227,6 +225,7 @@ namespace theBFG
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
+                    .CreatesOncePerApp(_ => new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag))
                     .CreatesOncePerApp<NoAppCmdsOnWorker>(true)
                     .CreatesOncePerApp(_ => Observable.Return(new [] { new StartUnitTest()}), true)
                     .CreatesOncePerApp(_ => new AppStatusCfg()

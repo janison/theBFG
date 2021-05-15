@@ -74,7 +74,7 @@ Target afterAllThoseCompleteSpawn3OfThese.dll;3
 
 1. Configure your `IDE` to deploy the  `app-under-test` on compile:
    
-`thebfg launch {app} {path/To/unit.test.dll}`
+`thebfg launch {app} {path/To/unit.test.dll} and exit`
 
 7. Update your `test.dll` to download the App and get a reference to it
 

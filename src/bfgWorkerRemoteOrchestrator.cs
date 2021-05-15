@@ -8,6 +8,7 @@ using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.Commanding;
 using Rxns.Health.AppStatus;
+using Rxns.Hosting.Cluster;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using theBFG.RxnsAdapter;
@@ -35,13 +36,17 @@ namespace theBFG
         private readonly IAppStatusStore _appCmds;
         private readonly IUpdateStorageClient _appUpdates;
         private readonly IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> _workerPool;
+        private readonly IClusterFanout<StartUnitTest, UnitTestResult> _cluster;
+        private readonly IRxnProcessor<WorkerDisconnected> _workerPoolD;
 
-        public bfgWorkerRemoteOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, IUpdateStorageClient appUpdates, IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> workerPool)
+        public bfgWorkerRemoteOrchestrator(IRxnManager<IRxn> rxnManager, IAppStatusStore appCmds, IUpdateStorageClient appUpdates, IRxnProcessor<WorkerDiscovered<StartUnitTest, UnitTestResult>> workerPool, IClusterFanout<StartUnitTest, UnitTestResult> cluster, IRxnProcessor<WorkerDisconnected> workerPoolD)
         {
             _rxnManager = rxnManager;
             _appCmds = appCmds;
             _appUpdates = appUpdates;
             _workerPool = workerPool;
+            _cluster = cluster;
+            _workerPoolD = workerPoolD;
         }
 
         /// <summary>
@@ -52,38 +57,77 @@ namespace theBFG
         /// <returns></returns>
         public IObservable<IRxn> OnNewAppDiscovered(IAppStatusManager updates, SystemStatusEvent app, object[] meta)
         {
-            var info = new Dictionary<string, string>();
-            info.Add("tags", meta.Skip(3).FirstOrDefault()?.ToString());
-
-            if (app.SystemName.BasicallyContains("worker"))
-                return _workerPool.Process(new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
-                {
-                    Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager, _appUpdates, info)
-                    {
-                        Route = RouteExtensions.GetRoute(app),
-                        Name = app.SystemName,
-                        Ip = app.IpAddress,
-                    }
-                });
-
             return OnAppHeartBeat(updates, app, meta);
+        }
+
+        private WorkerDiscovered<StartUnitTest, UnitTestResult> GenerateWorker(SystemStatusEvent app, object[] meta, string id)
+        {
+            var info = new Dictionary<string, string>();
+            info.Add("tags", meta.Skip(3).ToArray().ToStringEach(","));
+
+            return new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
+            {
+                Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager, _appUpdates, info)
+                {
+                    Route = RouteExtensions.GetRoute(app),
+                    Name = $"{app.SystemName}_{Guid.NewGuid().ToString().Split('-').FirstOrDefault()}",
+                    Ip = app.IpAddress,
+                }
+            };
         }
 
         public IObservable<IRxn> OnAppHeartBeat(IAppStatusManager updates, SystemStatusEvent app, object[] meta)
         {
-            return new TestArenaWorkerHeadbeat()
+            var heartBeat = new TestArenaWorkerHeadbeat()
             {
                 Route = RouteExtensions.GetRoute(app),
                 Name = app.SystemName,
                 IpAddress = app.IpAddress,
-                Host = ParseFromMeta("Id", meta),
-                Workers = ParseFromMeta("Free Workers", meta),
-                ComputerName = ParseFromMeta("ComputerName", meta),
-                UserName = ParseFromMeta("UserName", meta)
-            }.ToObservable();
+                Host = ParseValueFromMetaWithId("Id", meta),
+                Workers = ParseValueFromMetaWithId("Free Workers", meta),
+                ComputerName = ParseValueFromMetaWithId("ComputerName", meta),
+                UserName = ParseValueFromMetaWithId("UserName", meta)
+            };
+
+            BalanceRemoteWorkersWithCluster(heartBeat, app, meta);
+
+            return heartBeat.ToObservable();
         }
 
-        public string ParseFromMeta(string name, object[] meta)
+        private void BalanceRemoteWorkersWithCluster(TestArenaWorkerHeadbeat next, SystemStatusEvent app, object[] meta)
+        {
+            if(app.SystemName.BasicallyContains("TestArena"))
+                return; //dont track our node or bad things will happen!
+
+            var theWorkersWeThinkTheNoteHas = _cluster.Workers.Where(c => c.Value.Worker.Route.Equals(Rxns.RouteExtensions.GetRoute(app)))
+                .Select(r => r.Key)//this could potentially cause GC issues with large worker counts
+                .ToArray();
+
+            var theCurrentWorkersOnNode = next.Workers.Split("/").Last().AsInt();
+            var workerExpectedVsCurrentDiff = theCurrentWorkersOnNode - theWorkersWeThinkTheNoteHas.Length;
+
+            if (workerExpectedVsCurrentDiff > 0)
+            {
+                do
+                {
+                    _workerPool.Process(GenerateWorker(app, meta, workerExpectedVsCurrentDiff.ToString())).WaitR();
+                } while (--workerExpectedVsCurrentDiff > 0);
+            }
+
+            else if (workerExpectedVsCurrentDiff < 0)
+            {
+
+                foreach (var worker in theWorkersWeThinkTheNoteHas)
+                {
+                    _workerPoolD.Process(new WorkerDisconnected() {Name = worker}).WaitR();
+
+                    if (--workerExpectedVsCurrentDiff >= 0)
+                        break;
+                }
+            }
+        }
+
+        public string ParseValueFromMetaWithId(string name, object[] meta)
         {
             return meta.Select(m => m as AppStatusInfo[]).FirstOrDefault()?.FirstOrDefault(w => w.Key.BasicallyEquals(name))?.Value?.ToString();
         }

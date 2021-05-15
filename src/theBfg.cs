@@ -491,7 +491,7 @@ namespace theBFG
                             test.RunThisTest = FocusedTest;
                         }
 
-                        _testCluster.Publish(test);
+                        _testCluster.Handle(test).Until(); //todo: fix hanging resource
                     }
                 }).Until();
         }
@@ -807,7 +807,7 @@ namespace theBFG
 
         public static IObservable<IEnumerable<string>> ListTests(string testDll, Func<ITestArena[]> arenas)
         {
-            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems()).Select(d => d.Where(NotAFrameworkFile));
+            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems());
         }
 
         //todo: write unit test for this
@@ -818,7 +818,7 @@ namespace theBFG
                 return GetTargets(testDllSelector, args, null, null, null)
                     .Do(t =>
                     {
-                        ListTests(testDllSelector, arenas)
+                        ListTests(t.Dll, arenas)
                             .Select(
                             tests =>
                             {
