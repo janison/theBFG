@@ -163,7 +163,7 @@ namespace theBFG
                         
                         var stopArena = theBfg.StartTestArena(args, Cfg, resolver.Resolve<bfgCluster>(), resolver.Resolve<bfgWorkerManager>(), resolver.Resolve<IRxnManager<IRxn>>(), resolver.Resolve<SsdpDiscoveryService>());
 
-                        var searchPattern = args.Skip(1).FirstOrDefault();
+                        var searchPattern = theBfg.GetSearchPatternFromArgs(args);
 
                         if (args.FirstOrDefault().BasicallyEquals("launch"))
                         {

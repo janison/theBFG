@@ -3,47 +3,62 @@
 </h1>
 </div> 
 
-> A cloud-native .NET *unit* / *integration* / *load* testing **tool** that *`clusters`* *automatically*
-
+> A cloud-native `dotnet | .NET` *unit* / *integration* / *load* testing `tool` that *`clusters`* *automatically*
 
 Feature | ...
 -|-
 `Zero-configuration` | <font size=2> the host will automatically detect listeners using the `SSDP` protocal (*but yes, you can provide config in multiple ways if required*)</font>
 `Hyper-CD` | <font size=2>Verfy light-weight. Deploys apps in `ms`. Save time, and frustration, doing more testing, and less waiting or configuring.</font>
 `Real-time reporting` | <font size=2>Use the `theBFG` [Test Arena](#the-testarena) to monitor in real-time all aspects of your tests including errors, worker CPU, MEM and throughput</font>
-`NO DSL or JAVA or other` scripting to learn | Use all the same tools you love & pure C# to define complex intergation test scenarios</font>
+`NO DSL or JAVA or other` scripting to learn | <font size=2>Use all the same tools you love & pure `.net` to define complex intergation test scenarios</font>
 `Continuous Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
-`Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you required, 
+`Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you require! 
 `Supercharge EXISTING test-suites` | <font size=2>theBGF supports distributing work to a cluster that will work together to execute it as quickly as possible</font>
 `Cloud scale-out` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
-`NO API bleed` | <font size=2>If you out-grow `theBFG` or otherwise dont require its sevices anymore, delete its reference, its config classes and its gone. No refactor required.</font>
+`NO API bleed` | <font size=2>If you out-grow `theBFG` or otherwise dont require its sevices anymore, delete its reference, its config classes, the `.bfg` directory and **its gone**. *No refactor required.*</font>
 
+> Checkout the [backlog](backlog.md) to see whats to come
 
 # TheBFG *flow*
 
 1. Code your `app`
 
-2. Create a `unit-test`
-
-3. Install bfg
-
-    `dotnet tool install thebfg -g`
-
-5. Configure your `IDE` to deploy your `unit-test` on compile:
- 
-*AfterBuild:* `thebfg target {path/To/unit.test.dll}`
-
-1. Spin up worker on the *same computer*, **or** **many *others***
+2. Install `thebfg`
    
-`thebfg fire`
+    ```
+    dotnet tool install thebfg -g
+    ```
+    
+3. Create a `unit-test`
 
-... and thats it. Each time you `compile` your `unit-test` will be deployed to all the workers you have setup and they will run the tests as you commanded.
+and 
 
-> Pro Tips: 
+4. Configure your `IDE` to deploy your `unit-test` on compile:
+``` 
+AfterBuild: thebfg target {path/To/unit.test.dll} and fire
+```
+
+or 
+
+open up your *favourite* `console`
+
+```
+> thebfg target {path/To/unit.test.dll}
+```
+
+5. `and fire` in another process on the same computer **or** any other one across the network
+   
+```
+> thebfg fire
+```
+
+... and thats it. Each time you `compile` your `unit-test` will be deployed on demand the workers you have setup and they will run the tests in the way [you have commanded it](#quick-reference).
+
+> **Pro Tips:**
 > - use *wildcard* `*.tests.dll` to target all tests of specific patterns inside a folder, will search recursively
-> - use *\$* to target specific tests `...test.dll$any_test_you_want` inside a `.dll`
-> 
-> - No after build triggers? No Worries! theBFG also *monitors the target for changes*, reloading and *firing* on *every* update to bring advanced continious testing capabilities to any dev flow
+> - use `$` to target specific tests `...test.dll`$`any_test_you_want` inside a `.dll`
+> - every command also works with `project files` as the `.dll` ie. `.csproj` `.fsproj` or `.vbproj`
+> - `No after build triggers? No Worries!` theBFG also *`monitors the target for changes`*, automatically `reloading` and `fire`ing on *`every`* `update` to bring advanced Hyper-CD testing capabilities to **any** *`IDE`*
 
 *<h2>Integration test?</h2>*
 
@@ -200,21 +215,21 @@ or
 * TestExpression components: `<bfgCmd>` `<params>` `[;,]` 
 
 * Parallel test execution
-```
-target some.dll,target another.dll
-```
+  ```
+  target some.dll,target another.dll
+  ```
 
 * Serial test execution
-```
-target 1st.dll
-target 2nd.dll
-target 3rd.dll
-```
+  ```
+  target 1st.dll
+  target 2nd.dll
+  target 3rd.dll
+  ```
 
 * Target specific tests, 100 times
-```
-target test.dll!a_specific_test;100
-```
+  ```
+  target test.dll!a_specific_test;100
+  ```
 
 ### Performance Testing
 
@@ -245,9 +260,9 @@ target test.dll!a_specific_test;100
 ### Reliability Testing
 
 * Run test suite over and over again repeadily, logging any failures
-```
-> thebfg launch test.dll and fire continiously
-```
+  ```
+  > thebfg launch test.dll and fire continiously
+  ```
 
 
 ### Data Save / Import / Export / Reset
@@ -272,34 +287,36 @@ target test.dll!a_specific_test;100
 
 * All data lives inside of the `.bfg` dir
 
-```
-copy .bfg another/root/.bfg
-```
+  ```
+  copy .bfg another/root/.bfg
+  ```
 
 or
 
-```
-cp .bfg another/root/.bfg
-```
+  ```
+  cp .bfg another/root/.bfg
+  ```
 
 * Reset all data
 
-```
-thebfg self destruct
-```
+  ```
+  thebfg self destruct
+  ```
+
 then 
 
-```
-y
-```
+  ```
+  y
+  ```
 
 or
 
 * *no confirmation*, just do it
   
-```
-thebfg self destruct quite
-```
+  ```
+  thebfg self destruct quite
+  ```
+
 # Test Runners
 
 Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in essence all it does it wrap the output streams, parsing and triggering different events along the way to feed the Test Arena. You can use this same technique, or a closer integration using theBFG API, to tune theBFG to your specific flow.

@@ -20,42 +20,10 @@ using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
-
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
-/// <summary>
-///
-/// Backlog
-/// 
-/// todo:
-///         - fix firing round robin not fanning out to remote workers
-///             - need to register and track the remote workers so the cluster can fan out appropriotely. currently it will only fan out max 1 to each worker
-///         - reliable mode where each worker with a matching tag name will do the work in parrallel for each compile. ie #os: will send to #os:win #os:macos #os:linux
-///         - fix startunittest via ta nulls out
-///         - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with 
-///         -fix not launching if **.test.dll is used. need to use gettargets istead
-///         -fix save cmd UI element not active at startup when save arg used
-/// 
-///         - allow settings to be configured via UI and saved between restarts
-///             - html5 storage? or .cfg file?
-///             - lights out
-///             - threadholds for slow for flakey tests
-///             - cmd history?
-///             - zoom level
-/// 
-///         - allow way to use servicecmd to launch a worker in a new processes
-///         - thebfg target all // monitors dirs and auto-executes 
-///   
-///
-///             - allow graph to zoom or adjust for overall unit tests so it zooms at the right level
-///                 - or could just use a setting and a level adjuster thingy to allow easy zooming?, mouse wheel?
-/// 
-/// - auto-scaling of workers on node to allow dynamic sizing based on CPU/MEM usage of test scenario
-///             - indicate active work on each worker?
-/// 
-/// </summary>
 namespace theBFG
 {
 
@@ -292,7 +260,7 @@ namespace theBFG
         public static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
         {
             var appUpdateDllSource = GetAppNameFromDllSyntax(dll);
-            var testName = GetTestNameFromDllSyntax(dll);
+            var testName = GetTestNameFromArgs(args);
             var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
             var watchDllUpdatesOverTime = GetOrCreateWatcher(dll);
 
@@ -331,11 +299,11 @@ namespace theBFG
             });
         }
 
-        private static string GetTestNameFromDllSyntax(string dll)
+        private static string GetTestNameFromArgs(string[] dll)
         {
             var testCfg = theBigCfg.Detect();
 
-            return dll == null ? string.Empty : dll.Contains("$") ? dll.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest) : null;
+            return dll.FirstOrDefault(a => a.Contains("$"))?.Split('$').Reverse().FirstOrDefault().IsNullOrWhiteSpace(testCfg.RunThisTest);
         }
 
         private static readonly IDictionary<string, IObservable<string>> _watchers = new ConcurrentDictionary<string, IObservable<string>>();
@@ -842,6 +810,7 @@ namespace theBFG
             return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems()).Select(d => d.Where(NotAFrameworkFile));
         }
 
+        //todo: write unit test for this
         public static IObservable<UnitTestDiscovered> DiscoverUnitTests(string testDllSelector, string[] args, Func<ITestArena[]> arenas)
         {
             return Rxn.Create<UnitTestDiscovered>(o =>
@@ -1003,6 +972,11 @@ _/  |_|  |__   ____\______   \_/ ____\____
         public void ConfigiurePublishFunc(Action<IRxn> publish)
         {
             _publish = publish;
+        }
+
+        public static string GetSearchPatternFromArgs(string[] args)
+        {
+            return GetDllFromArgs(args);
         }
     }
 

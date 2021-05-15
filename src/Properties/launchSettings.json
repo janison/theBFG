@@ -2,7 +2,7 @@
   "profiles": {
     "theBFG": {
       "commandName": "Project",
-      "commandLineArgs": "fire"
+      "commandLineArgs": "target C:\\jan\\replay\\windows\\JanisonReplay.Integration.Tests\\bin\\Debug\\netcoreapp3.1\\JanisonReplay.Integration.Tests.dll$generate_a_wxs_file_from_a_directory_and_save_heaps_of_time"
     }
   }
 }
