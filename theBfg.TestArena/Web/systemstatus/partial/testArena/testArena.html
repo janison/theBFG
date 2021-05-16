@@ -86,8 +86,17 @@
             <span><span ng-click="cmdLightsOutToggle()" class="cmd fa fa-sun-o fa-2x"></span></span>
             <span><span ng-click="publish('', !isRecording ? 'StartRecording' : 'StopRecording'); isRecording = !isRecording;" ng-class="{active: isRecording, inactive: !isRecording}" class="cmd fa fa-floppy-o fa-2x"></span></span>
             <a href="/tenantLogs" target="_tenantlogs"><span class="cmd fa fa-stack-overflow fa-2x"></span></a>
+            <span><span class="cmd fa fa-2x fa-wrench" ng-click="showCfg = !showCfg" style="float:right" title="Settings"></span></span>
     </div>
-
+    <div class="settings" ng-style="{'visibility': showCfg ? 'visible': 'hidden'}">
+        <form novalidate class="simple-form">
+          <label>Slow Test Threshold: <input type="number" ng-model="testArenaCfg.slowTestMs" /></label>ms<br />
+          <label>Test Outcome Graph Max: <input type="number" ng-model="testArenaCfg.testDurationMax" /></label>ms<br />                   
+          Lights Out: <label><input type="checkbox" ng-model="testArenaCfg.isLightsOut" /></label><br />            
+          Always Save: <label><input type="checkbox" ng-model="testArenaCfg.alwaysSave" /></label>                           
+          <span class="cmd fa fa-floppy-o fa-2x" style="float:right;" ng-click="cmdSaveTestArenaCfg()"></span>
+        </form>
+    </div>
             
         <div ng-repeat="worker in workerInfo">            
             <div style="border-width: 0px;border-color: #373737; border-style: dashed;margin-top: 15px;">
@@ -108,7 +117,7 @@
             <div ng-if="!sendCmdDisabled" class="input-group"  style="padding-left:20px;padding-right:20px;padding-top: 5px;;padding-bottom: 5px;">
             <span class="input-group-btn" style="width: 200px;">                
                 <input type="text" class="form-control" width="80" ng-init="cmd = 'Reload'" ng-model="cmd">
-                <input type="text" class="form-control" width="80" ng-init="destination = 'TestArena\\bfgWorker'" ng-model="destination">
+                <input type="text" class="form-control" width="80" ng-init="destination = ''" ng-model="destination">
                 <button class="cmd btn btn-default" type="button" ng-click="publish(destination, cmd)">Send</button>
             </span>
         </div>
@@ -119,7 +128,8 @@
     </div>
     <div>
             <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
-            <table ng-if="currentTopic != ''" ng-class="{dark: isLightsOut, light: !isLightsOut}" class="table table-hover table-striped table-condensed h6">
+          
+            <table ng-if="currentTopic != ''" ng-class="{dark: testArenaCfg.isLightsOut, light: !testArenaCfg.isLightsOut}" class="table table-hover table-striped table-condensed h6">
                 <thead>
                 <th>Outcome</th>
                 <th>Test</th>

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Rxns;
 using Rxns.DDD;
+using Rxns.Interfaces;
+using Rxns.NewtonsoftJson;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using theBFG.TestDomainAPI;
 
@@ -17,7 +20,59 @@ namespace theBFG
         void SendCommand(string route, string command);
     }
 
-    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>
+    public class TestArenaCfg : IRxn
+    {
+        /// <summary>
+        /// The threshhold for a test to be considered "slow" and appear in the pie graph
+        /// </summary>
+        public int SlowTestMs { get; set; }
+        /// <summary>
+        /// This controls the resolution of the graph which displays each test outcome. The max value on the graph
+        /// will be this value in milliseconds
+        /// </summary>
+        public int TestDurationMax { get; set; }
+        /// <summary>
+        /// If the test arena will be in lights out mode by default
+        /// </summary>
+        public bool IsLightsOut { get; set; }
+        /// <summary>
+        /// If the test arena metics will default to persistint between sessions.
+        /// This is usually controlled with the "save" syntax in a command 
+        /// </summary>
+        public bool AlwaysSave { get; set; }
+
+        public static string CfgFile = Path.Combine(theBfg.DataDir, "testArena.json");
+        public TestArenaCfg()
+        {
+
+        }
+
+        public static TestArenaCfg Detect()
+        {
+            return File.Exists(CfgFile) ? Read(CfgFile) : new TestArenaCfg().Save();
+        }
+
+        private static TestArenaCfg Read(string cfgFile)
+        {
+            return File.ReadAllText(cfgFile).FromJson<TestArenaCfg>();
+        }
+
+        public TestArenaCfg Save()
+        {
+            File.WriteAllText(CfgFile, this.ToJson());
+            return this;
+        }
+    }
+
+    /// <summary>
+    /// Indicates a new test arena cfg has set in the system
+    /// </summary>
+    public class TestArenaCfgUpdated : IRxn
+    {
+        public TestArenaCfg Cfg { get; set; }
+    }
+
+    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>, IRxnProcessor<TestArenaCfgUpdated>
     {
         private readonly bfgTestArenaProgressView _testArena;
         private readonly IHubContext<bfgTestArenaProgressHub> _context;
@@ -34,7 +89,14 @@ namespace theBFG
         private void SendInitalMetricsTo(IClientProxy user)
         {
             _testArena.GetHistory().Where(v => v != null).Buffer(TimeSpan.FromSeconds(2), 50).Where(v => v.AnyItems())
-                .SelectMany(s => s).Do(s => user.SendAsync("onUpdate", s)).Subscribe();
+                .StartWith(LatestTestArenaCfg())
+                .SelectMany(s => s).Do(s => user.SendAsync("onUpdate", s))
+                .Until();
+        }
+
+        private IEnumerable<IRxn> LatestTestArenaCfg()
+        {
+            yield return TestArenaCfg.Detect();
         }
 
         public override Task OnConnectedAsync()
@@ -114,6 +176,18 @@ namespace theBFG
                                             _context.Clients.All.SendAsync("onUpdate", metric);
                                         })
                                         .DisposedBy(this);
+        }
+
+        public void SaveCfg(TestArenaCfg cfg)
+        {
+            cfg?.Save();
+        }
+
+        public IObservable<IRxn> Process(TestArenaCfgUpdated @event)
+        {
+            @event.Cfg?.Save();
+
+            return Rxn.Empty<IRxn>();
         }
     }
 }

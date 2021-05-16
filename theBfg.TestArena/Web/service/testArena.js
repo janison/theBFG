@@ -54,6 +54,9 @@ angular.module('portal').factory('testArenaApi', function ($interval, $localStor
         },
         isConnected,
         updates: log,
+        updateCfg: function(cfg) {
+             hub.invoke("saveCfg", cfg)
+        }
     };
 
     return testArenaApi;

@@ -7446,6 +7446,16 @@ code {
 .active {
   color: #0051b3 !important;
 }
+.settings {
+  background: #8087a3;
+  width: 100%;
+  position: absolute;
+  padding: 27px;
+  border-style: solid;
+}
+.settings .label {
+  padding: 10px;
+}
 .expand {
   overflow: visible !important;
   width: inherit !important;

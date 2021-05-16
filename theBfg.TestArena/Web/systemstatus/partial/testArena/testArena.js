@@ -14,8 +14,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         '.' + (time.getUTCMilliseconds() / 1000).toFixed(3).slice(2, 5);
     }
 
-    var startedTestArenaAt = new Date();
-    
     $scope.focusedOn = undefined;
     $scope.publish = function(destination, cmd) {  
         
@@ -34,15 +32,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     $scope.cmdReload = function() {
         testArenaApi.sendCommand("", "Reload");
     }
-    
-    $scope.cmdLightsOutToggle = function() {        
-        if(!$scope.lightsOut) {
-            $scope.lightsOut = false;
-        }
-        
-        $scope.lightsOut = !$scope.lightsOut;
 
-        if($scope.lightsOut) {
+    $scope.setLightsOut = function() {
+        if($scope.testArenaCfg.isLightsOut) {
             angular.element($document[0].querySelector("html")).css("background-color", "black");
             angular.element($document[0].querySelector("html")).css("-webkit-filter", "invert(100%)");
             angular.element($document[0].querySelector("html")).css("-moz-filter", "invert(100%)");
@@ -55,6 +47,18 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             angular.element($document[0].querySelector("html")).css("-o-filter", "invert(0%)");
             angular.element($document[0].querySelector("html")).css("-ms-filter", "invert(0%)");
         }
+    }
+
+    
+    
+    $scope.cmdLightsOutToggle = function() {        
+        if(!$scope.testArenaCfg.isLightsOut) {
+            $scope.testArenaCfg.isLightsOut = false;
+        }
+        
+        $scope.testArenaCfg.isLightsOut = !$scope.testArenaCfg.isLightsOut;
+
+        $scope.setLightsOut();
     }
 
     $scope.cmdShowTopic = function(result) {
@@ -102,9 +106,49 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         resetResults();
     }
 
+    
+        //animations
+    $scope.fire = function() {            
+        $scope.firedTimes++;
+
+        if($scope.firedTimes > 1)
+        {
+            return;
+        }
+
+        $scope.stop = $interval(() => {
+            $scope.shouldFire = !$scope.shouldFire
+        }, 800);
+    }
+
+    $scope.stopFiring = function() {
+        $scope.firedTimes--;
+
+        if($scope.firedTimes > 0)
+        {
+            return;
+        }
+        $interval.cancel($scope.stop);
+        $scope.shouldFire = false;
+    }
+
+    $scope.cmdSaveTestArenaCfg = function() {
+        testArenaApi.updateCfg($scope.testArenaCfg);
+    }
+
     // resets the test arena modal, ready for few data
     resetResults = function() {
+
+        $scope.showCfg = false;
+        $scope.testArenaCfg = {
+            slowTestMs: 2000,
+            testDurationMax: 1000 * 5,
+            isLightsOut: false,
+            alwaysSave: false             
+        };
+
         $scope.stop = 0;
+        $scope.shouldFire = false;
         $scope.firedTimes = 0
         $scope.log = [];
         $scope.tests = [];
@@ -128,31 +172,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             startedAt: new Date()
         }
 
-        //animations
-        $scope.fire = function() {            
-            $scope.firedTimes++;
-
-            if($scope.firedTimes > 1)
-            {
-                return;
-            }
-
-            $scope.stop = $interval(() => {
-                $scope.shouldFire = !$scope.shouldFire
-            }, 800);
-        }
-
-        $scope.stopFiring = function() {
-            $scope.firedTimes--;
-
-            if($scope.firedTimes > 0)
-            {
-                return;
-            }
-            $interval.cancel($scope.stop);
-            $scope.shouldFire = false;
-        }
-        $scope.shouldFire = false;
     }
 
     testArenaApi.isConnected.subscribe(function(isonline) {
@@ -161,18 +180,15 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     resetResults();
     
-    var updateTestArenaWith = function(msg, maxLogs) {
+    var updateTestArenaWith = function(msg, maxLogs) {      
+        console.log("Saw Event: " +JSON.stringify(msg));
 
-        // if(!msg.at) {
-        //     console.log("saw unknown message "+ JSON.stringify(msg));
-        // } else {
-        //     msg.at = new Date(msg.at)
-        // };
+        if(msg.hasOwnProperty("testDurationMax"))
+        {
+            $scope.testArenaCfg = msg;
 
-        // if(msg.at > startedTestArenaAt) {
-
-        // }
-        console.log("AppInfo: " +JSON.stringify(msg));
+            $scope.setLightsOut();
+        }
         
         if(msg.testName) {
             $scope.log.unshift(msg);
