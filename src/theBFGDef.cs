@@ -79,6 +79,7 @@ namespace theBFG
                     .RespondsToSvcCmds<DiscoverUnitTests>()
                     .RespondsToSvcCmds<StartRecording>()
                     .RespondsToSvcCmds<StopRecording>()
+                    .Emits<WorkerInfoUpdated>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
@@ -216,6 +217,8 @@ namespace theBFG
                     .CreatesOncePerRequest<DotNetTestArena>()
                     .CreatesOncePerRequest<bfgHostResourceMonitor>()
                     .CreatesOncePerRequest<bfgDataDirAppStore>()
+                    .Emits<WorkerInfoUpdated>()
+
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()

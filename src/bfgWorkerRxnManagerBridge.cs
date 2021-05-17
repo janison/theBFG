@@ -19,7 +19,6 @@ namespace theBFG.RxnsAdapter
         private readonly IRxnManager<IRxn> _repsonseChannel;
         private readonly IUpdateStorageClient _updates;
         private readonly IAppStatusStore _appCmds;
-        private Func<IRxn, IObservable<Unit>> _publish;
 
         public bfgWorkerRxnManagerBridge(IAppStatusStore appCmds, IRxnManager<IRxn> repsonseChannel, IUpdateStorageClient updates, IDictionary<string, string> info = null)
         {
@@ -38,6 +37,11 @@ namespace theBFG.RxnsAdapter
         public string Ip { get; set; }
 
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
+
+        public void Update(IDictionary<string, string> info)
+        {
+            Info = info;
+        }
 
         public IObservable<UnitTestResult> DoWork(StartUnitTest work)
         {

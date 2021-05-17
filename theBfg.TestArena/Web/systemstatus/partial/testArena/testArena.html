@@ -39,7 +39,7 @@
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed === 0">{{(entry.results[0].passed)}}</td>
                             <td width=5% ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
                             <td width=80%>
-                                <bar-chart class="cmd" height="30" data="entry.results"></bar-chart>
+                                <bar-chart class="cmd" height="30" max-duration="testArenaCfg.maxDurationMs" data="entry.results"></bar-chart>
                             </td>
                         </tr>
                     </tbody>
@@ -47,8 +47,8 @@
 
             </div>
             <div class="pieChart gfirst">
-                <pie-chart class="cmd" ng-click="cmdShowTopic('slow')" data="testOutcomes"></pie-chart>
-                <img src="img/thebfg.png" ng-style="{'visibility': testOutcomes.length > 0 ? 'hidden' : 'visible'}" style="mix-blend-mode: multiply; position: absolute; top: 112px; left:-1px" />
+                <pie-chart class="cmd" ng-click="cmdShowTopic('slow')" data="slowTests"></pie-chart>
+                <img src="img/thebfg.png" ng-style="{'visibility': slowTests.length > 0 ? 'hidden' : 'visible'}" style="mix-blend-mode: multiply; position: absolute; top: 112px; left:-1px" />
                 <div class="fire" style="
                 border-radius: 80%;
                 border-style: dashed;
@@ -80,20 +80,22 @@
                 <span><span ng-click="cmdShowTopic('slow')" class="cmd fa fa-truck fa-2x" title="Slow: Duration > 100ms"></span>{{testGlance.slow}}</span>
             <span><span ng-click="cmdShowTopic('flakey')" class="cmd fa fa-rmb fa-2x" title="Flakey"></span> {{testGlance.flakey}}</span>            
             <span><span ng-click="cmdShowTopic('log')" class="cmd fa fa-clock-o fa-2x"></span> {{msSince(testGlance.startedAt)}}</span>
-            <span><span style="float:right" ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd fa  fa-scissors fa-2x"></span></span>                
+            <span><span ng-click="cmdClear()" title="CLEAR ALL DATA!!!" class="cmd ux-option fa fa-scissors fa-2x"></span></span>                
             <span><span class="cmd fa fa-search-plus fa-2x"></span><input type="text" ng-model="searchTerm" width="50"/></span>
             <span><span ng-click="sendCmdDisabled = !sendCmdDisabled" class="cmd fa fa-share-square-o fa-2x" title="Send Custom Commands"></span></span>         
-            <span><span ng-click="cmdLightsOutToggle()" class="cmd fa fa-sun-o fa-2x"></span></span>
-            <span><span ng-click="publish('', !isRecording ? 'StartRecording' : 'StopRecording'); isRecording = !isRecording;" ng-class="{active: isRecording, inactive: !isRecording}" class="cmd fa fa-floppy-o fa-2x"></span></span>
+            <span><span ng-click="cmdLightsOutToggle()" class="cmd ux-option fa fa-sun-o fa-2x"></span></span>
+            <span><span ng-click="publish('', !isRecording ? 'StartRecording' : 'StopRecording'); isRecording = !isRecording;" ng-class="{active: isRecording, inactive: !isRecording}"  class="cmd ux-option fa fa-floppy-o fa-2x"></span></span>
             <a href="/tenantLogs" target="_tenantlogs"><span class="cmd fa fa-stack-overflow fa-2x"></span></a>
-            <span><span class="cmd fa fa-2x fa-wrench" ng-click="showCfg = !showCfg" style="float:right" title="Settings"></span></span>
+            <span><span class="ux-option cmd fa fa-2x fa-wrench" ng-click="showCfg = !showCfg" title="Settings"></span></span>
+            <span><span class="ux-option cmd fa fa-2x" ng-class="{'fa-volume-up': testArenaCfg.soundsOn, 'fa-volume-off': !testArenaCfg.soundsOn}" ng-click="testArenaCfg.soundsOn = !testArenaCfg.soundsOn" title="Settings"></span></span>
     </div>
     <div class="settings" ng-style="{'visibility': showCfg ? 'visible': 'hidden'}">
         <form novalidate class="simple-form">
           <label>Slow Test Threshold: <input type="number" ng-model="testArenaCfg.slowTestMs" /></label>ms<br />
           <label>Test Outcome Graph Max: <input type="number" ng-model="testArenaCfg.testDurationMax" /></label>ms<br />                   
           Lights Out: <label><input type="checkbox" ng-model="testArenaCfg.isLightsOut" /></label><br />            
-          Always Save: <label><input type="checkbox" ng-model="testArenaCfg.alwaysSave" /></label>                           
+          Always Save: <label><input type="checkbox" ng-model="testArenaCfg.alwaysSave" /></label><br/>                      
+          Sounds On: <label><input type="checkbox" ng-model="testArenaCfg.soundsOn" /></label>                           
           <span class="cmd fa fa-floppy-o fa-2x" style="float:right;" ng-click="cmdSaveTestArenaCfg()"></span>
         </form>
     </div>
@@ -109,7 +111,7 @@
                 <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'KillWorker')" style="float:right;margin-top:2px"></span>
                 <span title="Free workers / Total workers" class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
                 <span title="Add another worker to the node" class="fa fa-plus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'SpawnWorker')" style="float:right;margin-top:2px"></span>  
-                <span title="#Tags" class="fa fa-hashtag fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
+                <span title="#Tags" class="fa fa-tag fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
             </div>            
         </div>
         <div>

@@ -12,7 +12,8 @@ Feature | ...
 `Real-time reporting` | <font size=2>Use the `theBFG` [Test Arena](#the-testarena) to monitor in real-time all aspects of your tests including errors, worker CPU, MEM and throughput</font>
 `NO DSL or JAVA or other` scripting to learn | <font size=2>Use all the same tools you love & pure `.net` to define complex intergation test scenarios</font>
 `Continuous Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
-`Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you require! 
+`Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you require!
+`Target workers` with tags | <font size=2> Partition clusters and route different workloads to different workers with ease.
 `Supercharge EXISTING test-suites` | <font size=2>theBGF supports distributing work to a cluster that will work together to execute it as quickly as possible</font>
 `Cloud scale-out` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
 `NO API bleed` | <font size=2>If you out-grow `theBFG` or otherwise dont require its sevices anymore, delete its reference, its config classes, the `.bfg` directory and **its gone**. *No refactor required.*</font>
@@ -117,6 +118,47 @@ Options | **batchSize**: *number* \| *reactive* <font size=1>(watches the consum
   Options| **dotnet**: *uses dotnet test, for .NET core* **vstest**: *uses full framework vstest bundled with visual studio* \| **custom**: [use any test runner](#test-runners)
 
 > **Pro tip:** use the bfgAPI to better control and *instead* feed a `IObservable<Timespan>` to any of these *options*!
+
+# Tags
+
+Each worker can be assigned `#one` `#or` `#more` `#tags`
+
+*on a window machine:*
+```
+> thebfg fire #os:win
+```
+
+*on a macbook:*
+```
+> thebfg fire #os:macos
+```
+
+commands can then be `#tag`'ed
+
+```
+> thebfg launch some.dll #os:*
+```
+
+and `some.dll` will run ***on** **each** host* and *return* its results
+
+or
+
+```
+> thebfg launch some.dll #os:win
+```
+
+to *only* run the test on the *windows* host
+
+```
+@ StartUnitTest some.dll #os:*
+```
+
+other logic ...
+
+- If worker **is tagged**, and work **is tagged**, only matches will **run**
+- If work **is tagged**, and **no** **matching** worker found, work will be **queued**
+- If worker **is tagged**, and **work isn't**, work will be **run** on worker
+
 
 ## Commands
 

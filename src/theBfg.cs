@@ -556,7 +556,7 @@ namespace theBFG
 
         public static IObservable<bfgWorker> SpawnWorker()
         {
-            return TestArenaWorkerManager.SpawnTestWorker(bfgTagWorkflow.TagsFromString(theBfg.Args.ToStringEach(" ")).ToArray());
+            return TestArenaWorkerManager.SpawnTestWorker(bfgTagWorkflow.GetTagsFromString(theBfg.Args.ToStringEach(" ")).ToArray());
         }
 
 

@@ -67,7 +67,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if (result == "Passed" || result == "Failed") {
             $scope.currentTopic = $scope.tests.filter(t => t.result === result);
         } else if (result == 'slow') {
-            $scope.currentTopic = $scope.testOutcomes;
+            $scope.currentTopic = $scope.slowTests;
         } else if (result == 'all') {
             $scope.currentTopic = $scope.tests;
         } else if (result == 'log' || result == 'flakey') {
@@ -140,13 +140,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     resetResults = function() {
 
         $scope.showCfg = false;
-        $scope.testArenaCfg = {
-            slowTestMs: 2000,
-            testDurationMax: 1000 * 5,
-            isLightsOut: false,
-            alwaysSave: false             
-        };
-
         $scope.stop = 0;
         $scope.shouldFire = false;
         $scope.firedTimes = 0
@@ -154,7 +147,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         $scope.tests = [];
         $scope.currentTopic = [];
         $scope.testSummary = [];
-        $scope.testOutcomes = [];
+        $scope.slowTests = [];
         $scope.testRuns = [];
         $scope.showTestRunDetailed = false;
         $scope.testsQueued = 0;
@@ -171,8 +164,15 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             slow: 0,
             startedAt: new Date()
         }
+    };
 
-    }
+    //only set on startup, not reset
+    $scope.testArenaCfg = {
+        slowTestMs: 2000,
+        testDurationMax: 1000 * 5,
+        isLightsOut: false,
+        alwaysSave: false             
+    };
 
     testArenaApi.isConnected.subscribe(function(isonline) {
         $scope.testArenaInfo.isConnected = isonline;
@@ -186,7 +186,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         if(msg.hasOwnProperty("testDurationMax"))
         {
             $scope.testArenaCfg = msg;
-
             $scope.setLightsOut();
         }
         
@@ -259,13 +258,13 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
             
     
-            if(parseInt(msg.duration) > 100) {
+            if(parseInt(msg.duration) > $scope.testArenaApi.slowTestMs) {
                 
-                if($scope.testOutcomes.length > maxLogs) {
+                if($scope.slowTests.length > maxLogs) {
                     $scope.testSummary.shift();
                 }    
                 
-                $scope.testOutcomes.push(msg);                 
+                $scope.slowTests.push(msg);                 
             }
 
             
@@ -275,7 +274,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             msg.info = `${msg.result} in ${msg.duration}`;
 
-            $scope.testGlance.slow = $scope.testOutcomes.length;              
+            $scope.testGlance.slow = $scope.slowTests.length;              
             $scope.testGlance.total++;
 
             $scope.testSummary.push(msg);
@@ -326,6 +325,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.workerInfo[host].userName     = msg.userName;
             $scope.workerInfo[host].workers = msg.workers;
             $scope.workerInfo[host].route = msg.route;
+            $scope.workerInfo[host].tags = msg.tags;
         }
 
         if(msg.memUsage) {
@@ -478,18 +478,24 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         });
     });
 
-    $scope.playSound = function(sfx) {
-        var audio = new Audio(sfx);
+    var passSound = new Audio('sfx/pass.ogg');
+    var failSound = new Audio('sfx/fail.ogg');
+
+    $scope.playSound = function(audio) {
+        if(!$scope.testArenaCfg.soundsOn) {
+            return;
+        }
+        
         audio.volume = 0.5;
         audio.play();
     }    
     
 
     $scope.failSFX = function() {
-        $scope.playSound('sfx/fail.ogg');//.then(s => s());
+        $scope.playSound(failSound);//.then(s => s());
     }
 
     $scope.passSFX = function() {
-        $scope.playSound('sfx/pass.ogg');//.then(s => s());        
+        $scope.playSound(passSound);//.then(s => s());        
     }
 });

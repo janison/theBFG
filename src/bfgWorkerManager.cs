@@ -81,8 +81,10 @@ namespace theBFG
                 new AppStatusInfo("ComputerName", Environment.MachineName),
                 new AppStatusInfo("Username", Environment.UserName),
                 new AppStatusInfo("Id", ClientId),
+                new AppStatusInfo(bfgTagWorkflow.WorkerTag, bfgTagWorkflow.GetAllTagsRunnableByCluster(_workerCluster).ToStringEach()),
             };
         }
+
 
         public IObservable<bfgWorker> SpawnTestWorker(string[] tags = null)
         {
@@ -125,7 +127,7 @@ namespace theBFG
 
         public IObservable<CommandResult> Handle(SpawnWorker command)
         {
-            return SpawnTestWorker(bfgTagWorkflow.TagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
+            return SpawnTestWorker(bfgTagWorkflow.GetTagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
         }
     }
 

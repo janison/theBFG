@@ -7,15 +7,15 @@ angular.module('portal')
   .directive('barChart', function() {
     return {
       restrict: 'E',
-      scope: { data: '=' },
+      scope: { 
+        data: '=', 
+        maxDuration:'=' 
+      },
       link: function(scope, element) {
         var canvasWidth = document.body.clientWidth / 3;
         var height = element.attr("height");
         
-        var x = d3.scaleLinear()
-            .domain([0, 100])
-            .range([0, canvasWidth]);
-
+     
         // init
         var canvas = d3.select(element[0])
             .append('svg')            
@@ -26,10 +26,21 @@ angular.module('portal')
         var fix = function(e) {
             return e == "<" ? "1" : e;
         };        
+
+        
+        var x = d3.scaleLinear()
+        .domain([0, 100])
+        .range([0, canvasWidth]);
+
+        scope.$watch('maxDuration', function(maxDuration) {
+          console.info("Setting threashold not working: "+maxDuration);
+          // x = d3.scaleLinear()
+          // .domain([0, maxDuration])
+          // .range([0, canvasWidth]);
+        });
         
         // update
         scope.$watch('data', function(dataArray) {
-            
             var update = canvas.selectAll("g").data(dataArray);
 
             
@@ -368,4 +379,3 @@ angular.module('portal')
 
 
 
-  

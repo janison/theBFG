@@ -7446,6 +7446,9 @@ code {
 .active {
   color: #0051b3 !important;
 }
+.ux-option {
+  float: right;
+}
 .settings {
   background: #8087a3;
   width: 100%;

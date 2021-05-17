@@ -6,10 +6,13 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
 
 > ReadMe
 - remote worker not logs not being received??!
-- 
 
-- `reliable mode` where each worker with a matching tag name will do the work in parrallel for each compile. `ie #os: will send to #os:win #os:macos #os:linux`
--   
+- remote commands - allow adhoc commands to be run on host? is that too powerful? config via permission?
+  - `thebfg allow remote control` ? or do we already basically allow this and we dont need to call it out
+    - add authentication option, basic shared keys?
+  
+- allow worker to be downloaded from testarena to you can get workers online easier
+      
   - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with
   
     - fix save cmd UI element not active at startup when save arg used

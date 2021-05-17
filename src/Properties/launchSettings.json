@@ -2,7 +2,7 @@
   "profiles": {
     "theBFG": {
       "commandName": "Project",
-      "commandLineArgs": "launch"
+      "commandLineArgs": "target C:\\svn\\bfg\\theTestGimp\\bin\\Debug\\netcoreapp3.1\\*Gimp.dll"
     }
   }
 }

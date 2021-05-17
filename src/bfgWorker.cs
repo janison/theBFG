@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Rxns;
@@ -16,7 +15,6 @@ using Rxns.Hosting;
 using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
-using Rxns.Windows;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
@@ -34,13 +32,19 @@ namespace theBFG
         private readonly Func<ITestArena[]> _arena;
         private readonly IAppServiceRegistry _registry;
         private int _runId;
+        public void Update(IDictionary<string, string> eventInfo)
+        {
+            Info = eventInfo;
+        }
+
         public string Name { get; }
         public string Route { get; }
-        public IDictionary<string, string> Info { get; } = new Dictionary<string, string>();
+        public IDictionary<string, string> Info { get; set; } = new Dictionary<string, string>();
         public IObservable<bool> IsBusy => _isBusy;
         private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
         private readonly IZipService _zipService;
-        private readonly List<string> _tags; 
+
+        public IEnumerable<string> Tags => bfgTagWorkflow.GetTagsFromString(Info[bfgTagWorkflow.WorkerTag]);
 
         public bfgWorker(string name, string route, string[] tags, IAppServiceRegistry registry, IAppServiceDiscovery services, IZipService zipService, IAppStatusServiceClient appStatus, IRxnManager<IRxn> rxnManager, IUpdateServiceClient updateService, IAppStatusCfg cfg, Func<ITestArena[]> arena)
         {
@@ -54,27 +58,14 @@ namespace theBFG
             _arena = arena;
             Name = name;
             Route = route;
-            _tags = new List<string>(tags);
-
-            _rxnManager.Publish(new AppStatusInfoProviderEvent()
-            {
-                ReporterName = nameof(bfgWorker),
-                Component = "Worker",
-                Info = () =>
-                {
-                    return new[]
-                    {
-                        new AppStatusInfo(bfgTagWorkflow.WorkerTag, _tags.ToStringEach(" "))
-                    };
-                }
-            }).Until();
+            Info.Add(bfgTagWorkflow.WorkerTag, tags.ToStringEach());
         }
 
         public IObservable<CommandResult> Handle(TagWorker command)
         {
             return Rxn.Create(() =>
             {
-                command.Tags.ForEach(t => _tags.AddOrReplace(t));
+                Info[bfgTagWorkflow.WorkerTag] = $"{Info[bfgTagWorkflow.WorkerTag]},{command.Tags.ToStringEach()}";
 
                 return CommandResult.Success().AsResultOf(command).ToObservable();
             });
@@ -84,7 +75,7 @@ namespace theBFG
         {
             return Rxn.Create(() =>
             {
-                command.Tags.ForEach(t => _tags.RemoveIfExists(t));
+                Info[bfgTagWorkflow.WorkerTag] = Info[bfgTagWorkflow.WorkerTag].Split(',').Except(command.Tags).ToStringEach();
 
                 return CommandResult.Success().AsResultOf(command).ToObservable();
             });

@@ -1,26 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.DDD.Commanding;
 using Rxns.Health;
-using Rxns.Hosting.Updates;
 using Rxns.Interfaces;
 using Rxns.Logging;
-using Rxns.Playback;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
     public class bfgTagWorkflow
     {
-        public static string WorkerTag = "tag";
+        public static string WorkerTag = "tags";
 
         public static IEnumerable<string> GetTagsFromWorker(WorkerConnection<StartUnitTest, UnitTestResult> worker)
         {
@@ -38,13 +33,31 @@ namespace theBFG
             if (work.Tags.IsNullOrWhitespace() ||work.Tags.Length < 1)
                 return true; //no tags requested on work
             
-            var workTags = TagsFromString(work.Tags);
-            return tags.Any(tag => workTags.Any(w => w.BasicallyEquals(tag)));
+            var workTags = GetTagsFromString(work.Tags);
+            return tags.Any(workerTag => workTags.Any(workTag => workTag.BasicallyEquals(workerTag) || DoesMatchWildCard(workTag, workerTag)));
         }
 
-        public static IEnumerable<string> TagsFromString(string tagSyntax)
+        public static bool DoesMatchWildCard(string workTag, string workerTag)
+        {
+            if (workerTag.EndsWith(":"))
+                workerTag += "*";
+
+            var workTagTokens = workTag.Split(':');
+
+            //match all workers that are in the category
+            return workTagTokens.Length == 2 && workTagTokens[1] == "*"  //#os:* 
+                                             && workTagTokens[0] == workerTag.Split(":")[0]; //#os:win #os:mac
+
+        }
+
+        public static IEnumerable<string> GetTagsFromString(string tagSyntax)
         {
             return tagSyntax.IsNullOrWhitespace() ? new string[0] : tagSyntax.Split(' ').Where(t => t.Contains("#")).Select(t => t.Trim('#'));
+        }
+
+        public static IEnumerable<string> GetAllTagsRunnableByCluster(bfgCluster workerCluster)
+        {
+            return workerCluster.Workflow.Workers.Values.SelectMany(w => GetTagsFromWorker(w)).Distinct();
         }
     }
 
@@ -63,7 +76,7 @@ namespace theBFG
         }
         public TagWorker(string tagSyntax)
         {
-            Tags = bfgTagWorkflow.TagsFromString(tagSyntax).ToArray();
+            Tags = bfgTagWorkflow.GetTagsFromString(tagSyntax).ToArray();
         }
     }
 
@@ -71,7 +84,7 @@ namespace theBFG
     {
     }
 
-    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>, IServiceCommandHandler<StopUnitTest>
+    public class bfgCluster : ElasticQueue<StartUnitTest, UnitTestResult>, IServiceCommandHandler<StartUnitTest>, IServiceCommandHandler<StopUnitTest>, IRxnProcessor<WorkerInfoUpdated>
     {
         private readonly IRxnManager<IRxn> _rxnManager;
         private readonly IClusterFanout<StartUnitTest, UnitTestResult> _fanoutStrategy;

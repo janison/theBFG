@@ -28,6 +28,7 @@ namespace theBFG
         public string ComputerName { get; set; }
         public string UserName { get; set; }
         public string Host { get; set; }
+        public string Tags { get; set; }
     }
 
     public class bfgWorkerRemoteOrchestrator : IAppHeartBeatHandler
@@ -62,18 +63,27 @@ namespace theBFG
 
         private WorkerDiscovered<StartUnitTest, UnitTestResult> GenerateWorker(SystemStatusEvent app, object[] meta, string id)
         {
-            var info = new Dictionary<string, string>();
-            info.Add("tags", meta.Skip(3).ToArray().ToStringEach(","));
-
             return new WorkerDiscovered<StartUnitTest, UnitTestResult>() // 8-|
             {
-                Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager, _appUpdates, info)
+                Worker = new bfgWorkerRxnManagerBridge(_appCmds, _rxnManager, _appUpdates, ToInfo(meta))
                 {
                     Route = RouteExtensions.GetRoute(app),
                     Name = $"{app.SystemName}_{Guid.NewGuid().ToString().Split('-').FirstOrDefault()}",
                     Ip = app.IpAddress,
                 }
             };
+        }
+
+        private IDictionary<string, string> ToInfo(object[] meta)
+        {
+            var info = new Dictionary<string, string>
+            {
+                {
+                    bfgTagWorkflow.WorkerTag, ((AppStatusInfo[]) meta.FirstOrDefault()).FirstOrDefault(a => a.Key.BasicallyEquals(bfgTagWorkflow.WorkerTag))?.Value.ToString() ?? string.Empty
+                }
+            };
+
+            return info;
         }
 
         public IObservable<IRxn> OnAppHeartBeat(IAppStatusManager updates, SystemStatusEvent app, object[] meta)
@@ -86,17 +96,25 @@ namespace theBFG
                 Host = ParseValueFromMetaWithId("Id", meta),
                 Workers = ParseValueFromMetaWithId("Free Workers", meta),
                 ComputerName = ParseValueFromMetaWithId("ComputerName", meta),
-                UserName = ParseValueFromMetaWithId("UserName", meta)
+                UserName = ParseValueFromMetaWithId("UserName", meta),
+                Tags = ParseValueFromMetaWithId(bfgTagWorkflow.WorkerTag, meta)
+            };
+
+            //update info / tags
+            var workerInfoUpdate = new WorkerInfoUpdated()
+            {
+                Name = app.SystemName,
+                Info = ToInfo(meta)
             };
 
             BalanceRemoteWorkersWithCluster(heartBeat, app, meta);
 
-            return heartBeat.ToObservable();
+            return new IRxn[] { heartBeat, workerInfoUpdate }.ToObservableSequence();
         }
 
         private void BalanceRemoteWorkersWithCluster(TestArenaWorkerHeadbeat next, SystemStatusEvent app, object[] meta)
         {
-            if(app.SystemName.BasicallyContains("TestArena"))
+            if (app.SystemName.BasicallyContains("TestArena"))
                 return; //dont track our node or bad things will happen!
 
             var theWorkersWeThinkTheNoteHas = _cluster.Workers.Where(c => c.Value.Worker.Route.Equals(Rxns.RouteExtensions.GetRoute(app)))
@@ -119,7 +137,7 @@ namespace theBFG
 
                 foreach (var worker in theWorkersWeThinkTheNoteHas)
                 {
-                    _workerPoolD.Process(new WorkerDisconnected() {Name = worker}).WaitR();
+                    _workerPoolD.Process(new WorkerDisconnected() { Name = worker }).WaitR();
 
                     if (--workerExpectedVsCurrentDiff >= 0)
                         break;
