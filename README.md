@@ -187,7 +187,7 @@ or
 * Stop a in-flight unit test on a specific worker
 
   ```
-  Route: TestArena\bfgWorker
+  Route: ...
   @ StopUnitTest
   ```  
 
@@ -217,9 +217,22 @@ or
 * Exit theBFg after the target tests complete
 
 ```
->thebfg target test.dll and exit
+> thebfg target test.dll and exit
 ```
 
+## Debugging
+
+remotely stream all logs from a worker for 10mins
+
+```
+Route: ...
+@ StreamLogs 10
+```
+
+* All logs can then be seen in test arena console
+  * via terminal
+  * via [http://localhost:888/#/systemLog](http://localhost:888/#/systemLog) for tail
+  * via [http://localhost:888/#/cmd](http://localhost:888/#/cmd) for real-time
 ## Cluster testing
 
 * Setup a worker on any networked host and automatically join a Test Arena on another host

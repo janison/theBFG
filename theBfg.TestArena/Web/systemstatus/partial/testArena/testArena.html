@@ -111,7 +111,8 @@
                 <span title="Remove a worker the node" class="fa fa-minus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'KillWorker')" style="float:right;margin-top:2px"></span>
                 <span title="Free workers / Total workers" class="cmd" style="float:right" ><span style="color: #595958;">{{worker.workers}}</span></span>
                 <span title="Add another worker to the node" class="fa fa-plus-circle fa-x2 cmd" ng-click="publish(''+worker.route+'', 'SpawnWorker')" style="float:right;margin-top:2px"></span>  
-                <span title="#Tags" class="fa fa-tag fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
+                <span title="#Tags" class="fa fa-tags fa-x2 cmd" ng-if="worker.tags"><span style="color: #595958;">{{worker.tags}}</span></span>
+                <span title="Stream all logs from worker for 10mins" ng-if="worker.route.indexOf('TestArena') < 0" ng-click="publish(''+worker.route+'', 'StreamLogs 10')" class="cmd ux-option fa fa-stethoscope"></span>
             </div>            
         </div>
         <div>

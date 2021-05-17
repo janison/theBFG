@@ -13,6 +13,7 @@ using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
 using Rxns.DDD;
 using Rxns.DDD.Commanding;
+using Rxns.DDD.CQRS;
 using Rxns.Health;
 using Rxns.Health.AppStatus;
 using Rxns.Hosting;
@@ -80,6 +81,7 @@ namespace theBFG
                     .RespondsToSvcCmds<StartRecording>()
                     .RespondsToSvcCmds<StopRecording>()
                     .Emits<WorkerInfoUpdated>()
+                    .RespondsToSvcCmds<StreamLogs>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
@@ -218,7 +220,7 @@ namespace theBFG
                     .CreatesOncePerRequest<bfgHostResourceMonitor>()
                     .CreatesOncePerRequest<bfgDataDirAppStore>()
                     .Emits<WorkerInfoUpdated>()
-
+                    .RespondsToSvcCmds<StreamLogs>()
                     .Emits<UnitTestsStarted>()
                     .Emits<UnitTestDiscovered>()
                     .Emits<UnitTestOutcome>()
