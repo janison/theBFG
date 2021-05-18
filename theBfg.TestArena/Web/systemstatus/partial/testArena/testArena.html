@@ -52,7 +52,6 @@
                 <div class="fire" style="
                 border-radius: 80%;
                 border-style: dashed;
-                border-color: whitesmoke;
                 position: absolute;
                 top: 93px;
                 left: 650px;
@@ -62,7 +61,7 @@
                 opacity: 0%;
                 transition: opacity 0.5s;" ng-style="{'opacity': shouldFire ? '20%' : '0%'}"></div>
             </div>
-            <div class="barchart gsecond" style="border-radius:2%;border-style: inset;border-color: whitesmoke; border-width: 3px;">
+            <div class="barchart gsecond" style="border-radius:2%;border-style: inset;border-width: 3px;">
                 <bar-chart class="cmd" height="250" ng-click="cmdShowTopic('log')" data="testSummary"></bar-chart>
             </div>
         </div>
@@ -104,7 +103,7 @@
             <div style="border-width: 0px;border-color: #373737; border-style: dashed;margin-top: 15px;">
                 <worker-status data="worker.resources" ng-attr-title="{{'Host: '+ worker.host + ' & '+ worker.name}}"></worker-status>            
             </div>                      
-            <div style="background-color: #ececec;border-color: #373737 ; border-width: 0px;border-style: dashed; margin-top: -4px;">
+            <div style="border-color: #373737 ; border-width: 0px;border-style: dashed; margin-top: -4px;">
                 <span title="Name of the Node" class="fa fa-cogs fa-x2 cmd"><span style="color: #595958;">{{worker.name}}</span></span>
                 <span title="Network Details" class="fa fa-sitemap cmd"><span style="color: #595958;">{{worker.computerName}} @ {{worker.ipAddress}}</span></span>
                 <span title="Username workers run under" class="fa fa-child cmd"><span style="color: #595958;">{{worker.userName}}</span></span>

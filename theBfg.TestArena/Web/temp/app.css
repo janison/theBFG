@@ -7449,6 +7449,36 @@ code {
 .ux-option {
   float: right;
 }
+.dark-theme {
+  scrollbar-color: #484e51 #222526;
+}
+.dark-theme html,
+.dark-theme body,
+.dark-theme input,
+.dark-theme textarea,
+.dark-theme select,
+.dark-theme button,
+.dark-theme table,
+.dark-theme tr,
+.dark-theme td {
+  background-color: #191b1c !important;
+  color: #807769 !important;
+  border-color: #363a3c !important;
+}
+.dark-theme .table > thead > tr > th {
+  border-bottom-color: #3d4144;
+}
+.dark-theme pre {
+  color: #d2cdc5;
+  background-color: #202223;
+  border-color: #41474a;
+}
+.dark-theme .tr,
+.dark-theme .th,
+.dark-theme .tfoot,
+.dark-theme .thead {
+  border-top-color: #3d4144;
+}
 .settings {
   background: #8087a3;
   width: 100%;

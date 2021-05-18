@@ -3,24 +3,25 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.5</PackageVersion>
+        <PackageVersion>1.0.6</PackageVersion>
         <Authors>CaptainJono</Authors>
-        <Description>A cloud-native C# unit / integration / load / hyper-TDD testing tool that clusters automatically
-          dotnet tool install thebfg -g
-        </Description>
+        <Description>A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
+
+&gt; dotnet tool install thebfg</Description>
         <Copyright>MIT</Copyright>
         <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
       <RepositoryUrl>https://github.com/captainjono/theBFG/</RepositoryUrl>
       <PackageIcon>thebfg.png</PackageIcon>
       <PackageLicense>http://www.opensource.org/licenses/mit-license.php</PackageLicense>
 
-      <PackageTags>unit testing vstest tdd bdd xunit mstest nunit dotnet test cluster load performance scale integration</PackageTags>
+      <PackageTags>unit testing vstest tdd bdd xunit mstest nunit dotnet test cluster load performance scale integration TDD CI CI/CD</PackageTags>
       <IsPackable>true</IsPackable>
       <PackAsTool>true</PackAsTool>
       <ToolCommandName>thebfg</ToolCommandName>
       <PackageOutputPath>./nupkg</PackageOutputPath>
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+      <Version>1.0.6</Version>
     </PropertyGroup>
 
     <ItemGroup>
@@ -47,6 +48,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="TestArena\img\thebfg.png" />
       <None Remove="TestArena\sfx\fail.ogg" />
       <None Remove="TestArena\sfx\pass.ogg" />
     </ItemGroup>
@@ -60,6 +62,9 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </EmbeddedResource>
       <EmbeddedResource Include="TestArena\app.full.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="TestArena\img\thebfg.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </EmbeddedResource>
       <EmbeddedResource Include="TestArena\index.html">

@@ -35,17 +35,16 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     $scope.setLightsOut = function() {
         if($scope.testArenaCfg.isLightsOut) {
-            angular.element($document[0].querySelector("html")).css("background-color", "black");
-            angular.element($document[0].querySelector("html")).css("-webkit-filter", "invert(100%)");
-            angular.element($document[0].querySelector("html")).css("-moz-filter", "invert(100%)");
-            angular.element($document[0].querySelector("html")).css("-o-filter", "invert(100%)");
-            angular.element($document[0].querySelector("html")).css("-ms-filter", "invert(100%)");            
+
+//             --darkreader-neutral-background: #141617;
+// --darkreader-neutral-text: #e3dfd9;
+// --darkreader-selection-background: #0051b3;
+// --darkreader-selection-text: #f4f2ee;
+            angular.element($document[0].querySelector("html")).addClass("dark-theme");
         }
-        else {            
-            angular.element($document[0].querySelector("html")).css("-webkit-filter", "invert(0%)");
-            angular.element($document[0].querySelector("html")).css("-moz-filter", "invert(0%)");
-            angular.element($document[0].querySelector("html")).css("-o-filter", "invert(0%)");
-            angular.element($document[0].querySelector("html")).css("-ms-filter", "invert(0%)");
+        else {                  
+            angular.element($document[0].querySelector("html")).removeClass("dark-theme");
+            
         }
     }
 
@@ -199,9 +198,11 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         if(msg.tests) {
             var existingRun = $scope.testRuns.filter(w => w.results.filter(a => a.testId === msg.testId))
-                        
-            existingRun[0].workerId = msg.workerId;
-            existingRun[0].worker = msg.worker;
+              
+            if(existingRun[0]) {
+                existingRun[0].workerId = msg.workerId;
+                existingRun[0].worker = msg.worker;
+            }
         }
        
         //there is a bug here, logs will not be attached to tests and therefor 
@@ -258,7 +259,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             }
             
     
-            if(parseInt(msg.duration) > $scope.testArenaApi.slowTestMs) {
+            if(parseInt(msg.duration) > testArenaApi.slowTestMs) {
                 
                 if($scope.slowTests.length > maxLogs) {
                     $scope.testSummary.shift();

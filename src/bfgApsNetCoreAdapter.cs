@@ -52,7 +52,7 @@ namespace theBFG
             var args = Appcfg?.Args ?? new string[0];
             
             WebApiCfg = Cfg;
-            AppInfo = new ClusteredAppInfo("bfgTestArena", "1.0.0", args, false);
+            AppInfo = new bfgAppInfo("bfgTestArena");
             App = e => theBfgDef.TestArena(args);
         }
 
