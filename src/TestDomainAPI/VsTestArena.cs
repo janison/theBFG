@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive;
+using System.Reactive.Linq;
 using Rxns;
 using Rxns.Hosting;
 
@@ -14,10 +16,24 @@ namespace theBFG.TestDomainAPI
     {
         protected override string PathToTestArenaProcess()
         {
-            //lookup path from registry
-            //HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\12.0_Config
-            //<VisualStudioFolder>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0@ShellFolder)</VisualStudioFolder> <VsTestFolder>$([System.IO.Path]::Combine("$(VisualStudioFolder)", "Common7", "IDE", "CommonExtensions", "Microsoft", "TestWindow"))\</VsTestFolder> <VSTestExe>$(VsTestFolder)vstest.console.exe</VSTestExe> 
-            return @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe";
+            var path = string.Empty;
+            return Rxn.Create(@"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe", //should probbaly try other drives?
+                    "-legacy -prerelease -format json",
+                    i =>
+                    {
+                        if (!path.IsNullOrWhitespace()) return;
+
+                        if (i.BasicallyContains("installationPath"))
+                        {
+                            //whoa yeh, nice hack here
+                            var tokens = i.Split("\":");
+                            path = tokens[1].Split('"')[1];
+                        }
+                    },
+                    e => { })
+                .LastOrDefaultAsync()
+                .Select(_ => $@"{path}\Common7\IDE\Extensions\TestPlatform\vstest.console.exe")
+                .WaitR();
         }
 
         protected override string StartTestsCmd(StartUnitTest work, string logDir)
