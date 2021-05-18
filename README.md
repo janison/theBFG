@@ -382,7 +382,7 @@ Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in e
 
 TheBFG TestArena is a hyper-CD tool that allows you to understand whats going on *in realtime* through a web browser. It a minimal layer that is designed to supercharge TDD, while being pluggable into other systems / charts / CD pipelines as necessary.
 
-<img src=thebfg-example-basic.png>
+<img src="thebfg-example-basic.PNG">
 
 It has features which are not listed here. Mouse over different parts of the UI to learn its functions and explore the system as it evolves...
 
