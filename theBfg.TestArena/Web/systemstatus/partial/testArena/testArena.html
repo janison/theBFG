@@ -174,9 +174,10 @@
                     <tr  ng-repeat="entry in log | filter:searchTerm">                        
                         <td>
                             <span ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}">{{entry.result}}</span>
-                            <span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
-                            <span style="font-style: italic;"> on '{{entry.worker}}'</span>
-                            <span>in '{{entry.duration}}'s</span>
+                            | <span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
+                            <span> | <span style="font-style: bold;"></span>{{entry.duration}}</span> s</span>
+                            | <span style="font-style: italic;">{{entry.worker}}</span>
+                            
                             <div class="popup">
                                 <span class="popuptext" ng-class="{show: showLogs}">
                                     <span title="Reload" ng-click="publish('', 'StartUnitTest '+entry.dll+'$'+entry.testName+'')" class="cmd fa fa-rocket"></span>

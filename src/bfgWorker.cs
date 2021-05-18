@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
@@ -22,7 +24,7 @@ namespace theBFG
     /// <summary>
     /// 
     /// </summary>
-    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>, IServiceCommandHandler<TagWorker>, IServiceCommandHandler<UntagWorker>
+    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>, IServiceCommandHandler<TagWorker>, IServiceCommandHandler<UntagWorker>, IServiceCommandHandler<Run>
     {
         private readonly IAppServiceDiscovery _services;
         private readonly IAppStatusServiceClient _appStatus;
@@ -282,6 +284,74 @@ namespace theBFG
             return apiName.IsNullOrWhitespace()
                 ? allDiscoveredApiRequests.Until()
                 : allDiscoveredApiRequests.Where(foundApi => apiName == null || foundApi.Name.BasicallyEquals(apiName)).Until();
+        }
+
+
+
+        public IObservable<CommandResult> Handle(Run command)
+        {
+            var tokens = command.Cmd.Split(' ');
+            var cmd = tokens[0];
+            var worker = Name;
+
+            _rxnManager.Publish(new UnitTestsStarted()
+            {
+                TestId = command.Id,
+                At = DateTime.Now,
+                Tests = new[] { cmd },
+                Worker = "", //_appInfo.Name,
+                WorkerId = worker
+            }).Until();
+
+            var unitTestId = Guid.NewGuid().ToString();
+
+            _rxnManager.Publish(new UnitTestPartialResult(command.Id, "passed", cmd, "0", worker)
+            {
+                UnitTestId = unitTestId
+            }).Until();
+
+            return Rxn.Create
+            (
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd" : "/bin/bash",
+                $"{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/c" : "-c")} {command.Cmd}",
+                i =>
+                {
+                    if (i == null) return;
+
+
+                    _rxnManager.Publish(new UnitTestPartialLogResult
+                    {
+                        LogMessage = i.ToString(),
+                        TestId = command.Id,
+                        UnitTestId = unitTestId,
+                        Worker = worker
+                    }).Until();
+
+                },
+                e =>
+                {
+                    _rxnManager.Publish(new UnitTestPartialLogResult
+                    {
+                        LogMessage = e.ToString(),
+                        TestId = command.Id,
+                        UnitTestId = unitTestId,
+                        Worker = worker
+                    }).Until();
+                }
+            )
+            .FinallyR(() =>
+            {
+                _rxnManager.Publish(new UnitTestOutcome()
+                {
+                    Passed = 1,
+                    Failed = 0,
+                    InResponseTo = command.Id,
+                    UnitTestId = unitTestId,
+                    Dll = cmd
+                }).Until();
+            })
+            .Select(_ => CommandResult.Success());
+
         }
     }
 }

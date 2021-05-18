@@ -36,7 +36,7 @@ namespace theBFG
     }
 
 
-    public class bfgWorkerManager : IServiceCommandHandler<SpawnWorker>
+    public class bfgWorkerManager : IServiceCommandHandler<SpawnWorker>, IServiceCommandHandler<Run>
     {
         private readonly bfgCluster _workerCluster;
         private readonly IObservable<StartUnitTest[]> _cfg;
@@ -128,6 +128,13 @@ namespace theBFG
         public IObservable<CommandResult> Handle(SpawnWorker command)
         {
             return SpawnTestWorker(bfgTagWorkflow.GetTagsFromString(command.Tags).ToArray()).Select(_ => CommandResult.Success());
+        }
+
+        public IObservable<CommandResult> Handle(Run command)
+        {
+            var handler = (IServiceCommandHandler<Run>) _workerCluster.Workflow.Workers.Values.FirstOrDefault()?.Worker;
+
+            return handler == null ? CommandResult.Failure("No Workers on node to run command").ToObservable() : handler.Handle(command);
         }
     }
 

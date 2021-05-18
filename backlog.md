@@ -5,11 +5,11 @@
 I have used `Readme Driven Design` (`RDD`) to build this project.
 
 > ReadMe
-- remote worker not logs not being received??!
 
-- remote commands - allow adhoc commands to be run on host? is that too powerful? config via permission?
-  - `thebfg allow remote control` ? or do we already basically allow this and we dont need to call it out
-    - add authentication option, basic shared keys?
+
+- fix lookup of vstest, use registry to find valid install locations
+ 
+- add authentication option, basic shared keys?
   
 - allow worker to be downloaded from testarena to you can get workers online easier
       

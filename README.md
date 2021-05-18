@@ -346,7 +346,7 @@ Route: ...
   copy .bfg another/root/.bfg
   ```
 
-or
+  or
 
   ```
   cp .bfg another/root/.bfg
@@ -358,19 +358,35 @@ or
   thebfg self destruct
   ```
 
-then 
+  then 
 
   ```
   y
   ```
 
-or
+  or
 
 * *no confirmation*, just do it
   
   ```
   thebfg self destruct quite
   ```
+
+### Misc
+
+* Run any command via `cmd.exe` or `/bin/bash`
+
+  *ie. lookup networking info on worker*  
+
+  *Windows*
+  ```
+  @ Run ipconfig /all
+  ```
+
+  *macOS*
+  ```
+  @ Run ifconfig
+  ````
 
 # Test Runners
 

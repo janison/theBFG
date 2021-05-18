@@ -9,6 +9,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using Autofac;
 using Rxns;
 using Rxns.Cloud;
@@ -45,6 +46,16 @@ namespace theBFG
     public class StopFocusing : ServiceCommand
     {
 
+    }
+
+    public class Run : ServiceCommand
+    {    
+        public string Cmd { get; set; }
+        
+        public Run(string cmd)
+        {
+            Cmd = cmd;
+        }
     }
 
     public class DiscoverUnitTests : ServiceCommand
@@ -102,7 +113,7 @@ namespace theBFG
     /// 
     /// This API gives you the keys to the castle. Use with caution. Eye protection recommended when using rapid fire mode for extended periods.
     /// </summary>
-    public class theBfg : IDisposable, IServiceCommandHandler<Reload>, IServiceCommandHandler<FocusOn>, IServiceCommandHandler<StopFocusing>, IServiceCommandHandler<DiscoverUnitTests>, IRxnPublisher<IRxn>
+    public class theBfg : IDisposable, IServiceCommandHandler<Reload>, IServiceCommandHandler<FocusOn>, IServiceCommandHandler<StopFocusing>, IServiceCommandHandler<DiscoverUnitTests>,IRxnPublisher<IRxn>
     {
         private readonly Func<ITestArena[]> _testArena;
         public static ISubject<Unit> IsCompleted = new ReplaySubject<Unit>(1);

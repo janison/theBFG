@@ -214,11 +214,20 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             var existinTest = $scope.tests.filter(w => w.unitTestId === msg.unitTestId);
 
             if(existinLog.length > 0) {
-                existinLog[0].logMessage = msg.logMessage;            
+                if(!existinLog[0].logMessage) {
+                    existinLog[0].logMessage = "";
+                }
+                existinLog[0].logMessage += msg.logMessage;            
+                existinLog[0].logMessage += "\r\n";            
+
             }
 
             if(existinTest.length > 0) {
-                existinTest[0].logMessage = msg.logMessage;             
+                if(!existinTest[0].logMessage) {
+                    existinTest[0].logMessage = "";
+                }
+                existinTest[0].logMessage += msg.logMessage;             
+                existinTest[0].logMessage += "\r\n"; 
             }
         };
 
