@@ -115,6 +115,12 @@ namespace theBFG
         private static bool  _notUpdating = true;
 
         public static string DataDir = ".bfg";
+
+        static theBfg()
+        {
+            if (!Directory.Exists(DataDir))
+                Directory.CreateDirectory(DataDir);
+        }
         
         public static IObservable<Unit> ReloadWithTestWorker(params string[] args)
         {

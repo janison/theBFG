@@ -3,11 +3,11 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.6</PackageVersion>
+        <PackageVersion>1.0.7</PackageVersion>
         <Authors>CaptainJono</Authors>
         <Description>A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
 
-&gt; dotnet tool install thebfg</Description>
+&gt; dotnet tool install thebfg -g</Description>
         <Copyright>MIT</Copyright>
         <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
       <RepositoryUrl>https://github.com/captainjono/theBFG/</RepositoryUrl>
@@ -21,7 +21,7 @@
       <PackageOutputPath>./nupkg</PackageOutputPath>
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-      <Version>1.0.6</Version>
+      <Version>1.0.7</Version>
     </PropertyGroup>
 
     <ItemGroup>

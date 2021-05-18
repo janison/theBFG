@@ -380,11 +380,15 @@ Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in e
 
 # The TestArena
 
-<image>
-
 TheBFG TestArena is a hyper-CD tool that allows you to understand whats going on *in realtime* through a web browser. It a minimal layer that is designed to supercharge TDD, while being pluggable into other systems / charts / CD pipelines as necessary.
 
-## Real-time logs
+<img src=thebfg-example-basic.png>
+
+It has features which are not listed here. Mouse over different parts of the UI to learn its functions and explore the system as it evolves...
+
+## Features
+
+### Real-time logs
 
 Watch application output as it happens
 
@@ -392,20 +396,14 @@ Augment the stream with your own logging
 
 `TestArena.Log.OnInfo/OnError/etc(msg)`
 
-<img src=broken.jpg>
 
-## Real-time metrics
+### Real-time metrics
 
 Access Test Arena metrics and other bfg cluster vitals through a web-browser
 
-<img src=broken.jpg>
-
  ... and you can add your own data points through the `bfgAPI`
-
- ```
- ```
  
-# Automatic log shipping
+### Automatic log shipping
 
 * All workers will upload to the Test Arena during runs
   * Coverage results produced for all test `coverage.cobertura.xml`
@@ -413,12 +411,12 @@ Access Test Arena metrics and other bfg cluster vitals through a web-browser
   * Quick-links to all test assets via [TestArena](#the-testarena) portal
   * Ship your own assets by broadcasting `<UnitTestAssetResult>` *events*
 
-## Monitor Errors
+### Monitor Errors
 
 Any exception that is thrown in your test is surfaced through the portal
 
 
-## Own your data
+### Own your data
 
 All data collected by the BFG will be placed in a `.bfg` folder next to where you executed the command.
 
@@ -427,9 +425,7 @@ Benifits include:
 - Move this folder around to move tests and metrics between hosts.
 - Partially or completely check the folder into source control to share environments between team members.
 
-<img src=broken.jpg>
-
-## Real-time ports 
+### Real-time ports 
 
 use [SignalR](http://dotnet.microsoft.com/) to subscribe to a real-time event feed using the `bfgAPI` to customise the integration for your specific  `use-case` ie. logging to [AppInsights](http://azure.microsoft.com/)
 
@@ -437,12 +433,11 @@ use [SignalR](http://dotnet.microsoft.com/) to subscribe to a real-time event fe
 ```
 ```
 
-<img src=broken.jpg>
+### Manage libraries of Apps
 
-## Manage libraries of Apps
+Each time a test is targeted, it is uploaded to the Test Arena so workers can later run the test. This repository can also be accessed via REST and allow you to distribute your tests through your infrastructure with ease.
 
-<img src=broken.jpg>
-
+[http://localhost:888/#/updates](http://localhost:888/#/updates)
 
 Date| Changelog|comment
 -|-|-
@@ -450,3 +445,4 @@ Date| Changelog|comment
 8/4/21 | 1.0.0 | Stable first release
 8/4/21 | 1.0.1 | Adds auto detection of test runner
 9/4/21 | 1.0.2 | House keeping
+18/5/21 | 1.0.7 | New Features + Stabilising
