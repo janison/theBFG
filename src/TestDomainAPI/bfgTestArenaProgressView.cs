@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Rxns;
@@ -14,62 +16,6 @@ using theBFG.TestDomainAPI;
 
 namespace theBFG
 {
-    public interface ITestArenaApi
-    {
-        void OnUpdate(ITestDomainEvent e);
-        void SendCommand(string route, string command);
-    }
-
-    public class TestArenaCfg : IRxn
-    {
-        /// <summary>
-        /// The threshhold for a test to be considered "slow" and appear in the pie graph
-        /// </summary>
-        public int SlowTestMs { get; set; } = 100;
-
-        /// <summary>
-        /// This controls the resolution of the graph which displays each test outcome. The max value on the graph
-        /// will be this value in milliseconds
-        /// </summary>
-        public int TestDurationMax { get; set; } = 100;
-        /// <summary>
-        /// If the test arena will be in lights out mode by default
-        /// </summary>
-        public bool IsLightsOut { get; set; }
-        /// <summary>
-        /// If the test arena metics will default to persistint between sessions.
-        /// This is usually controlled with the "save" syntax in a command 
-        /// </summary>
-        public bool AlwaysSave { get; set; }
-
-        /// <summary>
-        /// If sounds will fire to indicate the outcome of a each test
-        /// </summary>
-        public bool SoundsOn { get; set; } = false;
-
-        public static string CfgFile = Path.Combine(theBfg.DataDir, "testArena.json");
-        public TestArenaCfg()
-        {
-
-        }
-
-        public static TestArenaCfg Detect()
-        {
-            return File.Exists(CfgFile) ? Read(CfgFile) : new TestArenaCfg().Save();
-        }
-
-        private static TestArenaCfg Read(string cfgFile)
-        {
-            return File.ReadAllText(cfgFile).FromJson<TestArenaCfg>();
-        }
-
-        public TestArenaCfg Save()
-        {
-            File.WriteAllText(CfgFile, this.ToJson());
-            return this;
-        }
-    }
-
     /// <summary>
     /// Indicates a new test arena cfg has set in the system
     /// </summary>
@@ -94,10 +40,15 @@ namespace theBFG
 
         private void SendInitalMetricsTo(IClientProxy user)
         {
-            _testArena.GetHistory().Where(v => v != null).Buffer(TimeSpan.FromSeconds(2), 50).Where(v => v.AnyItems())
+            _testArena.GetHistory().Where(v => v != null).Buffer(TimeSpan.FromSeconds(0.5), 50).Where(v => v.AnyItems())
                 .StartWith(LatestTestArenaCfg())
-                .SelectMany(s => s).Do(s => user.SendAsync("onUpdate", s))
+                .SelectMany(s => Send(user, s, "onUpdate").ToObservable())
                 .Until();
+        }
+
+        private Task Send(IClientProxy user, IEnumerable<IRxn> @events, string method)
+        {
+            return user.SendAsync(method, @events.ToJson());
         }
 
         private IEnumerable<IRxn> LatestTestArenaCfg()
@@ -159,7 +110,7 @@ namespace theBFG
                     {
                         OnWarning("x {0}", e.Message);
                         return new object().ToObservable();
-                    }).Until();
+                    }).Until(OnError);
             }
             catch (ArgumentException e)
             {
@@ -174,13 +125,10 @@ namespace theBFG
         private void ActiveMetricsUpdates()
         {
             _testArena.GetUpdates()
-                                        .Buffer(TimeSpan.FromMilliseconds(100), 20)
+                                        .Buffer(TimeSpan.FromMilliseconds(500), 50)
                                         .Where(ms => ms.Count > 0)
-                                        .SelectMany(s => s) //i think i need to reimplement the batched event passing using a delimiter - couldnt find the code in the frontend to deserilise
-                                        .Subscribe(this, metric =>
-                                        {
-                                            _context.Clients.All.SendAsync("onUpdate", metric);
-                                        })
+                                        .SelectMany(metric => Send(_context.Clients.All, metric, "onUpdate").ToObservable())
+                                        .Until(OnError)
                                         .DisposedBy(this);
         }
 

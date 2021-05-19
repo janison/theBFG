@@ -35,11 +35,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     $scope.setLightsOut = function() {
         if($scope.testArenaCfg.isLightsOut) {
-
-//             --darkreader-neutral-background: #141617;
-// --darkreader-neutral-text: #e3dfd9;
-// --darkreader-selection-background: #0051b3;
-// --darkreader-selection-text: #f4f2ee;
             angular.element($document[0].querySelector("html")).addClass("dark-theme");
         }
         else {                  
@@ -309,6 +304,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.stopFiring();
         }
 
+        //handler: test summary
         if(msg.RunThisTest) {
             
             var test = $scope.testRuns.filter(t => t.dll == msg.RunThisTest)[0];   
@@ -320,8 +316,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             test.testIds.push(msg.Id);
         }
 
+        //handler: worker info graphs
+
         if(msg.ipAddress) {
-            //workerstatusinfo
             var host = msg.host;
 
 
@@ -488,6 +485,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         });
     });
 
+    //init: sounds
     var passSound = new Audio('sfx/pass.ogg');
     var failSound = new Audio('sfx/fail.ogg');
 

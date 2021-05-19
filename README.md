@@ -13,7 +13,7 @@ Feature | ...
 `NO DSL or JAVA or other` scripting to learn | <font size=2>Use all the same tools you love & pure `.net` to define complex intergation test scenarios</font>
 `Continuous Fuzzy testing` |<font size=2> `theBFG` can execute your test suites in different ways, not just in different orders</font>
 `Create worker clusters` with ease | <font size=2>Simply run `theBFG` on as many instances as you require!
-`Target workers` with tags | <font size=2> Partition clusters and route different workloads to different workers with ease.
+`Target workers` with tags | <font size=2> Partition workers and route different tests conditionally with ease.
 `Supercharge EXISTING test-suites` | <font size=2>theBGF supports distributing work to a cluster that will work together to execute it as quickly as possible</font>
 `Cloud scale-out` | <font size=2>To really push the boundaries of your App, Cloud functions can be used to host workers</font>
 `NO API bleed` | <font size=2>If you out-grow `theBFG` or otherwise dont require its sevices anymore, delete its reference, its config classes, the `.bfg` directory and **its gone**. *No refactor required.*</font>
@@ -36,18 +36,18 @@ and
 
 4. Configure your `IDE` to deploy your `unit-test` on compile:
 ``` 
-AfterBuild: thebfg target {path/To/unit.test.dll} and fire
+AfterBuild: thebfg target {path/To/unit.test.dll} and fire and exit
 ```
 
 or 
 
-open up your *favourite* `console`
+open up your *favourite* `console` and host a `Test Arena ` independently of any `IDE`
 
 ```
 > thebfg target {path/To/unit.test.dll}
 ```
 
-5. `and fire` in another process on the same computer **or** any other one across the network
+then `fire` in another process **or** any other *networked* host (*Win, Linux, macOS...*)
    
 ```
 > thebfg fire
