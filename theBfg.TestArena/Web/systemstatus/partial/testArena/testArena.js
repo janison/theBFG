@@ -134,6 +134,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     resetResults = function() {
 
         $scope.showCfg = false;
+        $scope.showFullLog = false;
+        $scope.showLogStream = function() {
+            $scope.showFullLog = !$scope.showFullLog;
+        };
         $scope.stop = 0;
         $scope.shouldFire = false;
         $scope.firedTimes = 0

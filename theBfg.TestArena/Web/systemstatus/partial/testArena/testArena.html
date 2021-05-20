@@ -128,27 +128,25 @@
         <span class="cmd fa fa-scissors" title="Stop focusing on this test" ng-click="publish('testArena', 'StopFocusing')"></span><span title="Only firing at this test" class="cmd fa fa-crosshairs fa-2x" style="color:#b3b376"></span><spa class="cmd">{{focusedOn}}</spa>
     </span>
     </div>
-    <div ng-init="showLogsCol = false">
+    <div></div>
             <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
             <table ng-if="currentTopic != ''" ng-class="{dark: testArenaCfg.isLightsOut, light: !testArenaCfg.isLightsOut}" class="table table-hover table-striped table-condensed h6">
                 <thead>
                 <th>Outcome</th>
                 <th>Test</th>
                 <th>Duration</th>
-                <th>Log 
-                    <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
-                </th>
+                <th>Log </th>
                 <th>Worker</th>                
                 <colgroup>
                     <col/>
                     <col/>
                     <col/>
-                    <col ng-style="{'display': showLogsCol ? 'revert' : 'none'}"/>
+                    <col/>
                     <col/>
                 </colgroup>                
                 </thead>
                  <tbody><!--  ng-if="currentTopic.length != 0 -->                    
-                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false;expandLog = false" ng-repeat="entry in currentTopic track by $index">
+                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false" ng-repeat="entry in currentTopic track by $index">
                         <td class="freeze">{{entry.result}}<span ng-if="entry.isNew" class="fa fa-question-circle"></span></td>
                         <td class="freeze"><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <div class="popup">
@@ -161,10 +159,16 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="freeze">{{entry.duration}}</td>                        
-                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" style="white-space: pre;" ng-if="entry.logMessage"><span ng-click="expandLog = !expandLog" class="summary" ng-class="{expand: expandLog}"></span><pre class="stacktrace">{{entry.logMessage}}</pre></span></td>
-                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" ng-if="!entry.logMessage"></td>
-                        <td ng-style="{'display': showLogsCol ? 'none' : 'revert'}"></td>
+                        <td class="freeze">{{entry.duration}}</td>          
+                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" style="white-space: pre;" ng-if="entry.logMessage">                            
+                            <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
+                            <pre class="stacktrace">{{entry.logMessage}}</pre></span></td>
+                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" ng-if="!entry.logMessage">
+                            <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
+                        </td>
+                        <td ng-style="{'display': showLogsCol ? 'none' : 'revert'}">
+                            <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
+                        </td>
                         <td class="freeze">{{entry.worker}}</td>
                     </tr>
                 </tbody>
@@ -176,7 +180,9 @@
             
             <table ng-if="!logDisabled" class="table table-hover table-striped table-condensed h6">
                 <thead>
-                <th>Test Arena</th>
+                <th>Test Arena 
+                    <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogStream()" title="Show or hide logs"></span>
+                </th>
                 </thead>
                  <tbody><!--  ng-if="currentTopic.length != 0 -->
                     <!--<span class="fa fa-cog fa-spin" ng-show="$parent.logLoading" />-->
@@ -196,9 +202,8 @@
                                     </span>
                                 </span>
                             </div>
-                            <br/>
-                            <pre class="stacktrace">{{entry.logMessage}}</pre>
-                            
+                            <br/>   
+                            <pre ng-style="{'display': showFullLog ? 'revert' : 'none'}" class="stacktrace">{{entry.logMessage}}</pre>                            
                         </td>
                     </tr>
                 </tbody>
