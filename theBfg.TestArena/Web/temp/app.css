@@ -7449,6 +7449,9 @@ code {
 .ux-option {
   float: right;
 }
+.freeze {
+  width: 1em;
+}
 .dark-theme {
   scrollbar-color: #484e51 #222526;
 }

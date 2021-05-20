@@ -49,7 +49,7 @@ namespace theBFG
         private readonly IAppStatusServiceClient _appStatus;
         private readonly IAppServiceDiscovery _serviceDiscovery;
         private readonly IUpdateServiceClient _appUpdates;
-        public static string ClientId = bfgCfg.Detect().Id; //get from cfg file if exists
+        public static string ClientId = bfgCfg.Detect().Id.Split('-').FirstOrDefault(); //get from cfg file if exists
 
         public bfgWorkerManager(bfgCluster workerCluster, IObservable<StartUnitTest[]> cfg, SystemStatusPublisher systemStatus, IResolveTypes resolver, IRxnManager<IRxn> eventManager, IAppStatusCfg appStatusCfg, IAppServiceRegistry appServiceRegistry, IZipService zipService, IAppStatusStore appCmds, IAppStatusServiceClient appStatus, IAppServiceDiscovery serviceDiscovery, IUpdateServiceClient appUpdates)
         {

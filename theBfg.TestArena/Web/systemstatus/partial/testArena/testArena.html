@@ -160,15 +160,11 @@
                             </div>
                         </td>
                         <td class="freeze">{{entry.duration}}</td>          
-                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" style="white-space: pre;" ng-if="entry.logMessage">                            
+                        <td style="white-space: pre;" ng-if="entry.logMessage">                            
                             <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
-                            <pre class="stacktrace">{{entry.logMessage}}</pre></span></td>
-                        <td ng-style="{'display': showLogsCol ? 'revert' : 'none'}" ng-if="!entry.logMessage">
-                            <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
-                        </td>
-                        <td ng-style="{'display': showLogsCol ? 'none' : 'revert'}">
-                            <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
-                        </td>
+                            <pre ng-style="{'display': showLogsCol ? 'revert' : 'none'}"  class="stacktrace">{{entry.logMessage}}</pre></span>
+                        </td>                         
+                        <td ng-if="!entry.logMessage"></td>
                         <td class="freeze">{{entry.worker}}</td>
                     </tr>
                 </tbody>
