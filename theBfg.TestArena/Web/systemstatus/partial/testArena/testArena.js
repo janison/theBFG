@@ -177,6 +177,26 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     });
 
     resetResults();
+
+    var getDllFromTest = function(testId) {
+        var dll = $scope.testRuns.filter(w => w.results.filter(e => e.testId === testId).length > 0)[0];
+        return dll ? getDllFromFullName(dll.dll) : testId;
+    }
+
+    
+
+    function getDllFromFullName(fullname) {
+        let tokens = fullname.split('/');
+        return tokens[tokens.length -1]
+    }
+
+    function pushIfNotExist(list, msg, test) {
+        var existinTest = list.filter(w => w.testName === test && getDllFromFullName(w.dll) == getDllFromFullName(msg.dll));
+
+        if(!existinTest[0]) {
+            list.push({ testName: test, dll: msg.dll, isNew: true });
+        }
+    }
     
     var updateTestArenaWith = function(msg, maxLogs) {      
         console.log("Saw Event: " +JSON.stringify(msg));
@@ -289,7 +309,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.testSummary.push(msg);
 
             
-            var existinTest = $scope.tests.filter(w => w.testName === msg.testName)[0]; //dll is not in test
+            
+            var testDll = getDllFromTest(msg.testId);
+            var existinTest = $scope.tests.filter(w => w.testName === msg.testName && getDllFromTest(w.testId) == testDll)[0]; //dll is not in test
             
             if(!existinTest) {
                 $scope.tests.push(msg);                                          
@@ -317,7 +339,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 test.testIds = [];
             }
 
-            test.testIds.push(msg.Id);
+            test.testIds.push(msg.unitTestId);
         }
 
         //handler: worker info graphs
@@ -372,14 +394,6 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.workerInfo[host].resources[1].values.push((parseInt(msg.memUsage) / (16 * 1000)) * 100);                     
 
             return;
-        }
-
-        function pushIfNotExist(list, msg, test) {
-            var existinTest = list.filter(w => w.testName === test && w.dll == msg.dll);
-
-            if(!existinTest[0]) {
-                list.push({ testName: test, dll: msg.dll, isNew: true });
-            }
         }
 
         //handler: displays the todo tests TestDiscoveredEvent

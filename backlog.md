@@ -6,9 +6,10 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
 
 > ReadMe
 
+- switch to websockets for bfgworker comms
+- allow click on test to display all its results in a topic
+- rearrange tests topic to seperate into dlls  
 
-- fix lookup of vstest, use registry to find valid install locations
- 
 - add authentication option, basic shared keys?
   
 - allow worker to be downloaded from testarena to you can get workers online easier
