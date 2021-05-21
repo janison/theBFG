@@ -63,7 +63,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         } else if (result == 'slow') {
             $scope.currentTopic = $scope.slowTests;
         } else if (result == 'all') {
-            $scope.currentTopic = $scope.tests;
+            $scope.currentTopic = $scope.tests;    
+        } else if (result.indexOf(".") >= 0) {
+            let dll = getDllFromFullName(result);
+                $scope.currentTopic = $scope.tests.filter(t => getDllFromTest(t.testId) === dll);
         } else if (result == 'log' || result == 'flakey') {
             if ($scope.currentTopic.length === 0) {
                 $scope.logDisabled = !$scope.logDisabled;

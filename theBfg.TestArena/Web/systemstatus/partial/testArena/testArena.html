@@ -27,6 +27,7 @@
                                         <span class="popuptext" ng-class="{show: showLogs}">     
                                         <span title="Discover all unit tests in the dll again" ng-click="publish('', 'DiscoverUnitTests '+ entry.dll)" class="cmd fa fa-table"></span>
                                         <span class="cmd fa fa-exclamation-circle" ng-click="publish('TestArena\\'+entry.worker+'', 'StopUnitTest')" title="STOP running tests"></span>
+                                        <span class="cmd fa fa-search" ng-click="cmdShowTopic(''+entry.dll+'')" title="Show these tests"></span>
                                             <span ng-repeat="a in entry.assets">
                                                 <a ng-href="{{'/tenantLogs/' + a}}" target="_tenantlogs"><span class="cmd fa fa-stack-overflow" ng-attr-title="{{a}}"></span></a>
                                             </span>
@@ -39,7 +40,7 @@
                             <td width=5% ng-if="entry.completedAt && entry.results[0].failed === 0">{{(entry.results[0].passed)}}</td>
                             <td width=5% ng-attr-title="{{entry.results[0].duration}}">{{entry.results[0].duration}}</td>
                             <td width=80%>
-                                <bar-chart class="cmd" height="30" max-duration="testArenaCfg.maxDurationMs" data="entry.results"></bar-chart>
+                                <bar-chart  class="cmd" height="30" max-duration="testArenaCfg.maxDurationMs" data="entry.results"></bar-chart>
                             </td>
                         </tr>
                     </tbody>

@@ -7,21 +7,18 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
 > ReadMe
 
 - switch to websockets for bfgworker comms
-- allow click on test to display all its results in a topic
-- rearrange tests topic to seperate into dlls  
-
+- allow current screen config to be saved and restored so if reset of browser required no effort is lost
 - add authentication option, basic shared keys?
   
+- support having a picker for the fire mode, which will swap the icon and then fire with compete/rapid or whatever the user has set/saved/startup params
 - allow worker to be downloaded from testarena to you can get workers online easier
-      
-  - need to fix issue with discovering tests not associate with a dll. tests are associated witha unitTestId, lookup testRuns the unitTestId and return the dll its associated with
+
+- allow additional params to be passed through to underling testarena for lift-and-shift support
   
     - fix save cmd UI element not active at startup when save arg used
     - fix issue with graphs not respecting saved cfg
     - save these settings?
       - cmd history?
-
-- allow way to use servicecmd to launch a worker in a new processes
 
 - allow graph to zoom or adjust for overall unit tests so it zooms at the right level
   - or could just use a setting and a level adjuster thingy to allow easy zooming?, mouse wheel?

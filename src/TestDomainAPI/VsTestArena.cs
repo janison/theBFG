@@ -17,7 +17,7 @@ namespace theBFG.TestDomainAPI
         protected override string PathToTestArenaProcess()
         {
             var path = string.Empty;
-            return Rxn.Create(@$"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}\Microsoft Visual Studio\Installer\vswhere.exe", //should probbaly try other drives?
+            return Rxn.Create(@$"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}\Microsoft Visual Studio\Installer\vswhere.exe",
                     "-legacy -prerelease -format json",
                     i =>
                     {
