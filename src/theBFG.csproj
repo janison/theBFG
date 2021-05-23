@@ -22,6 +22,9 @@
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
       <Version>1.0.7</Version>
+
+      <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+      <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     </PropertyGroup>
 
     <ItemGroup>
@@ -107,9 +110,11 @@
 
     <ItemGroup>
         <PackageReference Include="DotNetZip" Version="1.15.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.6" />
         <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="5.0.5" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
         <PackageReference Include="System.Diagnostics.Tracing" Version="4.1.0" />
+        <PackageReference Include="System.Net.Http" Version="4.1.0" />
         <PackageReference Include="System.Reactive" Version="4.0.0" />
         <PackageReference Include="Autofac" Version="3.5.0" />
         <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />

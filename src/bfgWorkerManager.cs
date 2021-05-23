@@ -77,7 +77,7 @@ namespace theBFG
         {
             return new[]
             {
-                new AppStatusInfo("Workers", _workerCluster.Workflow.Workers),
+                new AppStatusInfo("Workers", _workerCluster.Workflow.Workers.Count),
                 new AppStatusInfo("ComputerName", Environment.MachineName),
                 new AppStatusInfo("Username", Environment.UserName),
                 new AppStatusInfo("Id", ClientId),

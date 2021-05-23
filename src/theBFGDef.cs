@@ -5,9 +5,15 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
+using Autofac;
+using Autofac.Features.OwnedInstances;
+using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http.Connections.Client;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using Rxns;
 using Rxns.Cloud;
 using Rxns.Cloud.Intelligence;
@@ -25,6 +31,7 @@ using Rxns.NewtonsoftJson;
 using Rxns.Playback;
 using Rxns.WebApiNET5;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
+using Rxns.WebApiNET5.NET5WebApiAdapters.RxnsApiAdapters;
 using theBFG.TestDomainAPI;
 
 namespace theBFG
@@ -186,7 +193,23 @@ namespace theBFG
 
                     }))
                     .CreatesOncePerApp<bfgFileSystemTapeRepository>()
+                    .CreatesOncePerApp<Func<string, Owned<HubConnection>>>(c =>
+                    {
+                        var cc = c.Resolve<IComponentContext>();
+                        return (url) =>
+                        {
+                            var lifetime = cc.Resolve<ILifetimeScope>().BeginLifetimeScope();
+                            return new Owned<HubConnection>(new HubConnectionBuilder().WithUrl(url).WithAutomaticReconnect(new AlwaysRetryPolicy(() => TimeSpan.FromSeconds(1))).Build(), lifetime);
+                        };
+                    })
                     ;
+
+                if (!args.Contains("httponly"))
+                {
+                    dd.CreatesOncePerApp<RxnManagerSystemStatusAdapter>() //allows signalrserviceclient
+                        .CreatesOncePerApp<SignalRRxnManagerBridge>()
+                        .CreatesOncePerApp<EventsHub>(); //allows Iappstatustore support for realtime cmd routing
+                }
                 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     dd.CreatesOncePerApp<MacOSSystemInformationService>();
@@ -201,6 +224,8 @@ namespace theBFG
             return dd =>
             {
                 d(dd);
+                
+                DistributedBackingChannel.For(typeof(AppResourceInfo), typeof(ITestDomainEvent))(dd);
 
                 dd
                     .CreatesOncePerApp<theBfg>()
@@ -232,6 +257,17 @@ namespace theBFG
                     .Emits<UnitTestPartialLogResult>()
                     .Emits<UnitTestOutcome>()
                     .Emits<UnitTestsStarted>()
+                    //.CreatesOncePerApp<SignalRBackingChannel<IRxn>>()
+                    //this is a connection factory takes a url and returns a signalR client
+                    .CreatesOncePerApp<Func<string, Owned<HubConnection>>>(c =>
+                    {
+                        var cc = c.Resolve<IComponentContext>();
+                        return (url) =>
+                        {
+                            var lifetime = cc.Resolve<ILifetimeScope>().BeginLifetimeScope();
+                            return new Owned<HubConnection>(new HubConnectionBuilder().WithUrl(url).WithAutomaticReconnect(new AlwaysRetryPolicy(() => TimeSpan.FromSeconds(1))).Build(), lifetime);
+                        };
+                    })
                     .CreatesOncePerApp(_ => new CompeteFanout<StartUnitTest, UnitTestResult>(bfgTagWorkflow.FanoutIfNotBusyAndHasMatchingTag))
                     .CreatesOncePerApp<NoAppCmdsOnWorker>(true)
                     .CreatesOncePerApp(_ => Observable.Return(new [] { new StartUnitTest()}), true)
@@ -250,6 +286,11 @@ namespace theBFG
                         var stopWorkers = theBfg.StartTestArenaWorkers(theBfg.Args, Cfg).Until();
                     }));
 
+                if (!theBfg.Args.Contains("httponly"))
+                {
+                    dd.CreatesOncePerApp<SignalRRxnManagerBridge>(); //enable real-time over http poll
+                }
+
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     dd.CreatesOncePerApp<MacOSSystemInformationService>();
 
@@ -257,7 +298,6 @@ namespace theBFG
                     dd.CreatesOncePerApp<WindowsSystemInformationService>();
 
                 //forward all test events to the test arena
-                DistributedBackingChannel.For(typeof(AppResourceInfo), typeof(ITestDomainEvent))(dd);
             };
         };
     }

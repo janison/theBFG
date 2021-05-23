@@ -24,12 +24,13 @@ namespace theBFG
         public TestArenaCfg Cfg { get; set; }
     }
 
-    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>, IRxnProcessor<TestArenaCfgUpdated>
+    public class bfgTestArenaProgressHub : ReportsStatusEventsHub<ITestArenaApi>, IRxnProcessor<TestArenaCfgUpdated>, IRxnPublisher<IRxn>
     {
         private readonly bfgTestArenaProgressView _testArena;
         private readonly IHubContext<bfgTestArenaProgressHub> _context;
         private bool callOnce = true;
         private IAppCommandService _cmdService;
+        private Action<IRxn> _publish;
 
         public bfgTestArenaProgressHub(bfgTestArenaProgressView testArena, IHubContext<bfgTestArenaProgressHub> context, IAppCommandService cmdService)
         {
@@ -137,11 +138,21 @@ namespace theBFG
             cfg?.Save();
         }
 
+        public void Publish(IRxn cfg)
+        {
+            _publish(cfg);
+        }
+
         public IObservable<IRxn> Process(TestArenaCfgUpdated @event)
         {
             @event.Cfg?.Save();
 
             return Rxn.Empty<IRxn>();
+        }
+
+        public void ConfigiurePublishFunc(Action<IRxn> publish)
+        {
+            _publish = publish;
         }
     }
 }

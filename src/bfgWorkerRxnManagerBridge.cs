@@ -36,7 +36,7 @@ namespace theBFG.RxnsAdapter
         public IObservable<bool> IsBusy => _isBusy;
         public string Ip { get; set; }
 
-        private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false);
+        private readonly ISubject<bool> _isBusy = new BehaviorSubject<bool>(false); 
 
         public void Update(IDictionary<string, string> info)
         {

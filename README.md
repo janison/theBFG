@@ -388,6 +388,12 @@ Route: ...
   @ Run ifconfig
   ````
 
+* *Disables* `web sockets`, uses `http` for all communication *between* Test Arena and its workers
+
+  ```
+  > thebfg <anything else> httponly
+  ```
+
 # Test Runners
 
 Out of the box, theBFG works with `dotnet test` & `vstest.console.exe`. But in essence all it does it wrap the output streams, parsing and triggering different events along the way to feed the Test Arena. You can use this same technique, or a closer integration using theBFG API, to tune theBFG to your specific flow.

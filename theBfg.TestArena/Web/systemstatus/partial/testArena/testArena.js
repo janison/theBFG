@@ -347,8 +347,12 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         //handler: worker info graphs
 
-        if(msg.ipAddress) {
+        if(msg.$type.indexOf('theBFG.TestArenaWorkerHeadbeat') > -1) {
             var host = msg.host;
+
+            if(!host) {
+                return;
+            }
 
 
             if(!$scope.workerInfo[host]) {
@@ -364,7 +368,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.workerInfo[host].tags = msg.tags;
         }
 
-        if(msg.memUsage) {
+        if(msg.$type.indexOf('Rxns.Health.AppResourceInfo') > -1) {
+
 
             var host = msg.host;
 

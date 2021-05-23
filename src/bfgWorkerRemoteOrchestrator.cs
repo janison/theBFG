@@ -79,7 +79,7 @@ namespace theBFG
             var info = new Dictionary<string, string>
             {
                 {
-                    bfgTagWorkflow.WorkerTag, ((AppStatusInfo[]) meta.FirstOrDefault()).FirstOrDefault(a => a.Key.BasicallyEquals(bfgTagWorkflow.WorkerTag))?.Value.ToString() ?? string.Empty
+                    bfgTagWorkflow.WorkerTag, ((AppStatusInfo[]) meta.FirstOrDefault())?.FirstOrDefault(a => a.Key.BasicallyEquals(bfgTagWorkflow.WorkerTag))?.Value.ToString() ?? string.Empty
                 }
             };
 
