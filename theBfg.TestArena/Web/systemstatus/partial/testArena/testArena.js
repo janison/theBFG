@@ -313,8 +313,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
             
             
-            var testDll = getDllFromTest(msg.testId);
-            var existinTest = $scope.tests.filter(w => w.testName === msg.testName && getDllFromTest(w.testId) == testDll)[0]; //dll is not in test
+            var testDll = getDllFromFullName(msg.dll);
+            var existinTest = $scope.tests.filter(w => w.testName === msg.testName && getDllFromFullName(w.dll) === testDll)[0]; //dll is not in test
             
             if(!existinTest) {
                 $scope.tests.push(msg);                                          
@@ -325,8 +325,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 Object.keys(msg).forEach(k => {
                     if(!existinTest[k]) {
                         existinTest[k] = msg[k];
-                    }
+                    }                    
                 })
+
+                existinTest.isNew = false;
             }
   
 
@@ -408,7 +410,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
 
         //handler: displays the todo tests TestDiscoveredEvent
-        if(msg.dll && msg.hasOwnProperty("discoveredTests"))
+        if(msg.$type.indexOf("theBFG.TestDomainAPI.UnitTestDiscovered") > -1)// msg.dll && msg.hasOwnProperty("discoveredTests"))
         {
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];                        
 
@@ -444,7 +446,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
         }
 
         // handler: indicates a test is about to startunittest, adds test to results section
-        else if(msg.dll && !msg.hasOwnProperty("passed")) {
+        else if(msg.$type.indexOf('StartUnitTest') > -1) {
 
             var test = $scope.testRuns.filter(t => t.dll == msg.dll)[0];            
 
