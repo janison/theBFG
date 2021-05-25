@@ -193,6 +193,7 @@ namespace theBFG
 
                     }))
                     .CreatesOncePerApp<bfgFileSystemTapeRepository>()
+                    .CreatesOncePerApp<Func<string, ITapeSource>>(_ => __ => new ReplaySubjectTapeSource(2000))
                     .CreatesOncePerApp<Func<string, Owned<HubConnection>>>(c =>
                     {
                         var cc = c.Resolve<IComponentContext>();

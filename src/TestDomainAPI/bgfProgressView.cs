@@ -2,7 +2,6 @@
 using System.Reactive.Linq;
 using Rxns;
 using Rxns.Health;
-using Rxns.Hosting;
 using Rxns.Interfaces;
 using Rxns.Metrics;
 using Rxns.Playback;
@@ -11,14 +10,11 @@ namespace theBFG.TestDomainAPI
 {
     public class bfgTestArenaProgressView : AggregatedView<IRxn>, IReactTo<IRxn>
     {
-        private readonly ISystemResourceService _sr;
-        private readonly IRxnAppInfo _appInfo;
         public override string ReportName => "TestArena";
 
-        public bfgTestArenaProgressView(ITapeRepository reportRepo, ISystemResourceService sr, IRxnAppInfo appInfo, AggViewCfg cfg) : base(reportRepo, cfg)
+        public bfgTestArenaProgressView(ITapeRepository reportRepo, AggViewCfg cfg) : base(reportRepo, cfg)
         {
-            _sr = sr;
-            _appInfo = appInfo;
+            //
         }
 
         public override IObservable<IRxn> GetOrCreateStream()

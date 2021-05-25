@@ -6,9 +6,16 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
 
 > ReadMe
 
-- switch to websockets for bfgworker comms
+- make uploading of versions more accurate, use timestamp of last time to create version number which then allows us to efficently only upload when changed
+
+- make coverage seamless with compete mode
+  - either merge results ahead of time? or push into sonar somehow?
+  - need a good flow here
+  - uploads extract automatically, but are they easy to reference for external tooling? predictable output dir?
+
+- fix issue with not capturing skipped / ignored tests causing testarena to think more tests are still to be executed or the count to be off
+
 - allow current screen config to be saved and restored so if reset of browser required no effort is lost
-- add authentication option, basic shared keys?
   
 - support having a picker for the fire mode, which will swap the icon and then fire with compete/rapid or whatever the user has set/saved/startup params
 - allow worker to be downloaded from testarena to you can get workers online easier
@@ -37,3 +44,5 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
       - push images to devtestlabs to allow each spinning up
     - Spawn in: Cloud Functions
       - thebfg can managed cross platform via integration with AzurePowershell
+
+- add authentication option, basic shared keys?

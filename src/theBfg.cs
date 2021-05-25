@@ -474,7 +474,7 @@ namespace theBFG
             var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
             url = GetTestarenaUrlFromArgs(args) ?? url;
 
-            return LaunchAppToTestArena(name, appUpdateVersion, dll, url, new AppStatusCfg()).FinallyR(() => theBfg.IsCompleted.OnCompleted()).Until();
+            return LaunchAppToTestArenaIf(name, appUpdateVersion, dll, url, new AppStatusCfg()).FinallyR(() => theBfg.IsCompleted.OnCompleted()).Until();
         }
 
         /// <summary>
@@ -702,12 +702,15 @@ namespace theBFG
         {
             return unitTestToRun.Delay(TimeSpan.FromSeconds(1.5))
                 .SelectMany(t => t)
-                .SelectMany(runTheseUnitTest => LaunchAppToTestArena(runTheseUnitTest.UseAppUpdate, runTheseUnitTest.UseAppVersion, runTheseUnitTest.Dll, testArenaAddress, cfg))
+                .SelectMany(runTheseUnitTest => LaunchAppToTestArenaIf(runTheseUnitTest.UseAppUpdate, runTheseUnitTest.UseAppVersion, runTheseUnitTest.Dll, testArenaAddress, cfg))
                 ;
         }
 
-        public static IObservable<string> LaunchAppToTestArena(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
+        private static readonly IDictionary<string, string> _lastUploaded = new Dictionary<string, string>();
+        public static IObservable<string> LaunchAppToTestArenaIf(string appName, string appVersion, string appDll, string testArenaAddress, IAppStatusCfg cfg)
         {
+            if (HasNotChangedSinceLastUpload(appName, appVersion)) return appVersion.ToObservable();
+
             return RxnApps.CreateAppUpdate(
                     appName,
                     Scrub(appVersion),
@@ -724,6 +727,24 @@ namespace theBFG
                         throw e;
                 })
                 .Select(_ => appVersion);
+        }
+
+        private static bool HasNotChangedSinceLastUpload(string appName, string appVersion)
+        {
+            if (!_lastUploaded.ContainsKey(appName))
+            {
+                _lastUploaded.Add(appName, appVersion);
+
+                return false;
+            }
+
+            if (_lastUploaded[appName] != appVersion)
+            {
+                _lastUploaded[appName] = appVersion;
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -832,7 +853,7 @@ namespace theBFG
         {
             return Rxn.Create<UnitTestDiscovered>(o =>
             {
-                return GetTargets(testDllSelector, args, null, null, null)
+                return GetTargets(testDllSelector, args, arenas, null, null)
                     .Do(t =>
                     {
                         ListTests(t.Dll, arenas)

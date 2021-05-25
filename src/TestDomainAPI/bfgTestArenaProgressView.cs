@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -31,17 +32,23 @@ namespace theBFG
         private bool callOnce = true;
         private IAppCommandService _cmdService;
         private Action<IRxn> _publish;
+        private readonly ISubject<IRxn> _testStream = new ReplaySubject<IRxn>(2000);
 
-        public bfgTestArenaProgressHub(bfgTestArenaProgressView testArena, IHubContext<bfgTestArenaProgressHub> context, IAppCommandService cmdService)
+        public bfgTestArenaProgressHub(bfgTestArenaProgressView testArena, IHubContext<bfgTestArenaProgressHub> context, IAppCommandService cmdService, IRxnManager<IRxn> historyBuffer)
         {
             _testArena = testArena;
             _context = context;
             _cmdService = cmdService;
+
+            if(!theBfg.Args.Contains("save"))
+                historyBuffer.CreateSubscription<ITestDomainEvent>().Do(_testStream).Until();
         }
 
         private void SendInitalMetricsTo(IClientProxy user)
         {
-            _testArena.GetHistory().Where(v => v != null).Buffer(TimeSpan.FromSeconds(0.5), 50).Where(v => v.AnyItems())
+            _testArena.GetHistory()
+                .Merge(_testStream)
+                .Where(v => v != null).Buffer(TimeSpan.FromSeconds(0.5), 200).Where(v => v.AnyItems())
                 .StartWith(LatestTestArenaCfg())
                 .SelectMany(s => Send(user, s, "onUpdate").ToObservable())
                 .Until();

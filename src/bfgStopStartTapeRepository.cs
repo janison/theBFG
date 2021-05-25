@@ -13,7 +13,6 @@ using Rxns.Playback;
 
 namespace theBFG
 {
-
     /// <summary>
     /// There is an issue with the fstaperepo not hooking up to servicecmds?! maybe cause stop/start not 
     /// </summary>
