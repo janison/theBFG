@@ -58,7 +58,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
     $scope.cmdShowTopic = function(result) {
         $scope.filter = result;
 
-        if (result == "Passed" || result == "Failed") {
+        if (result == "Passed" || result == "Failed" || result == "Skipped") {
             $scope.currentTopic = $scope.tests.filter(t => t.result === result);
         } else if (result == 'slow') {
             $scope.currentTopic = $scope.slowTests;
@@ -86,6 +86,9 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             $scope.currentTopic.push(msg);
         }
         else if(msg.result == "Failed" && $scope.filter === msg.result ) {
+            $scope.currentTopic.push(msg);
+        }
+        else if(msg.result == "Skipped" && $scope.filter === msg.result ) {
             $scope.currentTopic.push(msg);
         }
         else if($scope.filter === "slow" && msg.duration && parseInt(msg.duration) > 100) {
@@ -135,7 +138,8 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
     // resets the test arena modal, ready for few data
     resetResults = function() {
-
+        $scope.orderByField = 'testName';
+        $scope.reverseSort = false;
         $scope.showCfg = false;
         $scope.showFullLog = false;
         $scope.showLogStream = function() {
@@ -160,6 +164,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
 
         $scope.testGlance = {
             total: 0,
+            skipped: 0,
             errors: 0,
             flakey: 0,
             slow: 0,
@@ -289,8 +294,10 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
                 $scope.testSummary.shift();
             }
             
+            msg.duration = msg.duration == ''? '0' : msg.duration;
+            msg.duration = parseInt(msg.duration);
     
-            if(parseInt(msg.duration) > testArenaApi.slowTestMs) {
+            if(msg.duration > testArenaApi.slowTestMs) {
                 
                 if($scope.slowTests.length > maxLogs) {
                     $scope.testSummary.shift();
@@ -302,6 +309,7 @@ angular.module('systemstatus').controller('testArenaCtrl', function ($rootScope,
             
             if(msg.result == "Failed") {
                 $scope.testGlance.errors++;
+                $scope.testGlance.skipped++;
             }
 
             msg.info = `${msg.result} in ${msg.duration}`;

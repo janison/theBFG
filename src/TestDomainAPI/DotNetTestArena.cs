@@ -35,6 +35,7 @@ namespace theBFG.TestDomainAPI
         //todo: fix state, this class is not multi-threadable
         protected bool startParsing;
         protected bool baddll;
+        private int _skipped;
 
         public DotNetTestArena(IRxnAppInfo appInfo)
         {
@@ -65,7 +66,7 @@ namespace theBFG.TestDomainAPI
 
                 lastLine = false;
 
-                if (cmd[0] == "Passed" || cmd[0] == "Failed")
+                if (cmd[0] == "Passed" || cmd[0] == "Failed" || cmd[0] == "Skipped")
                 {
                     if(_unitTestId != string.Empty)
                         yield return new UnitTestPartialLogResult
@@ -84,16 +85,12 @@ namespace theBFG.TestDomainAPI
                         _passed++;
                     else if (cmd[0].StartsWith('F'))
                         _failed++;
+                    else if (cmd[0].StartsWith('S'))
+                        _skipped++;
 
-                    if(cmd.Length > 0)
+                    if (cmd.Length > 0)
                         yield return new UnitTestPartialResult(work.Id, cmd[0], cmd[1], cmd.Length > 2 ? ToDuration(cmd[2]) : "0", worker) { UnitTestId = _unitTestId };
 
-                    yield break;
-                }
-
-                if (cmd[0] == ">>SCREENSHOT<<")
-                {
-                    yield return new UnitTestAssetResult() { Worker = _worker, LogUrl = "screenshot", TestId = _work.Id, UnitTestId = _unitTestId };
                     yield break;
                 }
 

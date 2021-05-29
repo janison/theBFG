@@ -130,14 +130,32 @@
     </span>
     </div>
     <div></div>
-            <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
+        <span style="color:cadetblue" ng-if="currentTopic != ''" class="fa fa-search fa-2x"></span>
             <table ng-if="currentTopic != ''" ng-class="{dark: testArenaCfg.isLightsOut, light: !testArenaCfg.isLightsOut}" class="table table-hover table-striped table-condensed h6">
                 <thead>
-                <th>Outcome</th>
-                <th>Test</th>
-                <th>Duration</th>
-                <th>Log </th>
-                <th>Worker</th>                
+                <th>
+                    <span ng-click="orderByField='result'; reverseSort = !reverseSort">
+                        Outcome
+                    </span>
+                </th>
+                <th>
+                    <span ng-click="orderByField='testName'; reverseSort = !reverseSort">
+                        Test
+                    </a>
+                </th>
+                <th>
+                    <span ng-click="orderByField='duration'; reverseSort = !reverseSort">
+                        Duration
+                    </span>                        
+                </th>
+                <th>
+                    Log
+                </th>
+                <th>
+                    <span ng-click="orderByField='testName'; reverseSort = !reverseSort">
+                        Worker
+                    </span>
+                </th>          
                 <colgroup>
                     <col/>
                     <col/>
@@ -147,7 +165,7 @@
                 </colgroup>                
                 </thead>
                  <tbody><!--  ng-if="currentTopic.length != 0 -->                    
-                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false" ng-repeat="entry in currentTopic track by $index">
+                    <tr ng-class="{error: entry.result === 'Failed', infor: entry.result === 'Passed'}" ng-init="showLogs = false" ng-repeat="entry in currentTopic |orderBy:orderByField:reverseSort track by $index ">
                         <td class="freeze">{{entry.result}}<span ng-if="entry.isNew" class="fa fa-question-circle"></span></td>
                         <td class="freeze"><span class="popuptrigger" ng-click="showLogs = !showLogs">{{entry.testName}}</span>
                             <div class="popup">
@@ -160,7 +178,7 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="freeze">{{entry.duration}}</td>          
+                        <td class="freeze">{{entry.duration| number}}</td>          
                         <td style="white-space: pre;" ng-if="entry.logMessage">                            
                             <span class="cmd fa fa-ellipsis-h" style="float: right;padding-top: 5px;position: absolute;" ng-click="showLogsCol = !showLogsCol" title="Show or hide logs"></span>
                             <pre ng-style="{'display': showLogsCol ? 'revert' : 'none'}"  class="stacktrace">{{entry.logMessage}}</pre></span>

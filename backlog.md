@@ -16,8 +16,6 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
 - fix issue with compete 20 rapid 8 not working as it could be a common syntax for local dev compete:20 better, hmm, rather not
 - tech debt args parsing, centralise and use fluent config like ShouldSave() instead of always args matching
 
-- fix issue with not capturing skipped / ignored tests causing testarena to think more tests are still to be executed or the count to be off
-
 - allow current screen config to be saved and restored so if reset of browser required no effort is lost
   
 - support having a picker for the fire mode, which will swap the icon and then fire with compete/rapid or whatever the user has set/saved/startup params
@@ -35,7 +33,8 @@ I have used `Readme Driven Design` (`RDD`) to build this project.
   - or could just use a setting and a level adjuster thingy to allow easy zooming?, mouse wheel?
 
 - auto-scaling of workers on node to allow dynamic sizing based on CPU/MEM usage of test scenario
-             - indicate active work on each worker?
+
+- indicate active work on each worker? overlay on CPU graph to make trends easier to spot?
 
  - spawning test environments
    - faciliate being able to script different test environment scenarios such that you can target tests at partciular environments and allow the cluster to be configured with workers of various tag types so you can model complex integration test scenarios 
