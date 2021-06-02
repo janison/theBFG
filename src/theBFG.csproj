@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.0.7</PackageVersion>
+        <PackageVersion>1.1.0</PackageVersion>
         <Authors>CaptainJono</Authors>
         <Description>A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
 
@@ -21,10 +21,15 @@
       <PackageOutputPath>./nupkg</PackageOutputPath>
       <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-      <Version>1.0.7</Version>
+      <Version>1.1.0</Version>
 
       <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
       <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+      <PackageReleaseNotes>-Now uses SignalR to stream all messages from workers back to test arena
+-Now caches messages so you can connect to Test Arena after a test run and see a replay of the test session so far.
+-Improves UX and adds features
+
+This project is under active development. Submit feature requests, Issues and feedback @ github</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
