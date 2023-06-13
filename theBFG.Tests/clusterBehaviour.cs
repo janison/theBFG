@@ -39,7 +39,7 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_keep_updated()
         {
-            //todo:
+            //todo: this feature is implemented via rxns, havnt created unit test yet
             //theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll".Split(' ')).WaitR();
         }
 
@@ -90,7 +90,7 @@ namespace theBFG.Tests
             theBfg.ReloadAnd(args: @$"target {theGimp} and fire rapidly".Split(' ')).LastAsync().Until();
 
             "waiting for test to complete".LogDebug();
-            new Subject<int>().Wait();
+            theBfg.IsCompleted.WaitR();
         }
 
 
@@ -234,7 +234,21 @@ namespace theBFG.Tests
         {
             theBfg.ReloadAnd(args: $"target {theGimp} and fire compete 2".Split(' ')).Until();
 
-            new Subject<Unit>().WaitR();
+            theBfg.IsCompleted.WaitR();
+        }
+
+        [TestMethod]
+        public void should_support_cover()
+        {
+            //setup the coverage worker
+            theBfg.ReloadAnd(args: $"cover iis-apppool-thetestgimp #winiis".Split(' ')).Until();
+
+            //start the unit test worker
+            theBfg.ReloadAnd(args: $"target {theGimp} and fire #winiis".Split(' ')).Until();
+
+            //expect there to be a iis-coverage log as a testassetresult at some stage after finishing the test
+
+            theBfg.IsCompleted.WaitR();
         }
     }
 }
