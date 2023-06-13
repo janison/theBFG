@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
 using Rxns;
 using Rxns.DDD.Commanding;
 using Rxns.Interfaces;
@@ -19,10 +23,10 @@ namespace theBFG.TestDomainAPI
     /// </summary>
     public class UnitTestDiscovered : ITestDomainEvent
     {
-        public DateTime At { get; set;  } = DateTime.Now;
+        public DateTime At { get; set; } = DateTime.Now;
 
         public string Dll { get; set; }
-        public string[] DiscoveredTests{ get; set; }
+        public string[] DiscoveredTests { get; set; }
     }
 
     /// <summary>
@@ -93,7 +97,7 @@ namespace theBFG.TestDomainAPI
 
         public override string ToString()
         {
-            if(!Dll.IsNullOrWhitespace() && UseAppVersion.IsNullOrWhitespace())
+            if (!Dll.IsNullOrWhitespace() && UseAppVersion.IsNullOrWhitespace())
                 return $"{GetType().Name} {Dll}{(RunThisTest.IsNullOrWhitespace() ? "" : $"${RunThisTest}")}";
             else
             {
@@ -111,7 +115,7 @@ namespace theBFG.TestDomainAPI
         public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate, string UseAppVersion)
         {
             this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
-            
+
             this.RepeatTests = int.Parse(RepeatTests.IsNullOrWhiteSpace("0"));
             this.InParallel = bool.Parse(InParallel.IsNullOrWhiteSpace("false"));
             this.Dll = Dll;
@@ -205,5 +209,75 @@ namespace theBFG.TestDomainAPI
 
         public string InResponseTo { get; set; }
         public string Dll { get; set; }
+    }
+
+    public class UnitTestEventWorkflow
+    {
+        public static IObservable<IRxn> Run(string Name, Run command)
+        {
+            return Rxn.DfrCreate<IRxn>(o =>
+            {
+                var tokens = command.Cmd.Split(' ');
+                var cmd = tokens[0];
+                var worker = Name;
+
+                o.OnNext(new UnitTestsStarted() {
+                    TestId = command.Id,
+                    At = DateTime.Now,
+                    Tests = new[] { cmd },
+                    Worker = "", //_appInfo.Name,
+                    WorkerId = worker
+                });
+
+                var unitTestId = Guid.NewGuid().ToString();
+
+                o.OnNext(new UnitTestPartialResult(command.Id, "passed", cmd, "0", worker) {
+                    UnitTestId = unitTestId
+                });
+
+                return Rxn.Create
+                    (
+                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd" : "/bin/bash",
+                        $"{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/c" : "-c")} {command.Cmd}",
+                        i =>
+                        {
+                            if (i == null) return;
+
+
+                            o.OnNext(new UnitTestPartialLogResult
+                            {
+                                LogMessage = i.ToString(),
+                                TestId = command.Id,
+                                UnitTestId = unitTestId,
+                                Worker = worker
+                            });
+
+                        },
+                        e =>
+                        {
+                            o.OnNext(new UnitTestPartialLogResult
+                            {
+                                LogMessage = e.ToString(),
+                                TestId = command.Id,
+                                UnitTestId = unitTestId,
+                                Worker = worker
+                            });
+                        }
+                    )
+                    .FinallyR(() =>
+                    {
+                        o.OnNext(new UnitTestOutcome()
+                        {
+                            Passed = 1,
+                            Failed = 0,
+                            InResponseTo = command.Id,
+                            UnitTestId = unitTestId,
+                            Dll = cmd
+                        });
+                        o.OnCompleted();
+                    }).Until();
+            });
+            
+        }
     }
 }

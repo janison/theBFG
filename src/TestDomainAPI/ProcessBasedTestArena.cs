@@ -17,11 +17,11 @@ namespace theBFG.TestDomainAPI
         protected abstract void OnStart(StartUnitTest work);
 
 
-        public abstract IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg);
+        public abstract IEnumerable<ITestDomainEvent> OnLog(string worker, StartUnitTest work, string msg);
 
-        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir)
+        public IObservable<ITestDomainEvent> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir)
         {
-            var testEventStream = new Subject<IRxn>();
+            var testEventStream = new Subject<ITestDomainEvent>();
             //https://github.com/dotnet/sdk/issues/5514
             var dotnetHack = PathToTestArenaProcess();
 
