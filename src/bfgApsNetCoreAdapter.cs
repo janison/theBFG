@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.FileProviders;
 using Rxns;
@@ -21,7 +22,7 @@ namespace theBFG
         {
             BindingUrl = "http://*:888",
             Html5IndexHtml = "index.html",
-            Html5Root = @"C:\svn\bfg\theBfg.TestArena\Web\dist"// @$"{ new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena" //@"C:\svn\bfg\theBfg.TestArena\Web\dist"//
+            Html5Root = @$"{new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName}/TestArena"
         };
 
         public static IAspnetCoreCfg AspnetCfg = new AspnetCoreCfg()
