@@ -24,9 +24,9 @@ namespace theBFG
     /// <summary>
     /// 
     /// </summary>
-    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>, 
-        IServiceCommandHandler<TagWorker>, 
-        IServiceCommandHandler<UntagWorker>, 
+    public class bfgWorker : IClusterWorker<StartUnitTest, UnitTestResult>,
+        IServiceCommandHandler<TagWorker>,
+        IServiceCommandHandler<UntagWorker>,
         IServiceCommandHandler<Run>,
         IServiceCommandHandler<Cover>
     {
@@ -92,11 +92,13 @@ namespace theBFG
         {
             $"Attempting to discover work {apiName ?? "any"}@{testHostUrl ?? "any"}".LogDebug();
 
-            var allDiscoveredApiRequests = bfgTestArenaApi.DiscoverWork(_services).Do(apiFound => {
+            var allDiscoveredApiRequests = bfgTestArenaApi.DiscoverWork(_services).Do(apiFound =>
+            {
                 $"Discovered Api Hosting: {apiFound.Name}@{apiFound.Url}".LogDebug();
                 _registry.AppStatusUrl = apiFound.Url;
 
-                TimeSpan.FromSeconds(1).Then().Do(_ => {
+                TimeSpan.FromSeconds(1).Then().Do(_ =>
+                {
                     _rxnManager.Publish(new PerformAPing()).Until();
 
                 });
@@ -114,7 +116,7 @@ namespace theBFG
             //right now we may need to hack fanout stratergies to discount duplicate and stream unit test events across workers so 
             //the cover flow works out correctly otherwise there may not be a worker actually running the unit test.
             //we want the worker to either be a coverage worker, or a unit test worker. not exactly sure how to transfer this info, maybe i just use Info?
-            return !_cover.IsActive ? 
+            return !_cover.IsActive ?
                     UnitTestWorkflow.Run(Name, work, isBusy => _isBusy.OnNext(isBusy), _updateService, _cfg, _appStatus, _arena, _zipService)
                                     .Do(msg => _rxnManager.Publish(msg))
                                     .LastOrDefaultAsync()

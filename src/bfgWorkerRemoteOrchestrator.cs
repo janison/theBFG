@@ -117,12 +117,12 @@ namespace theBFG
             if (app.SystemName.BasicallyContains("TestArena"))
                 return; //dont track our node or bad things will happen!
 
-            var theWorkersWeThinkTheNoteHas = _cluster.Workers.Where(c => c.Value.Worker.Route.Equals(Rxns.RouteExtensions.GetRoute(app)))
+            var theWorkersWeThinkTheNodeHas = _cluster.Workers.Where(c => c.Value.Worker.Route.Equals(Rxns.RouteExtensions.GetRoute(app)))
                 .Select(r => r.Key)//this could potentially cause GC issues with large worker counts
                 .ToArray();
 
             var theCurrentWorkersOnNode = next.Workers.Split("/").Last().AsInt();
-            var workerExpectedVsCurrentDiff = theCurrentWorkersOnNode - theWorkersWeThinkTheNoteHas.Length;
+            var workerExpectedVsCurrentDiff = theCurrentWorkersOnNode - theWorkersWeThinkTheNodeHas.Length;
 
             if (workerExpectedVsCurrentDiff > 0)
             {
@@ -135,7 +135,7 @@ namespace theBFG
             else if (workerExpectedVsCurrentDiff < 0)
             {
 
-                foreach (var worker in theWorkersWeThinkTheNoteHas)
+                foreach (var worker in theWorkersWeThinkTheNodeHas)
                 {
                     _workerPoolD.Process(new WorkerDisconnected() { Name = worker }).WaitR();
 
