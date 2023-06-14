@@ -24,8 +24,8 @@ namespace theBFG.TestDomainAPI
             var testEventStream = new Subject<ITestDomainEvent>();
             //https://github.com/dotnet/sdk/issues/5514
             var dotnetHack = PathToTestArenaProcess();
-
-            var logName = $"{name}{work.RunThisTest.Substring(0, work.RunThisTest.Length > 25 ? 25 : work.RunThisTest.Length).IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}".LogDebug("Targeting");
+            
+            var logName = $"{name}{(work.RunThisTest.IsNullOrWhitespace() ? "" : work.RunThisTest.IsNullOrWhiteSpace("").Substring(0, work.RunThisTest.Length > 25 ? 25 : work.RunThisTest.Length).IsNullOrWhiteSpace(new FileInfo(work.Dll).Name))}".LogDebug("Targeting");
 
             bool isreadingOutputMessage = false;
             var lastLine = false;

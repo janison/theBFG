@@ -82,7 +82,7 @@ namespace theBFG.TestDomainAPI
 
         public StartUnitTest()
         {
-
+            RunAllTest = true;
         }
 
         public StartUnitTest(string dll)
@@ -90,6 +90,7 @@ namespace theBFG.TestDomainAPI
             var tokens = dll.Split('$');
             Dll = tokens.FirstOrDefault();
             RunThisTest = tokens.Skip(1).FirstOrDefault();
+            RunAllTest = RunThisTest.IsNullOrWhitespace();
 
             var fn = new FileInfo(dll);
             UseAppUpdate = $"{fn.Name}".Replace(fn.Extension, "");
@@ -114,7 +115,7 @@ namespace theBFG.TestDomainAPI
         /// </summary>
         public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate, string UseAppVersion)
         {
-            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
+            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("true"));
 
             this.RepeatTests = int.Parse(RepeatTests.IsNullOrWhiteSpace("0"));
             this.InParallel = bool.Parse(InParallel.IsNullOrWhiteSpace("false"));
@@ -131,7 +132,7 @@ namespace theBFG.TestDomainAPI
         /// </summary>
         public StartUnitTest(string RunAllTest, string RepeatTests, string InParallel, string Dll, string UseAppUpdate)
         {
-            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("false"));
+            this.RunAllTest = bool.Parse(RunAllTest.IsNullOrWhiteSpace("true"));
             this.RepeatTests = int.Parse(RepeatTests.IsNullOrWhiteSpace("0"));
             this.InParallel = bool.Parse(InParallel.IsNullOrWhiteSpace("false"));
             this.Dll = Dll;

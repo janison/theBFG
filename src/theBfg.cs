@@ -24,6 +24,7 @@ using Rxns.NewtonsoftJson;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
 using Rxns.Windows;
 using theBFG.TestDomainAPI;
+using Files = Rxns.Hosting.Files;
 
 namespace theBFG
 {
@@ -260,6 +261,11 @@ namespace theBFG
             var testCfg = bfgCfg.Detect();
 
             var appUpdateDllSource = args.Skip(4).FirstOrDefault().IsNullOrWhiteSpace(testCfg.UseAppVersion);
+
+            if (appUpdateDllSource.IsNullOrWhiteSpace("").StartsWith("#")) //dont match on tags (or allow) other bad chars
+            {
+                appUpdateDllSource = null;
+            }
             
             return appUpdateDllSource.IsNullOrWhiteSpace(DateTime.Now.ToString("s").Replace(":", ""));
         }
@@ -447,6 +453,7 @@ namespace theBFG
         {
             return Rxn.Create<Unit>(o =>
             {
+                Logger.OnDebug.Do(msg => Debug.WriteLine(msg)).Until();
                 ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
                 theBfg.Args = args;
 
@@ -711,20 +718,22 @@ namespace theBFG
         {
             if (HasNotChangedSinceLastUpload(appName, appVersion)) return appVersion.ToObservable();
 
-            return RxnApps.CreateAppUpdate(
-                    appName,
-                    Scrub(appVersion),
-                    new FileInfo(appDll).DirectoryName,
-                    false,
-                    cfg,
-                    testArenaAddress,
-                    new string[] {DataDir}
-                )
+            var doUpload = RxnApps.CreateAppUpdate(
+                appName,
+                Scrub(appVersion),
+                new FileInfo(appDll).DirectoryName,
+                false,
+                cfg,
+                testArenaAddress,
+                new string[] { DataDir }
+            );
+
+            return doUpload
                 .Catch<Unit, Exception>(
                     e =>
                     {
-                        ReportStatus.Log.OnError("Could not upload test. Cant join cluster :(", e);
-                        throw e;
+                        ReportStatus.Log.OnWarning("Could not upload test. Cant join cluster yet. Retrying :(", e);
+                        return doUpload;
                 })
                 .Select(_ => appVersion);
         }

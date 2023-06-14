@@ -90,9 +90,11 @@ namespace theBFG.TestDomainAPI
                         WasSuccessful = false
                     }.AsResultOf(work)).ToObservable();
                 })
+                .Do(o.OnNext)
                 .FinallyR(() =>
                 {
                     isBusy(false);
+                    o.OnCompleted();
                 })
                 .Until();
             });
@@ -146,7 +148,7 @@ namespace theBFG.TestDomainAPI
                             {
                                 var tests = arena.ListTests(work.Dll).WaitR();
                                 if (tests.AnyItems())
-                                    return arena.Start(Name, work, testLog, logDir).Do(_ => o.OnNext(_));
+                                    return arena.Start(Name, work, testLog, logDir).Do(msg => o.OnNext(msg));
                             }
                             catch (Exception)
                             {
@@ -199,6 +201,10 @@ namespace theBFG.TestDomainAPI
 
                     sendingLogs.Dispose();
                     File.Delete(logsZip);
+                })
+                .FinallyR(() =>
+                {
+                    o.OnCompleted();
                 }).Until();
             });
         }

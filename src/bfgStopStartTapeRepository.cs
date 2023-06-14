@@ -35,7 +35,7 @@ namespace theBFG
             _fileSystem.DeleteFile(name);
         }
 
-        public ITapeStuff GetOrCreate(string fulleName, IStringCodec codec = null)
+        public ITapeStuff GetOrCreate(string fulleName, IStringCodec codec = null, IObservable<bool> shouldRecord = null)
         {
             var fileToGet = Path.Combine(_cfg.AppRoot, fulleName);
             var directory = _fileSystem.GetDirectoryPart(fileToGet);
