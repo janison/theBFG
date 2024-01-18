@@ -136,6 +136,9 @@ This project is under active development. Submit feature requests, Issues and fe
       <Reference Include="Rxns.WebApiNET5">
         <HintPath>..\rxns\Rxns.WebApiNET5.dll</HintPath>
       </Reference>
+      <Reference Include="Rxns.Windows">
+        <HintPath>..\rxns\Rxns.Windows.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <ItemGroup>

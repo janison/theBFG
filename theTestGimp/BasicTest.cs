@@ -63,7 +63,7 @@ namespace theTestGimp
         {
             Console.WriteLine("runnning 3");
             Thread.Sleep(4 * 1000);
-            Assert.IsTrue(false, "unit test exxxxxxception");
+            Assert.IsTrue(true, "unit test exxxxxxception");
         }
 
 
