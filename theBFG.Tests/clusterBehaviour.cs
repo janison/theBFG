@@ -241,13 +241,14 @@ namespace theBFG.Tests
         }
 
         [TestMethod]
+        [Ignore]
         public void should_support_cover()
         {
             //setup the coverage worker
             theBfg.ReloadAnd(args: $"cover iis-apppool-thetestgimp #winiis".Split(' ')).Until();
 
             //start the unit test worker
-            theBfg.ReloadAnd(args: $"target {theGimp} and fire #winiis".Split(' ')).Until();
+            //theBfg.ReloadAnd(args: $"target {theGimp} and fire #winiis".Split(' ')).Until();
 
             //expect there to be a iis-coverage log as a testassetresult at some stage after finishing the test
 

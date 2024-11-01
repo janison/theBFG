@@ -9,7 +9,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.InteropServices;
 using Autofac;
 using Rxns;
 using Rxns.Cloud;
@@ -22,7 +21,6 @@ using Rxns.Interfaces;
 using Rxns.Logging;
 using Rxns.NewtonsoftJson;
 using Rxns.WebApiNET5.NET5WebApiAdapters;
-using Rxns.Windows;
 using theBFG.TestDomainAPI;
 using Files = Rxns.Hosting.Files;
 
@@ -376,6 +374,7 @@ namespace theBFG
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
+                
 
                 switch (args.FirstOrDefault()?.ToLower())
                 {
@@ -391,7 +390,7 @@ namespace theBFG
                     case "self":
                         return SelfDestructIf(args).Subscribe(o);
 
-                    case null:
+                    default:
 
 
                         "theBFG instructions:".LogDebug();
