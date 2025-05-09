@@ -42,7 +42,7 @@ namespace theBFG.TestDomainAPI
             _appInfo = appInfo;
         }
 
-        public override IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg)
+        public override IEnumerable<ITestDomainEvent> OnLog(string worker, StartUnitTest work, string msg)
         {
             var cmd = msg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             _worker = worker;

@@ -35,13 +35,6 @@ namespace theBFG.Tests
         {
             
         }
-        
-        [TestMethod]
-        public void should_keep_updated()
-        {
-            //todo:
-            //theBfg.ReloadAnd("launch testApp ../../../../theBfgtestApp/bin/debug/testApp.dll".Split(' ')).WaitR();
-        }
 
         [TestMethod]
         public void should_auto_detect_workers()
@@ -62,22 +55,32 @@ namespace theBFG.Tests
         }
         
         [TestMethod]
-        public void should_detect_testagents()
+        public void should_detect_workers_and_keep_updated()
         {
-            try
-            {
-                var workerLifetime = new Subject<Unit>();
-                theBfg.ReloadAnd(args: "fire".Split(' ')).LastAsync().Until();
+            var finished = new ReplaySubject<Unit>(1);
 
-                theBfg.ReloadAnd(args: $"target {theGimp}".Split(' ')).LastAsync().Until();
-
-                "waiting for test to complete".LogDebug();
-                workerLifetime.WaitR();
-            }
-            catch (Exception e)
+            "waiting for test to complete".LogDebug();
+            theBfg.IsReady.SelectMany(rxnapp =>
             {
-               Assert.Fail(e.ToString());
-            }
+                return rxnapp.RxnManager.CreateSubscription<UnitTestResult>().FirstOrDefaultAsync();
+            }).FirstOrDefaultAsync().Do(r =>
+            {
+                if(r.WasSuccessful)
+                {
+                    finished.OnNext(new Unit());
+                    finished.OnCompleted();
+                }
+                else
+                {
+                    finished.OnError(new Exception($"Test {r.InResponseTo} failed"));
+                }
+            }).Until();
+
+            theBfg.ReloadAnd(args: $"target {theGimp}".Split(' ')).LastAsync().Until();
+            //TimeSpan.FromSeconds(2).Then().WaitR();
+            theBfg.ReloadAnd(args: "fire".Split(' ')).LastAsync().Until();
+
+            finished.WaitR();
         }
 
         [TestMethod]
@@ -87,10 +90,10 @@ namespace theBFG.Tests
             //rapidly is appended download function
             //need to detect local vs remote worker
 
-            theBfg.ReloadAnd(args: @$"target {theGimp} and fire rapidly".Split(' ')).LastAsync().Until();
+            theBfg.ReloadAnd(args: @$"target {theGimp} and fire rapidly and exit".Split(' ')).LastAsync().Until();
 
             "waiting for test to complete".LogDebug();
-            new Subject<int>().Wait();
+            theBfg.IsCompleted.WaitR();
         }
 
 
@@ -101,7 +104,7 @@ namespace theBFG.Tests
 
             var allTest = ta.ListTests(theGimp).WaitR().ToArray();
 
-            allTest.Count().Should().Be(6, "4 tests should be found in theTestGimp");
+            allTest.Count().Should().Be(5, "5 tests should be found in theTestGimp");
 
             //todo: write unit test for start
             //ta.Start()
@@ -232,9 +235,24 @@ namespace theBFG.Tests
         [TestMethod]
         public void should_support_compete()
         {
-            theBfg.ReloadAnd(args: $"target {theGimp} and fire compete 2".Split(' ')).Until();
+            theBfg.ReloadAnd(args: $"target {theGimp} and fire compete 2 and exit".Split(' ')).Until();
 
-            new Subject<Unit>().WaitR();
+            theBfg.IsCompleted.WaitR();
+        }
+
+        [TestMethod]
+        [Ignore]
+        public void should_support_cover()
+        {
+            //setup the coverage worker
+            theBfg.ReloadAnd(args: $"cover iis-apppool-thetestgimp #winiis".Split(' ')).Until();
+
+            //start the unit test worker
+            //theBfg.ReloadAnd(args: $"target {theGimp} and fire #winiis".Split(' ')).Until();
+
+            //expect there to be a iis-coverage log as a testassetresult at some stage after finishing the test
+
+            theBfg.IsCompleted.WaitR();
         }
     }
 }

@@ -17,15 +17,15 @@ namespace theBFG.TestDomainAPI
         protected abstract void OnStart(StartUnitTest work);
 
 
-        public abstract IEnumerable<IRxn> OnLog(string worker, StartUnitTest work, string msg);
+        public abstract IEnumerable<ITestDomainEvent> OnLog(string worker, StartUnitTest work, string msg);
 
-        public IObservable<IRxn> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir)
+        public IObservable<ITestDomainEvent> Start(string name, StartUnitTest work, StreamWriter testLog, string logDir)
         {
-            var testEventStream = new Subject<IRxn>();
+            var testEventStream = new Subject<ITestDomainEvent>();
             //https://github.com/dotnet/sdk/issues/5514
             var dotnetHack = PathToTestArenaProcess();
-
-            var logName = $"{name}{work.RunThisTest.Substring(0, work.RunThisTest.Length > 25 ? 25 : work.RunThisTest.Length).IsNullOrWhiteSpace(new FileInfo(work.Dll).Name)}".LogDebug("Targeting");
+            
+            var logName = $"{name}{(work.RunThisTest.IsNullOrWhitespace() ? "" : work.RunThisTest.IsNullOrWhiteSpace("").Substring(0, work.RunThisTest.Length > 25 ? 25 : work.RunThisTest.Length).IsNullOrWhiteSpace(new FileInfo(work.Dll).Name))}".LogDebug("Targeting");
 
             bool isreadingOutputMessage = false;
             var lastLine = false;
