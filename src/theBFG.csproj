@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <OutputType>Exe</OutputType>
-        <PackageVersion>1.1.0</PackageVersion>
+        <PackageVersion>1.2.0</PackageVersion>
         <Authors>CaptainJono</Authors>
         <Description>A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
 
@@ -117,28 +117,15 @@ This project is under active development. Submit feature requests, Issues and fe
         <PackageReference Include="DotNetZip" Version="1.15.0" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.6" />
         <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="5.0.5" />
-        <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="System.Diagnostics.Tracing" Version="4.1.0" />
-        <PackageReference Include="System.Net.Http" Version="4.1.0" />
-        <PackageReference Include="System.Reactive" Version="4.0.0" />
+        <PackageReference Include="System.Reactive" Version="6.0.0" />
         <PackageReference Include="Autofac" Version="3.5.0" />
         <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />
-        <PackageReference Include="System.Management" Version="5.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="Rxns">
-        <HintPath>..\rxns\Rxns.dll</HintPath>
-      </Reference>
-      <Reference Include="Rxns.Autofac">
-        <HintPath>..\rxns\Rxns.Autofac.dll</HintPath>
-      </Reference>
-      <Reference Include="Rxns.WebApiNET5">
-        <HintPath>..\rxns\Rxns.WebApiNET5.dll</HintPath>
-      </Reference>
-      <Reference Include="Rxns.Windows">
-        <HintPath>..\rxns\Rxns.Windows.dll</HintPath>
-      </Reference>
+      <PackageReference Include="Rxns" Version="3.0.0" />
+      <PackageReference Include="Rxns.Autofac" Version="3.0.0" />
+      <PackageReference Include="Rxns.WebApiNET5" Version="3.0.0" />
+      <PackageReference Include="Rxns.Windows" Version="3.0.0" />
     </ItemGroup>
 
     <ItemGroup>
