@@ -1,152 +1,156 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <OutputType>Exe</OutputType>
-        <PackageVersion>1.2.0</PackageVersion>
-        <Authors>CaptainJono</Authors>
-        <Description>A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <PackageVersion>1.2.0</PackageVersion>
+    <Authors>CaptainJono</Authors>
+    <Description>
+      A Cloud-Native .NET Unit / Integration / Load / Hyper-CD testing tool that clusters automatically. Harness the power of your existing test suite to optimise the quality of your App. Install this as a tool or reference it to integrate closely with thebfg
 
-&gt; dotnet tool install thebfg -g</Description>
-        <Copyright>MIT</Copyright>
-        <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
-      <RepositoryUrl>https://github.com/captainjono/theBFG/</RepositoryUrl>
-      <PackageIcon>thebfg.png</PackageIcon>
-      <PackageLicense>http://www.opensource.org/licenses/mit-license.php</PackageLicense>
+      &gt; dotnet tool install thebfg -g
+    </Description>
+    <Copyright>MIT</Copyright>
+    <PackageProjectUrl>http://github.com/captainjono/theBFG/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/captainjono/theBFG/</RepositoryUrl>
+    <PackageIcon>thebfg.png</PackageIcon>
+    <PackageLicense>http://www.opensource.org/licenses/mit-license.php</PackageLicense>
 
-      <PackageTags>unit testing vstest tdd bdd xunit mstest nunit dotnet test cluster load performance scale integration TDD CI CI/CD</PackageTags>
-      <IsPackable>true</IsPackable>
-      <PackAsTool>true</PackAsTool>
-      <ToolCommandName>thebfg</ToolCommandName>
-      <PackageOutputPath>./nupkg</PackageOutputPath>
-      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-      <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-      <Version>1.1.0</Version>
+    <PackageTags>unit testing vstest tdd bdd xunit mstest nunit dotnet test cluster load performance scale integration TDD CI CI/CD</PackageTags>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>thebfg</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+    <Version>1.1.0</Version>
 
-      <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-      <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-      <PackageReleaseNotes>-Now uses SignalR to stream all messages from workers back to test arena
--Now caches messages so you can connect to Test Arena after a test run and see a replay of the test session so far.
--Improves UX and adds features
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <PackageReleaseNotes>
+      -Now uses SignalR to stream all messages from workers back to test arena
+      -Now caches messages so you can connect to Test Arena after a test run and see a replay of the test session so far.
+      -Improves UX and adds features
 
-This project is under active development. Submit feature requests, Issues and feedback @ github</PackageReleaseNotes>
-    </PropertyGroup>
+      This project is under active development. Submit feature requests, Issues and feedback @ github
+    </PackageReleaseNotes>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <Compile Remove="logs\**" />
-      <Compile Remove="reports\**" />
-      <Compile Remove="repos\**" />
-      <Compile Remove="temp\**" />
-      <Compile Remove="TenantLogs\**" />
-      <Content Remove="logs\**" />
-      <Content Remove="reports\**" />
-      <Content Remove="repos\**" />
-      <Content Remove="temp\**" />
-      <Content Remove="TenantLogs\**" />
-      <EmbeddedResource Remove="logs\**" />
-      <EmbeddedResource Remove="reports\**" />
-      <EmbeddedResource Remove="repos\**" />
-      <EmbeddedResource Remove="temp\**" />
-      <EmbeddedResource Remove="TenantLogs\**" />
-      <None Remove="logs\**" />
-      <None Remove="reports\**" />
-      <None Remove="repos\**" />
-      <None Remove="temp\**" />
-      <None Remove="TenantLogs\**" />
-    </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="logs\**" />
+    <Compile Remove="reports\**" />
+    <Compile Remove="repos\**" />
+    <Compile Remove="temp\**" />
+    <Compile Remove="TenantLogs\**" />
+    <Content Remove="logs\**" />
+    <Content Remove="reports\**" />
+    <Content Remove="repos\**" />
+    <Content Remove="temp\**" />
+    <Content Remove="TenantLogs\**" />
+    <EmbeddedResource Remove="logs\**" />
+    <EmbeddedResource Remove="reports\**" />
+    <EmbeddedResource Remove="repos\**" />
+    <EmbeddedResource Remove="temp\**" />
+    <EmbeddedResource Remove="TenantLogs\**" />
+    <None Remove="logs\**" />
+    <None Remove="reports\**" />
+    <None Remove="repos\**" />
+    <None Remove="temp\**" />
+    <None Remove="TenantLogs\**" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <None Remove="TestArena\img\thebfg.png" />
-      <None Remove="TestArena\sfx\fail.ogg" />
-      <None Remove="TestArena\sfx\pass.ogg" />
-    </ItemGroup>
+  <ItemGroup>
+    <None Remove="TestArena\img\thebfg.png" />
+    <None Remove="TestArena\sfx\fail.ogg" />
+    <None Remove="TestArena\sfx\pass.ogg" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="..\thebfg.png" Pack="true" PackagePath="" Link="thebfg.png" />
-    </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\thebfg.png" Pack="true" PackagePath="" Link="thebfg.png" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <EmbeddedResource Include="TestArena\app.full.min.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\app.full.min.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\img\thebfg.png">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\index.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\sfx\fail.ogg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\sfx\pass.ogg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\shared_components\signalr.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="TestArena\app.full.min.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\app.full.min.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\img\thebfg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\index.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\sfx\fail.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\sfx\pass.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\shared_components\signalr.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
 
-    <ItemGroup>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\FontAwesome.otf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.eot">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\FontAwesome.otf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
 
-    <ItemGroup>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.svg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff2">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestArena\bower_components\font-awesome\fonts\fontawesome-webfont.woff2">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="DotNetZip" Version="1.15.0" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.6" />
-        <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="5.0.5" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="System.Diagnostics.Tracing" Version="4.1.0" />
-        <PackageReference Include="System.Reactive" Version="6.0.0" />
-        <PackageReference Include="Autofac" Version="3.5.0" />
-        <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />
-      <PackageReference Include="Rxns" Version="3.0.0" />
-      <PackageReference Include="Rxns.Autofac" Version="3.0.0" />
-      <PackageReference Include="Rxns.WebApiNET5" Version="3.0.0" />
-      <PackageReference Include="Rxns.Windows" Version="3.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DotNetZip" Version="1.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.6" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="5.0.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Diagnostics.Tracing" Version="4.1.0" />
+    <PackageReference Include="System.Reactive" Version="6.0.0" />
+    <PackageReference Include="Autofac" Version="3.5.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />
+    <PackageReference Include="Rxns" Version="3.0.0" />
+    <PackageReference Include="Rxns.Autofac" Version="3.0.0" />
+    <PackageReference Include="Rxns.WebApiNET5" Version="3.0.0" />
+    <PackageReference Include="Rxns.Windows" Version="3.0.0" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <Resource Include="TestArena\app.full.min.css">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Resource>
-      <Resource Include="TestArena\app.full.min.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Resource>
-      <Resource Include="TestArena\index.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Resource>
-      <Resource Include="TestArena\shared_components\signalr.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Resource>
-    </ItemGroup>
+  <ItemGroup>
+    <Resource Include="TestArena\app.full.min.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="TestArena\app.full.min.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="TestArena\index.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="TestArena\shared_components\signalr.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
 
-    <ItemGroup>
-      <None Update="TestArena\thebfg.png">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+  <ItemGroup>
+    <None Update="TestArena\thebfg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
