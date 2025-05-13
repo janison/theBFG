@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30804.86
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35417.141 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "theBFG", "src\theBFG.csproj", "{0C322427-2014-496C-82D6-DF726BA50DF5}"
 EndProject
@@ -12,6 +12,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12F4162D-51E2-454A-AC4B-20CD009B6331}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		backlog.md = backlog.md
+		devguide.md = devguide.md
+		PublishToNuget.ps1 = PublishToNuget.ps1
+		README.md = README.md
+		thebfg-example-basic.PNG = thebfg-example-basic.PNG
+		thebfg.png = thebfg.png
 	EndProjectSection
 EndProject
 Global
