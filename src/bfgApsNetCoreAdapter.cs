@@ -44,6 +44,22 @@ namespace theBFG
                         FileProvider = logFileShareLocation,
                         StaticFileOptions = { FileProvider = logFileShareLocation, ServeUnknownFileTypes = true }
                     });
+
+                server.UseCors(policy => policy
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+
+                // Enable CSP
+                server.Use(async (context, next) => {
+                    context.Response.Headers.Add("Content-Security-Policy",
+                        "default-src 'self' http://localhost:888; " +
+                        "script-src 'self' http://localhost:888; " +
+                        "style-src 'self' http://localhost:888; " +
+                        "frame-src 'self' http://localhost:888");
+                    await next();
+                });
+                
             }
         };
 

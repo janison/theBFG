@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35417.141 d17.12
+VisualStudioVersion = 17.12.35417.141
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "theBFG", "src\theBFG.csproj", "{0C322427-2014-496C-82D6-DF726BA50DF5}"
 EndProject
@@ -19,6 +19,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		thebfg-example-basic.PNG = thebfg-example-basic.PNG
 		thebfg.png = thebfg.png
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG.VSCodeExt", "theBFG.VSCodeExt\theBFG.VSCodeExt.csproj", "{5E94BD9C-0502-48CC-A04E-5A55C0E490F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "theBFG.VSExtension", "theBFG.VSExtension\theBFG.VSExtension.csproj", "{086E9236-A5CF-4003-8644-8DE9A6CB8FE0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +42,14 @@ Global
 		{8F0C91F2-9C82-4878-8FD4-F7406FB5E56A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F0C91F2-9C82-4878-8FD4-F7406FB5E56A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F0C91F2-9C82-4878-8FD4-F7406FB5E56A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E94BD9C-0502-48CC-A04E-5A55C0E490F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E94BD9C-0502-48CC-A04E-5A55C0E490F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E94BD9C-0502-48CC-A04E-5A55C0E490F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E94BD9C-0502-48CC-A04E-5A55C0E490F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{086E9236-A5CF-4003-8644-8DE9A6CB8FE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{086E9236-A5CF-4003-8644-8DE9A6CB8FE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{086E9236-A5CF-4003-8644-8DE9A6CB8FE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{086E9236-A5CF-4003-8644-8DE9A6CB8FE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

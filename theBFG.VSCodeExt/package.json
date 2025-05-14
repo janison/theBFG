@@ -1,0 +1,38 @@
+{
+  "name": "bfg-portal",
+  "displayName": "BFG Test Arena",
+  "description": "Supercharge your dev-test flow with the BFG Portal",
+  "publisher": "janison",
+  "version": "1.0.0",
+  "extextensionKind": "ui",  
+  "categories": [
+    "Development"
+  ],
+  "repository": "https://github.com/janison/thebfg",
+  "activationEvents": [
+    "onCommand:bfg.start"
+  ],
+  "main": "extension/src/bfgTestArenaExt.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bfg.start",
+        "title": "Start BFG Portal"
+      }
+    ]
+  },
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -p ./ -w",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "@types/vscode": "1.50.0",
+    "@vscode/vsce": "^3.3.2",
+    "typescript": "^4.9.5"
+  }
+}

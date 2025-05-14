@@ -426,3 +426,4 @@ DerivedData/
 /src/.bfg
 /theTestGimp/.bfg
 /src/Properties/launchSettings.json
+*.vsix
