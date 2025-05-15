@@ -10,14 +10,14 @@
   ],
   "repository": "https://github.com/janison/thebfg",
   "activationEvents": [
-    "onCommand:bfg.start"
+    "onCommand:bfg.connect"
   ],
   "main": "extension/src/bfgTestArenaExt.js",
   "contributes": {
     "commands": [
       {
-        "command": "bfg.start",
-        "title": "Start BFG Portal"
+        "command": "bfg.connect",
+        "title": "Connect to theBFG Test Arena"
       }
     ]
   },

@@ -1,45 +1,20 @@
-// src/extension.ts
+﻿// src/extension.ts
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import * as net from 'net';
 
 let bfgProcess: childProcess.ChildProcess | null = null;
 let webviewPanel: vscode.WebviewPanel | null = null;
+let currentUrl: string = 'http://localhost:888';
 
 export function activate(context: vscode.ExtensionContext) {
-    // Register command to start BFG
     context.subscriptions.push(
-        vscode.commands.registerCommand('bfg.start', async () => {
-            // Check if BFG is already running
-            if (bfgProcess) {
-                vscode.window.showWarningMessage('BFG is already running!');
-                return;
+        vscode.commands.registerCommand('bfg.connect', async () => {
+            
+            if (webviewPanel) {
+                webviewPanel.dispose();
             }
 
-            // Start BFG process
-            //bfgProcess = childProcess.spawn('thebfg');
-            
-            //// Handle process output
-            //bfgProcess.stdout?.on('data', (data) => {
-            //    console.log(`BFG stdout: ${data}`);
-            //});
-            
-            //bfgProcess.stderr?.on('data', (data) => {
-            //    console.error(`BFG stderr: ${data}`);
-            //});
-            
-            //bfgProcess.on('close', (code) => {
-            //    console.log(`BFG process exited with code ${code}`);
-            //    bfgProcess = null;
-            //    if (webviewPanel) {
-            //        webviewPanel.webview.postMessage({ command: 'bfgClosed' });
-            //        webviewPanel.dispose();
-            //    }
-            //});
-
-            vscode.window.showInformationMessage('BFG Test Arena launhing!');
-
-                        
             // Create webview panel
             webviewPanel = vscode.window.createWebviewPanel(
                 'theBFGTestArena',
@@ -49,126 +24,13 @@ export function activate(context: vscode.ExtensionContext) {
                     enableScripts: true,
                     retainContextWhenHidden: true,
                     enableCommandUris: true,
-                    
+
                 }
             );
-            // need to wait for the server to start up after running theBFG which createsit
-            // Wait for the server to start
-
 
             // Set up webview content
-            webviewPanel.webview.html = `
-<!DOCTYPE html>
-<html id="vscode-bfg-root">
-<head>
-    <meta charset="UTF-8">
-    <title>BFG Portal</title>
-    <style>
-        /* Reset all existing styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: inherit;
-            line-height: normal;
-        }
+            webviewPanel.webview.html = getWebviewContent();
 
-        /* Unique root selector */
-        #vscode-bfg-root {
-            width: 100%;
-            height: 100vh !important;
-            overflow: hidden !important;
-        }
-
-        /* Body with unique ID */
-        #vscode-bfg-body {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Controls panel with unique ID */
-        #vscode-bfg-controls {
-            background: #1e1e1e;
-            border-bottom: 1px solid #333;
-            padding: 10px;
-            min-height: auto !important;
-            max-height: none !important;
-        }
-
-        /* Button with unique ID */
-        #vscode-bfg-button {
-            padding: 5px 10px;
-            background: #00ff00;
-            color: #000;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        #vscode-bfg-button:hover {
-            background: #00cc00;
-        }
-
-        /* Frame container with unique ID */
-        #vscode-bfg-frame {
-            flex: 1 1 auto !important;
-            overflow: hidden !important;
-            position: relative;
-            min-height: 0 !important;
-        }
-
-        /* Iframe with unique ID */
-        #vscode-bfg-iframe {
-            width: 100% !important;
-            height: 100% !important;
-            border: none !important;
-            display: block !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            bottom: 0 !important;
-            right: 0 !important;
-        }
-
-        /* Error message with unique ID */
-        #vscode-bfg-error {
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            color: #ff0000 !important;
-            font-family: monospace !important;
-            z-index: 1000 !important;
-        }
-    </style>
-</head>
-<body id="vscode-bfg-body">
-    <div id="vscode-bfg-controls">
-        <button id="vscode-bfg-button" onclick="reloadPortal()">Reload Portal</button>
-    </div>
-    <div id="vscode-bfg-frame">
-        <iframe id="vscode-bfg-iframe" src="http://localhost:888/#/" frameborder="0"></iframe>
-        <div id="vscode-bfg-error"></div>
-    </div>
-    <script>
-        function reloadPortal() {
-            const iframe = document.getElementById('vscode-bfg-iframe');
-            const errorDiv = document.getElementById('vscode-bfg-error');
-            errorDiv.style.display = 'none';
-            iframe.src = iframe.src;
-        }
-        
-        document.getElementById('vscode-bfg-iframe').addEventListener('error', function() {
-            const errorDiv = document.getElementById('vscode-bfg-error');
-            errorDiv.textContent = 'Portal not available. Click reload to try again.';
-            errorDiv.style.display = 'block';
-        });
-    </script>
-</body>
-</html>`;
-            
             // Handle panel disposal
             webviewPanel.onDidDispose(() => {
                 if (bfgProcess) {
@@ -176,6 +38,13 @@ export function activate(context: vscode.ExtensionContext) {
                     bfgProcess = null;
                 }
             });
+
+            // Handle messages from webview
+            webviewPanel.webview.onDidReceiveMessage(
+                message => handleMessage(message),
+                undefined,
+                context.subscriptions
+            );
         })
     );
 }
@@ -186,16 +55,53 @@ function getWebviewContent(): string {
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>theBFG Test Arena</title>
+            <title>BFG Test Arena</title>
             <style>
-                body {
-                    margin: 0;
-                    padding: 0;
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+           .banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;  /* Added to ensure full width */
+    background: #1e1e1e;
+    padding: 10px;
+    display: flex;
+    justify-content: center;  /* Added to center content */
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.banner .nav-container,
+.banner .url-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 10px;  /* Added for spacing between groups */
+}
+
+.banner button {
+    padding: 5px 10px;
+    background: #007acc;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.banner input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 200px;  /* Added to make input field wider */
+}
+                .iframe-container {
+                    position: absolute;
+                    top: 42px; /* Banner height */
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
                 }
                 iframe {
                     width: 100%;
@@ -205,17 +111,207 @@ function getWebviewContent(): string {
             </style>
         </head>
         <body>
-            <iframe src="http://localhost:888"></iframe>
+
+            <script>
+            
+                // Add this message handler
+                window.addEventListener('message', event => {
+                    
+                    const message = event.data;
+    
+                    console.log(JSON.stringify(message));
+                    switch (message.command) {
+                        case 'updateInstallButton':
+                            const button = document.getElementById('installBtn');
+                            if (button) {
+                                button.textContent = "Run Local";
+                            }
+                            break;
+            
+                        case 'updateUrl':
+                            const urlInput = document.getElementById('urlInput');
+                            if (urlInput) {
+                                urlInput.value = message.url;
+                            }
+                            break;
+                    }
+                });
+
+               const vscode = acquireVsCodeApi();
+
+                function handleNavigation(direction) {
+                    if(direction=='back') {                        
+                        history.back();
+                    }
+                    else {
+                        history.forward();
+                    }
+                }
+
+                function handleRefresh() {
+                    document.getElementById('mainFrame').src = document.getElementById('mainFrame').src;
+                }
+
+                function handleInstall() {
+                    const isInstalled = document.getElementById('installBtn').textContent === 'Run Local';
+                    if (isInstalled) {
+                        vscode.postMessage({
+                            command: 'runBfg'
+                        });
+                    } else {
+                        vscode.postMessage({
+                            command: 'installBfg'
+                        });
+                    }
+                }
+
+                function handleConnect() {
+                    const newUrl = document.getElementById('urlInput').value;
+                    document.getElementById('mainFrame').src = newUrl;
+                    vscode.postMessage({
+                        command: 'updateUrl',
+                        url: newUrl
+                    });
+                }
+
+                // Initialize install button state
+                vscode.postMessage({
+                    command: 'checkInstallation'
+                });
+            </script>
+
+
+            <div class="banner">
+                <div class="nav-container">
+                    <button onclick="handleNavigation('back')">← Back</button>
+                    <button onclick="handleNavigation('forward')">Forward →</button>
+                </div>
+                <button onclick="handleRefresh()">Refresh</button>
+                <button id="installBtn" onclick="handleInstall()">Install</button>
+                <div class="url-container">
+                    <span>URL:</span>
+                    <input type="text" id="urlInput" value="${currentUrl}">
+                    <button onclick="handleConnect()">Connect</button>
+                </div>
+            </div>
+            <div class="iframe-container">
+                <iframe id="mainFrame" src="${currentUrl}"></iframe>
+            </div>
         </body>
-        </html>
+    </html>
     `;
 }
+function handleMessage(message: any) {
 
-export function deactivate() {
+    console.info('saw bfg cmd', message);
+
+    switch (message.command) {
+        case 'checkInstallation':
+            checkInstallation();
+            break;
+        case 'installBfg':
+            installBfg();
+            break;
+        case 'runBfg':
+            runBfg();
+            break;
+        case 'updateUrl':
+            currentUrl = message.url;
+            break;
+        case 'updateInstallButton':
+            console.info("Got install status: " + message.installed);
+            const button = document.getElementById('installBtn');
+            if (button) {
+                button.textContent = message.installed ? "Run local" : "Install";                
+            }
+            break;
+    }
+}
+
+async function checkInstallation() {
+    console.info('checking install');
+    try {
+        const result = await execShellCommand('dotnet', ['tool', 'list', '-g']);
+        const isInstalled = result.stdout.indexOf('thebfg') > -1;
+        console.info(isInstalled ? "Found theBFG!" : "Didnt find theBfg :(");
+        console.info(webviewPanel ? "Webview found" : "Not found webview");
+        webviewPanel?.webview.postMessage({
+            command: 'updateInstallButton',
+            installed: isInstalled
+        });
+    } catch (error) {
+        console.error('Error checking installation:', error);
+        webviewPanel?.webview.postMessage({
+            command: 'updateInstallButton',
+            installed: false
+        });
+    }
+}
+
+async function installBfg() {
+    try {
+        await execShellCommand('dotnet', ['tool', 'install', '-g', 'thebfg']);
+        checkInstallation();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to install BFG: ${error}`);
+    }
+}
+
+async function runBfg() {
     if (bfgProcess) {
-        bfgProcess.kill();
+        vscode.window.showWarningMessage('BFG is already running!');
+        return;
     }
-    if (webviewPanel) {
-        webviewPanel.dispose();
+
+    try {
+        bfgProcess = childProcess.spawn('thebfg', []);
+
+        bfgProcess.stdout?.on('data', (data) => {
+            console.log(`[BFG] ${data}`);
+        });
+
+        bfgProcess.stderr?.on('data', (data) => {
+            console.error(`[BFG][ERROR] ${data}`);
+        });
+
+        bfgProcess.on('close', (code) => {
+            console.log(`BFG process exited with code ${code}`);
+            bfgProcess = null;
+            if (webviewPanel) {
+                webviewPanel.dispose();
+            }
+        });
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to start BFG: ${error}`);
     }
+}
+
+function execShellCommand(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+        const child = childProcess.spawn(command, args);
+        let stdout = '';
+        let stderr = '';
+        child.stdout?.on('data', (data) => {
+            console.info(command, data.toString());
+            stdout += data.toString();
+        });
+
+        child.stderr?.on('data', (data) => {
+            console.error(command, data.toString());
+            stderr += data.toString();
+
+        });
+
+        child.on('close', (code) => {
+            if (code === 0) {
+                resolve({ stdout, stderr });
+            } else {
+                reject(new Error(`Command failed with code ${code}`));
+            }
+        });
+
+        child.on('error', (err) => {
+            reject(err);
+        });
+    });
 }

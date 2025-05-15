@@ -80,13 +80,14 @@ function Execute-Command {
 if (-not (Execute-Command "node" @("node_modules/@vscode/vsce/vsce", "package") "extension packaging")) {
     exit 1
 }
+$vscode = Get-VSCodeExecutable
 
-$uninstallArgs = @("--uninstall-extension", "bfg-portal")
-if (-not (Execute-Command "code" $uninstallArgs "uninstall existing extension")) {
+
+$uninstallArgs =  @("$env:USERPROFILE\.vscode\extensions\janison.bfg* /q");
+if (-not (Execute-Command del $uninstallArgs "uninstall existing extension")) {
     Write-Host "Previous version not found, continuing with installation..." -ForegroundColor Yellow
 }
 
-$vscode = Get-VSCodeExecutable
 # Step 4: Install locally
 if (-not (Execute-Command $vscode @("--install-extension", "./bfg-portal-${Version}.vsix", "--log", "debug","--extensionDevelopmentPath=.") "local extension installation")) {
     exit 1
