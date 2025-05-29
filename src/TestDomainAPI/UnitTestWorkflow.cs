@@ -147,8 +147,10 @@ namespace theBFG.TestDomainAPI
                             try
                             {
                                 var tests = arena.ListTests(work.Dll).WaitR();
+                                tests.ForEach(t => t.LogDebug("FOUND"));
                                 if (tests.AnyItems())
-                                    return arena.Start(Name, work, testLog, logDir).Do(msg => o.OnNext(msg));
+                                    return arena.Start(Name, work, testLog, logDir)
+                                        .Do(msg => o.OnNext(msg));
                             }
                             catch (Exception)
                             {

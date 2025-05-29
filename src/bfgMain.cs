@@ -7,10 +7,12 @@ namespace theBFG
 {
     class bfgMain
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             theBfg.ReloadAnd(args: args).Until();
-            ConsoleHostedApp.StartREPL(theBfg.IsReady.FirstAsync().WaitR().AppCmdService);
+            var appContext = theBfg.IsReady.FirstOrDefaultAsync().WaitR()?.AppCmdService;
+            if(appContext != null)
+                ConsoleHostedApp.StartREPL(appContext);
         }
     }
 }

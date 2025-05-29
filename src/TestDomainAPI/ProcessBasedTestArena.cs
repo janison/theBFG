@@ -78,7 +78,7 @@ namespace theBFG.TestDomainAPI
                 ListTestsCmd(dll),
                 i =>
                 {
-                    i.LogDebug();
+                    //i.LogDebug();
 
                     foreach (var test in OnTestCmdLog(i))
                         tests.Add(test);

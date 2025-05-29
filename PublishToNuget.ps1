@@ -46,9 +46,12 @@ function Run {
     $buildArgs = @(
         "build",
         $ProjectPath,
-        "--configuration", "Release"
+        "--configuration", "Release",
+        "--p:packageversion=$Version"
         #,"--verbosity", "detailed"
     )
+
+    Write-Host "Building $ProjectPath with version $Version..."
     
     if (-not (Execute-DotnetCommand -CommandArgs $buildArgs -Operation "build")) {
         exit 1
@@ -57,6 +60,7 @@ function Run {
     # Step 2: Create the package
     $packArgs = @(
         "pack",
+        "--no-build",
         $ProjectPath,
         "--output", $SourcePath,
         "--include-symbols",

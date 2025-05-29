@@ -237,13 +237,17 @@ namespace theBFG
         {
             var pattern = testSyntax.Split('/', '\\');
 
-            var dir = pattern.Take(pattern.Length - 1).ToStringEach("/");
+            var dir = pattern.Take(pattern.Length - 1).ToStringEach("/").IsNullOrWhiteSpace(".");
+            dir += "\\";
+
             var filePattern = pattern.Last();
             var watchers = new CompositeDisposable();
 
 
             return Rxn.Create<StartUnitTest>(o =>
             {
+                $"Scanning: {Path.GetFullPath(dir)}\\{filePattern}".LogDebug();
+
                 foreach (var dll in Directory.GetFileSystemEntries(dir, filePattern, SearchOption.AllDirectories).Select(d => d.AsCrossPlatformPath()).Where(NotAFrameworkFile))
                 {
                     GetTargetsFromDll(args, dll, arena).Do(t => o.OnNext(t)).Until();
@@ -280,6 +284,8 @@ namespace theBFG
 
         public static IObservable<StartUnitTest> GetTargetsFromDll(string[] args, string dll, Func<ITestArena[]> arena)
         {
+            $"Found target: {dll}".LogDebug();
+
             var appUpdateDllSource = GetAppNameFromDllSyntax(dll);
             var testName = GetTestNameFromArgs(args);
             var appUpdateVersion = GetAppVersionFromDllSyntax(args, dll);
@@ -374,7 +380,12 @@ namespace theBFG
             {
                 RxnExtensions.DeserialiseImpl = (t, json) => JsonExtensions.FromJson(json, t);
                 RxnExtensions.SerialiseImpl = (json) => JsonExtensions.ToJson(json);
-                
+#if DEBUG
+                Logger.OnDebug.Do(msg => Debug.WriteLine(msg.Replace("[DBG]", "[bfg]"))).Until();
+#else
+                Logger.OnDebug.Do(msg => Console.WriteLine(msg.Replace("[DBG]", "[bfg]"))).Until();
+#endif
+                ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
 
                 switch (args.FirstOrDefault()?.ToLower())
                 {
@@ -390,29 +401,33 @@ namespace theBFG
                     case "self":
                         return SelfDestructIf(args).Subscribe(o);
 
-                    default:
-
-
-                        "theBFG instructions:".LogDebug();
-                        "1. Take aim at a target".LogDebug();
-                        "2. Fire".LogDebug();
-                        "".LogDebug();
-                        "".LogDebug();
-                        "Usage:".LogDebug();
-                        "target test.dll".LogDebug();
-                        "target Test@test.dll and fire".LogDebug();
-                        "fire".LogDebug();
-                        "fire @url".LogDebug();
-                        "fire rapidly {{threadCount | max}} | will fire on multiple threads simultatiously".LogDebug();
-                        "fire compete | shard test-suite execution across multiple nodes".LogDebug();
-                        "".LogDebug();
-                        "launch sut@sut.dll | deploy apps to worker nodes automatically during CI/CD. Worker integration via complementary C# api: theBfgApi.launch(\"app\", \"dir\")".LogDebug();
-                        "".LogDebug();
-                        "".LogDebug();
-                        "<<USE WITH CAUTION>>".LogDebug();
-                        "".LogDebug();
-                        break;
                 }
+                
+                "theBFG instructions:".LogDebug();
+                "1. Take aim at a target".LogDebug();
+                "2. Fire".LogDebug();
+                "".LogDebug();
+                "".LogDebug();
+                "Usage:".LogDebug();
+                "target".LogDebug();
+                "target *test.dll".LogDebug();
+                "target Test@test.dll and fire".LogDebug();
+                "fire".LogDebug();
+                "fire @url".LogDebug();
+                "fire rapidly {{threadCount | max}} | will fire on multiple threads simultatiously".LogDebug();
+                "fire compete | shard test-suite execution across multiple nodes".LogDebug();
+                "".LogDebug();
+                "launch sut@sut.dll | deploy apps to worker nodes automatically during CI/CD. Worker integration via complementary C# api: theBfgApi.launch(\"app\", \"dir\")".LogDebug();
+                "launch".LogDebug();
+                "".LogDebug();
+                "".LogDebug();
+                "<<USE WITH CAUTION>>".LogDebug();
+                "".LogDebug();
+
+                theBfg.IsReady.OnCompleted();
+                theBfg.IsCompleted.OnNext(new Unit());
+                theBfg.IsCompleted.OnCompleted();
+                o.OnCompleted();
 
                 return Disposable.Empty;
             });
@@ -452,8 +467,7 @@ namespace theBFG
         {
             return Rxn.Create<Unit>(o =>
             {
-                Logger.OnDebug.Do(msg => Debug.WriteLine(msg)).Until();
-                ReportStatus.StartupLogger = ReportStatus.Log.ReportToConsole();
+                
                 theBfg.Args = args;
 
                 "Configuring App".LogDebug();
@@ -853,7 +867,7 @@ namespace theBFG
 
         public static IObservable<IEnumerable<string>> ListTests(string testDll, Func<ITestArena[]> arenas)
         {
-            return arenas().SelectMany(a => a.ListTests(testDll)).FirstAsync(w => w.AnyItems());
+            return arenas().SelectMany(a => a.ListTests(testDll).Catch<IEnumerable<string>, Exception>(e => Enumerable.Empty<string>().ToArray().ToObservable())).FirstAsync(w => w.AnyItems());
         }
 
         //todo: write unit test for this

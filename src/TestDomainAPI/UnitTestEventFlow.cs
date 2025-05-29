@@ -19,7 +19,7 @@ namespace theBFG.TestDomainAPI
     }
 
     /// <summary>
-    /// A test potential unit test session has been located.
+    /// A potential unit test session has been located.
     /// </summary>
     public class UnitTestDiscovered : ITestDomainEvent
     {
