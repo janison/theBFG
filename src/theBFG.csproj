@@ -23,15 +23,13 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
 
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <PackageReleaseNotes>
-      -Now uses SignalR to stream all messages from workers back to test arena
-      -Now caches messages so you can connect to Test Arena after a test run and see a replay of the test session so far.
-      -Improves UX and adds features
-
+      -Fixes various bugs causing test arena to fail to start or log
+      
       This project is under active development. Submit feature requests, Issues and feedback @ github
     </PackageReleaseNotes>
   </PropertyGroup>
