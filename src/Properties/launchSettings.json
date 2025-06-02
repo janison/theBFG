@@ -1,8 +1,12 @@
 {
   "profiles": {
-    "theBFG": {
+    "bfg testarena": {
       "commandName": "Project",
-      "commandLineArgs": "target ..\\*Gimp.dll"
+      "commandLineArgs": "target ../*Gimp.dll"
+    },
+    "bfg worker": {
+      "commandName": "Project",
+      "commandLineArgs": "fire"
     }
   }
 }

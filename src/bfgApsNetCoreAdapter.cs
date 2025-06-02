@@ -51,7 +51,8 @@ namespace theBFG
                     .AllowAnyHeader());
 
                 // Enable CSP
-                server.Use(async (context, next) => {
+                server.Use(async (context, next) => 
+                {
                     context.Response.Headers.Add("Content-Security-Policy",
                         "default-src 'self' http://localhost:888; " +
                         "script-src 'self' http://localhost:888; " +

@@ -74,7 +74,8 @@ namespace theBFG.TestDomainAPI
                             LogMessage = outputBuffer.ToString(),
                             TestId = work.Id,
                             UnitTestId = _unitTestId,
-                            Worker = worker
+                            Worker = worker,
+                            TestName = cmd[1]
                         };
 
                     outputBuffer.Clear();

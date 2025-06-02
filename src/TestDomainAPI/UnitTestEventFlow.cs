@@ -177,6 +177,7 @@ namespace theBFG.TestDomainAPI
         public string Worker { get; set; }
         public string TestId { get; set; }
         public string UnitTestId { get; set; }
+        public string TestName { get; set; }
 
         public UnitTestPartialLogResult()
         {
@@ -185,6 +186,7 @@ namespace theBFG.TestDomainAPI
 
     public class UnitTestResult : CommandResult, ITestDomainEvent
     {
+        public string TestName { get; set; }
         public DateTime At { get; set; } = DateTime.Now;
 
         public bool WasSuccessful { get; set; }

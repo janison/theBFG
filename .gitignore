@@ -428,3 +428,4 @@ DerivedData/
 /src/Properties/launchSettings.json
 *.vsix
 /.bfg
+/src/rxn.cfg

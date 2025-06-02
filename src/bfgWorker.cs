@@ -118,7 +118,7 @@ namespace theBFG
             //we want the worker to either be a coverage worker, or a unit test worker. not exactly sure how to transfer this info, maybe i just use Info?
             return !_cover.IsActive ?
                     UnitTestWorkflow.Run(Name, work, isBusy => _isBusy.OnNext(isBusy), _updateService, _cfg, _appStatus, _arena, _zipService)
-                                    .Do(msg => _rxnManager.Publish(msg))
+                                    .Do(msg => _rxnManager.Publish(msg).Until())
                                     .LastOrDefaultAsync()
                                     .OfType<UnitTestResult>()
                     : Rxn.Empty<UnitTestResult>();

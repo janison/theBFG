@@ -143,7 +143,7 @@ namespace theBFG.Tests
             {
                 called++;
                 "Saw Unit test".LogDebug();
-                results.OnNext((UnitTestResult) new UnitTestResult() {WasSuccessful = true}.AsResultOf(t));
+                results.OnNext((UnitTestResult) new UnitTestResult() {WasSuccessful = true, TestName = t.RunThisTest}.AsResultOf(t));
             }).WaitR();
             called.Should().Be(9, "9 commands are in the parallel test");
 
