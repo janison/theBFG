@@ -4,9 +4,12 @@ param (
     [string]$ToolPath,
     [string]$SourcePath = "./src/nupkg",
     [string]$ToolName = "theBfg",
-    [string]$ApiKey,
+    [string]$ApiKey, #If not specified, will publish locally only
+    [string]$Notes = "A new version of theBFG with improved stability and features"
     [string]$NuGetSource = "https://api.nuget.org/v3/index.json",
-    [string]$ProjectPath ="./src/theBFG.csproj"
+    [string]$ProjectPath ="./src/theBFG.csproj",
+    [string]$Configuration = "Debug",
+    [string]$Platform = "Any CPU"
 )
 
 function Get-DefaultToolPath {
@@ -42,36 +45,17 @@ function Execute-DotnetCommand {
 }
 
 function Run {
-    # Step 1: Build project (Release configuration)
-    $buildArgs = @(
-        "build",
-        $ProjectPath,
-        "--configuration", "Release",
-        "--p:packageversion=$Version"
-        #,"--verbosity", "detailed"
-    )
-
     Write-Host "Building $ProjectPath with version $Version..."
     
-    if (-not (Execute-DotnetCommand -CommandArgs $buildArgs -Operation "build")) {
-        exit 1
-    }
-    
-    # Step 2: Create the package
-    $packArgs = @(
-        "pack",
-        "--no-build",
-        $ProjectPath,
-        "--output", $SourcePath,
-        "--include-symbols",
-        "--include-source",
-        "--configuration", "Release"
-        #,"--verbosity", "detailed"
-    )
-    
-    if (-not (Execute-DotnetCommand -CommandArgs $packArgs -Operation "package creation")) {
-        exit 1
-    }
+    &dotnet build `
+        -p:Version=$Version `
+        -p:PackageVersion=$Version `
+        -p:AssemblyVersion=$Version `
+        -p:FileVersion=$Version `
+        -c $Configuration `
+        -p:Platform=$Platform `  
+        -p:PackageReleaseNotes=$Notes
+
 
      if (-not $ToolPath) {
         $ToolPath = Get-DefaultToolPath
