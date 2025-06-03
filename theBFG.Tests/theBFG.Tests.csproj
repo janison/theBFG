@@ -15,11 +15,11 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.3" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.3" />
-        <PackageReference Include="coverlet.collector" Version="6.0.4"/>
-        <PackageReference Include="Rxns" Version="3.0.0" />
-        <PackageReference Include="Rxns.Autofac" Version="3.0.0" />
-        <PackageReference Include="Rxns.WebApiNET5" Version="3.0.0" />
-        <PackageReference Include="Rxns.Windows" Version="3.0.0" />
+        <PackageReference Include="coverlet.collector" Version="6.0.4" />
+        <PackageReference Include="Rxns" Version="3.0.1" />
+        <PackageReference Include="Rxns.Autofac" Version="3.0.1" />
+        <PackageReference Include="Rxns.WebApiNET5" Version="3.0.1" />
+        <PackageReference Include="Rxns.Windows" Version="3.0.1" />
     </ItemGroup>
 
     <ItemGroup>

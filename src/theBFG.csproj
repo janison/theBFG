@@ -124,10 +124,10 @@
     <PackageReference Include="System.Reactive" Version="6.0.0" />
     <PackageReference Include="Autofac" Version="3.5.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.0" />
-    <PackageReference Include="Rxns" Version="3.0.0" />
-    <PackageReference Include="Rxns.Autofac" Version="3.0.0" />
-    <PackageReference Include="Rxns.WebApiNET5" Version="3.0.0" />
-    <PackageReference Include="Rxns.Windows" Version="3.0.0" />
+    <PackageReference Include="Rxns" Version="3.0.1" />
+    <PackageReference Include="Rxns.Autofac" Version="3.0.1" />
+    <PackageReference Include="Rxns.WebApiNET5" Version="3.0.1" />
+    <PackageReference Include="Rxns.Windows" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>
